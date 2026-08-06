@@ -22,14 +22,17 @@ from bosshunter.db import (
 	get_daily_activity,
 	get_db,
 	get_funnel_stats,
+	get_jobs_by_status,
+	get_jobs_approved_to_send,
 	get_jobs_needing_resume,
+	get_jobs_needing_greeting,
 	get_jobs_pending_confirmation,
-	get_jobs_ready_to_send,
 	get_jobs_with_send_errors,
 	get_recent_history,
 	get_unresolved_resume_failures,
 	get_stats,
 	get_top_companies,
+	reset_job_greeting,
 	update_job_status,
 )
 from bosshunter.web.tasks import TaskAlreadyRunningError, WorkbenchTask, WorkbenchTaskRunner
@@ -58,15 +61,17 @@ def _default_base_dir() -> Path:
 BASE_DIR = _default_base_dir()
 DATA_DIR = BASE_DIR / "data"
 RESUME_DIR = DATA_DIR / "resumes"
+PROFILE_DIR = DATA_DIR / "profile"
 CONFIG_PATH = BASE_DIR / "config.yaml"
 
 
 def set_base_dir(base_dir: Path | str) -> None:
 	"""Set the runtime directory used for config.yaml, data, and uploads."""
-	global BASE_DIR, DATA_DIR, RESUME_DIR, CONFIG_PATH
+	global BASE_DIR, DATA_DIR, RESUME_DIR, PROFILE_DIR, CONFIG_PATH
 	BASE_DIR = Path(base_dir).resolve()
 	DATA_DIR = BASE_DIR / "data"
 	RESUME_DIR = DATA_DIR / "resumes"
+	PROFILE_DIR = DATA_DIR / "profile"
 	CONFIG_PATH = BASE_DIR / "config.yaml"
 
 
@@ -82,11 +87,35 @@ def _json_response(data, status_code=200):
 	return json.dumps(data, ensure_ascii=False, default=str)
 
 
+def _utc_timestamp(value):
+	"""Mark SQLite CURRENT_TIMESTAMP values as UTC ISO-8601 strings."""
+	if not isinstance(value, str) or not value.strip():
+		return value
+	text = value.strip()
+	if text.endswith("Z") or text[-6:-5] in {"+", "-"}:
+		return text
+	return f"{text.replace(' ', 'T')}Z"
+
+
+def _serialize_db_item(item):
+	"""Copy a database record and make timestamp timezone semantics explicit."""
+	record = dict(item)
+	for field in ("created_at", "updated_at"):
+		if field in record:
+			record[field] = _utc_timestamp(record[field])
+	return record
+
+
+def _serialize_db_items(items):
+	"""Serialize a collection of database records for browser clients."""
+	return [_serialize_db_item(item) for item in items]
+
+
 def _serialize_history_items(items):
 	"""Expose structured history details while retaining the legacy detail field."""
 	serialized = []
 	for item in items:
-		record = dict(item)
+		record = _serialize_db_item(item)
 		detail = record.get("detail")
 		if isinstance(detail, str) and detail.lstrip().startswith("{"):
 			try:
@@ -161,31 +190,33 @@ def _sanitize_config_for_write(data):
 
 
 def _preflight_messages(mode: str, config: dict) -> list[str]:
-	"""Return user-actionable blockers before starting a dashboard task."""
-	messages: list[str] = []
-	if mode not in {"full", "collect", "monitor"}:
-		messages.append(f"不支持的任务模式：{mode}")
+    """Return user-actionable blockers before starting a dashboard task."""
+    messages: list[str] = []
+    if mode not in {"full", "collect", "score", "reenrich", "monitor", "import"}:
+        messages.append(f"不支持的任务模式：{mode}")
 
-	profile = config.get("profile", {})
-	resume_path = profile.get("resume_path", "")
-	if not resume_path or not Path(str(resume_path)).exists():
-		messages.append("请先在配置页上传 Markdown 简历。")
+    profile = config.get("profile", {})
+    resume_path = profile.get("resume_path", "")
+    if not resume_path or not Path(str(resume_path)).exists():
+        messages.append("请先在配置页上传 Markdown 简历。")
 
-	if mode in {"full", "collect"} and not config.get("search", {}).get("keywords"):
-		messages.append("请先在配置页填写搜索关键词。")
+    if mode in {"full", "collect"} and not config.get("search", {}).get("keywords"):
+        messages.append("请先在配置页填写搜索关键词。")
 
-	if mode in {"full", "collect"}:
-		ai_cfg = config.get("ai", {}) if isinstance(config.get("ai"), dict) else {}
-		has_ai_key = bool(
-			os.environ.get("ANTHROPIC_API_KEY")
-			or os.environ.get("ANTHROPIC_AUTH_TOKEN")
-			or ai_cfg.get("api_key")
-			or ai_cfg.get("auth_token")
-		)
-		if not has_ai_key:
-			messages.append("请先在配置页填写 AI API Key，或设置 ANTHROPIC_API_KEY 环境变量。")
+    # 定向采集（import）跳过搜索关键词检查：它是按 URL / 公司+职位手动触发的，
+    # 不依赖批量采集的 search.keywords 配置。但仍需要简历（招呼语生成）和 AI Key。
+    if mode in {"full", "collect", "score", "import"}:
+        ai_cfg = config.get("ai", {}) if isinstance(config.get("ai"), dict) else {}
+        has_ai_key = bool(
+            os.environ.get("ANTHROPIC_API_KEY")
+            or os.environ.get("ANTHROPIC_AUTH_TOKEN")
+            or ai_cfg.get("api_key")
+            or ai_cfg.get("auth_token")
+        )
+        if not has_ai_key:
+            messages.append("请先在配置页填写 AI API Key，或设置 ANTHROPIC_API_KEY 环境变量。")
 
-	return messages
+    return messages
 
 
 def _task_config(extra: dict | None = None) -> dict:
@@ -200,16 +231,43 @@ def _log(task: WorkbenchTask, message: str) -> None:
 
 
 def _execute_collect(task: WorkbenchTask, config: dict) -> None:
-	from bosshunter.ai.scorer import score_jobs
 	from bosshunter.scraper.jobs import scrape_jobs
 
+	# 注入 stop_event，让采集/评分内部能在循环迭代间协作式中断。
+	config = dict(config)
+	config["_workbench_stop_event"] = task.stop_requested
 	keywords = config.get("search", {}).get("keywords", [])
 	_log(task, "开始采集岗位")
 	scrape_jobs(config, keywords)
-	if task.stop_requested.is_set():
-		return
-	_log(task, "开始 AI 评分")
-	score_jobs(config)
+	if not task.stop_requested.is_set():
+		_log(task, "采集完成，岗位已进入待评分队列")
+
+
+def _execute_score(task: WorkbenchTask, config: dict) -> None:
+	from bosshunter.ai.scorer import score_jobs
+
+	# 注入 stop_event，让评分循环能在岗位迭代间中断。
+	config = dict(config)
+	config["_workbench_stop_event"] = task.stop_requested
+	_log(task, "开始 AI 评分（不重新采集）")
+	scored, filtered = score_jobs(config)
+	db = _get_web_db()
+	try:
+		remaining = len(get_jobs_by_status(db, "pending"))
+	finally:
+		db.close()
+	_log(task, f"AI 评分结束：通过 {scored}，过滤 {filtered}，待重试 {remaining}")
+
+
+def _execute_reenrich(task: WorkbenchTask, config: dict) -> None:
+	"""Revisit job detail pages to fill previously missing company metadata."""
+	from bosshunter.scraper.jobs import reenrich_jobs
+
+	reenrich_config = dict(config)
+	reenrich_config["_workbench_stop_event"] = task.stop_requested
+	_log(task, "开始补全缺失的地区、公司背景和注册资本信息")
+	updated = reenrich_jobs(reenrich_config)
+	_log(task, f"企业信息补全结束：更新 {updated} 个岗位")
 
 
 def _execute_monitor(task: WorkbenchTask, config: dict) -> None:
@@ -221,7 +279,16 @@ def _execute_monitor(task: WorkbenchTask, config: dict) -> None:
 	interval_sec = max(interval_min * 60, 1)
 	while not task.stop_requested.is_set():
 		_log(task, "执行一轮监测")
-		monitor_and_send_resumes(monitor_config)
+		summary = monitor_and_send_resumes(monitor_config)
+		# monitor_and_send_resumes 内部用 console.print 打终端，不会进任务日志，
+		# 这里把未跟踪会话的回复显式写入日志，避免用户在面板上看不到检测结果。
+		unmatched = summary.get("unmatched_convs") or []
+		if unmatched:
+			names = "、".join(
+				str(c.get("company") or c.get("hr_name") or "未知") for c in unmatched[:5]
+			)
+			suffix = f"等 {len(unmatched)} 个" if len(unmatched) > 5 else ""
+			_log(task, f"⚠ 检测到 {len(unmatched)} 个未跟踪会话的新回复（{names}{suffix}），请手动到 BOSS 查看")
 		if task.stop_requested.is_set():
 			return
 		_log(task, f"本轮监测完成，{interval_min} 分钟后再次检查")
@@ -278,19 +345,224 @@ def _execute_deliver(task: WorkbenchTask, config: dict) -> None:
 	config = dict(config)
 	config["_workbench_stop_event"] = task.stop_requested
 	if not config.get("_workbench_skip_greeting"):
-		_log(task, "生成招呼语")
-		generate_greetings(config)
+		_log(task, "检查招呼语...")
+		generated = generate_greetings(config)
+		if generated > 0:
+			_log(task, f"已生成 {generated} 条招呼语")
+		else:
+			_log(task, "所有岗位已有招呼语，跳过生成")
 		if task.stop_requested.is_set():
 			return
 	_log(task, "发送招呼语")
-	send_greetings(config, force=True)
+	sent = send_greetings(config, force=True)
+	_log(task, f"已发送 {sent} 条招呼语")
+
+
+def _execute_greeting(task: WorkbenchTask, config: dict) -> None:
+	from bosshunter.ai.greeter import generate_greetings
+
+	_log(task, "生成招呼语...")
+	generated = generate_greetings(config)
+	if generated > 0:
+		_log(task, f"已生成 {generated} 条招呼语，等待人工查看后发送")
+	else:
+		_log(task, "所有岗位已有招呼语，无需重新生成")
+
+
+def _execute_reply(task: WorkbenchTask, config: dict) -> None:
+	"""Send a user-confirmed reply through the matching BOSS conversation."""
+	history_id = int(config.get("_reply_history_id") or 0)
+	message = str(config.get("_reply_message") or "").strip()
+	if not history_id or not message:
+		raise ValueError("缺少待回复记录或回复内容")
+
+	db = _get_web_db()
+	try:
+		row = db.execute(
+			"SELECT j.*, h.id AS history_id, h.action AS history_action, h.detail AS pending_detail "
+			"FROM history h JOIN jobs j ON j.id = h.job_id WHERE h.id = ?",
+			(history_id,),
+		).fetchone()
+		if not row or row["history_action"] != "reply_pending":
+			raise ValueError("待回复记录不存在或已处理")
+		job = dict(row)
+		pending_detail = str(row["pending_detail"] or "")
+	finally:
+		db.close()
+
+	from bosshunter.browser import close_tab
+	from bosshunter.executor.monitor import _build_reply_resolution_detail, _open_conversation, _send_message_in_chat
+
+	_log(task, "打开对应的 BOSS 聊天会话")
+	target_id = _open_conversation(job, config)
+	if not target_id:
+		raise RuntimeError("无法打开对应的 BOSS 聊天会话")
+	try:
+		if not _send_message_in_chat(target_id, message):
+			raise RuntimeError("未能发送回复，请检查 BOSS 登录状态和聊天页面")
+	finally:
+		close_tab(target_id)
+
+	db = _get_web_db()
+	try:
+		add_history(
+			db,
+			job["id"],
+			"replied",
+			_build_reply_resolution_detail(
+				"replied.v1", "Web Dashboard 已确认并发送回复", pending_detail, message, history_id
+			),
+		)
+		update_job_status(db, job["id"], "replied")
+	finally:
+		db.close()
+	_log(task, "回复已发送并记录")
+
+
+def _upsert_imported_job(job: dict) -> str:
+	"""Insert a target-imported job, or fill blanks if it already exists.
+
+	Returns the job id. Used by the import executor for both URL-mode and
+	search-mode flows. Reuses ``insert_job`` (INSERT OR IGNORE) and
+	``update_job_enrichment`` (only fills NULL/blank fields) so re-importing a
+	job is idempotent and never clobbers an existing greeting/score/status.
+	"""
+	from bosshunter.db import insert_job, update_job_enrichment
+
+	db = _get_web_db()
+	try:
+		# 定向采集的岗位跳过 AI 评分与 deal_breaker/agency 过滤——用户已经手动选定，
+		# 不应被自动过滤掉。status 保持默认 'pending'，随后由 regenerate_greeting
+		# 推到 'ready'，套用现有「今日待确定 → 人工确认 → 投递」闭环。
+		insert_job(db, job)
+		# 即便已存在，也用新解析的字段补空（如重新采集补全 HR 信息）。
+		update_job_enrichment(db, job)
+		# company_size / company_industry 不在 update_job_enrichment 覆盖范围内，
+		# 但 insert_job 已写入；若已存在且这些字段为空，做一次显式补全。
+		db.execute(
+			"UPDATE jobs SET company_size = COALESCE(NULLIF(company_size, ''), NULLIF(:company_size, '')), "
+			"company_industry = COALESCE(NULLIF(company_industry, ''), NULLIF(:company_industry, '')), "
+			"hr_name = COALESCE(NULLIF(hr_name, ''), NULLIF(:hr_name, '')), "
+			"hr_title = COALESCE(NULLIF(hr_title, ''), NULLIF(:hr_title, '')), "
+			"hr_active = COALESCE(NULLIF(hr_active, ''), NULLIF(:hr_active, '')), "
+			"jd = COALESCE(NULLIF(jd, ''), NULLIF(:jd, '')), "
+			"updated_at = CURRENT_TIMESTAMP WHERE id = :id",
+			job,
+		)
+		db.commit()
+		return job["id"]
+	finally:
+		db.close()
+
+
+def _import_generate_greeting(task: WorkbenchTask, job_id: str, config: dict) -> None:
+	"""Generate a greeting for an imported job so it lands in the review queue.
+
+	Uses ``regenerate_greeting`` which resets the job to ``approved``, generates
+	the greeting, then sets status to ``ready`` — making it appear in the
+	dashboard's "今日待确定" section, exactly where the manual confirmation flow
+	already lives. Does NOT send anything; the user must confirm explicitly.
+	"""
+	from bosshunter.ai.greeter import regenerate_greeting
+
+	import_config = dict(config)
+	import_config["_workbench_stop_event"] = task.stop_requested
+	_log(task, f"为岗位 {job_id} 生成招呼语…")
+	greeting = regenerate_greeting(job_id, import_config)
+	if greeting:
+		_log(task, "招呼语已生成，请在「今日待确定」中查看并确认")
+	else:
+		_log(task, "⚠ 招呼语生成失败（请检查 AI 配置），岗位已入库可手动重试")
+
+
+def _execute_import(task: WorkbenchTask, config: dict) -> None:
+	"""Targeted one-job importer driven by the dashboard.
+
+	Supports three sub-modes (selected by ``config["_import_params"]``):
+
+	- ``{"mode": "url", "url": "..."}`` — collect a single job by detail URL,
+	  then generate its greeting.
+	- ``{"mode": "search", "company": "...", "title": "..."}`` — search by
+	  company + title, store candidate list cards in ``task.context["candidates"]``
+	  for the frontend to render. Stops here; the user picks one.
+	- ``{"mode": "select", "url": "..."}`` — second stage of search mode:
+	  collect the user-picked candidate's detail page and generate its greeting.
+	"""
+	from bosshunter.scraper.jobs import import_job_by_url, search_jobs_by_company_title
+
+	params = config.get("_import_params", {}) or {}
+	mode = params.get("mode")
+	import_config = dict(config)
+	import_config["_workbench_stop_event"] = task.stop_requested
+
+	if mode == "url":
+		url = str(params.get("url", "")).strip()
+		if not url:
+			raise ValueError("缺少岗位 URL")
+		_log(task, f"按 URL 定向采集: {url}")
+		job = import_job_by_url(url, import_config)
+		if not job:
+			raise RuntimeError("采集失败，请检查 URL 是否正确、BOSS 登录状态及 CDP 运行时")
+		# 把解析得到的详情字段回填到 task.context，方便前端即时展示。
+		task.context["job"] = {
+			k: job.get(k) for k in ("id", "title", "company", "salary", "url")
+		}
+		job_id = _upsert_imported_job(job)
+		hist_db = _get_web_db()
+		try:
+			add_history(hist_db, job_id, "imported", "Web Dashboard 定向采集（URL）")
+		finally:
+			hist_db.close()
+		_import_generate_greeting(task, job_id, config)
+
+	elif mode == "search":
+		company = str(params.get("company", "")).strip()
+		title = str(params.get("title", "")).strip()
+		if not company and not title:
+			raise ValueError("请至少填写公司名或职位名")
+		_log(task, f"按公司+职位搜索: company={company!r} title={title!r}")
+		candidates = search_jobs_by_company_title(company, title, import_config)
+		# 候选列表写进 task.context；前端通过 /api/workbench/import/candidates 读取。
+		task.context["candidates"] = candidates
+		if not candidates:
+			_log(task, "未找到匹配岗位，请放宽或调整关键词后重试")
+		else:
+			_log(task, f"找到 {len(candidates)} 个候选，请在面板中选择目标岗位")
+		# search 模式到此结束：用户选定后会再次启动一个 mode=select 的 import 任务。
+
+	elif mode == "select":
+		url = str(params.get("url", "")).strip()
+		if not url:
+			raise ValueError("缺少所选岗位的 URL")
+		_log(task, f"采集所选岗位详情: {url}")
+		job = import_job_by_url(url, import_config)
+		if not job:
+			raise RuntimeError("采集失败，请检查 BOSS 登录状态及 CDP 运行时")
+		task.context["job"] = {
+			k: job.get(k) for k in ("id", "title", "company", "salary", "url")
+		}
+		job_id = _upsert_imported_job(job)
+		hist_db = _get_web_db()
+		try:
+			add_history(hist_db, job_id, "imported", "Web Dashboard 定向采集（公司+职位）")
+		finally:
+			hist_db.close()
+		_import_generate_greeting(task, job_id, config)
+
+	else:
+		raise ValueError(f"未知的导入模式: {mode!r}")
 
 
 task_runner._executors.update({
 	"full": _execute_full,
 	"collect": _execute_collect,
+	"score": _execute_score,
+	"reenrich": _execute_reenrich,
 	"monitor": _execute_monitor,
 	"deliver": _execute_deliver,
+	"greeting": _execute_greeting,
+	"reply": _execute_reply,
+	"import": _execute_import,
 })
 
 
@@ -337,22 +609,50 @@ def api_activity():
 @app.route("/api/jobs")
 def api_jobs():
 	status_filter = request.params.get("status", None)
-	limit = int(request.params.get("limit", 100))
+	# 默认一页 50 条，上限 200 防滥用。前端再做二级分页/滚动。
+	limit = min(int(request.params.get("limit", 50)), 200)
 	offset = int(request.params.get("offset", 0))
 
 	db = _get_web_db()
 	try:
+		# 当前页岗位（受 status 筛选 + 分页约束）
 		query = "SELECT * FROM jobs"
+		count_query = "SELECT COUNT(*) AS cnt FROM jobs"
 		params = []
+		count_params = []
 		if status_filter:
 			query += " WHERE status = ?"
+			count_query += " WHERE status = ?"
 			params.append(status_filter)
+			count_params.append(status_filter)
 		query += " ORDER BY score DESC, created_at DESC LIMIT ? OFFSET ?"
 		params.extend([limit, offset])
 
 		rows = db.execute(query, params).fetchall()
-		jobs = [dict(row) for row in rows]
-		return _json_response(jobs)
+		jobs = _serialize_db_items(rows)
+
+		# 当前筛选条件下的总数（用于分页器/计数标签）
+		filtered_total = db.execute(count_query, count_params).fetchone()["cnt"]
+		# 全量按状态计数（不受 status 筛选影响），喂给筛选 pill
+		status_counts = get_stats(db)
+		# 批量评分/补全企业按钮的计数基于全量，而非当前页
+		pending_count = db.execute(
+			"SELECT COUNT(*) AS cnt FROM jobs WHERE status = 'pending'"
+		).fetchone()["cnt"]
+		missing_company_info_count = db.execute(
+			"SELECT COUNT(*) AS cnt FROM jobs "
+			"WHERE district IS NULL OR TRIM(district) = '' "
+			"OR company_background IS NULL OR TRIM(company_background) = '' "
+			"OR registered_capital IS NULL OR TRIM(registered_capital) = ''"
+		).fetchone()["cnt"]
+
+		return _json_response({
+			"items": jobs,
+			"total": filtered_total,
+			"status_counts": status_counts,
+			"pending_count": pending_count,
+			"missing_company_info_count": missing_company_info_count,
+		})
 	finally:
 		db.close()
 
@@ -408,15 +708,18 @@ def api_workbench():
 		status = task_runner.status()
 		return _json_response({
 			"funnel": get_funnel_stats(db),
-			"pending_confirmation": [
+			"pending_confirmation": _serialize_db_items([
 				job for job in get_jobs_pending_confirmation(db)
 				if int(job.get("score") or 0) >= threshold
-			],
-			"pending_greetings": get_jobs_ready_to_send(db),
-			"send_errors": get_jobs_with_send_errors(db),
-			"needs_resume": get_jobs_needing_resume(db),
+			]),
+			"pending_greetings": _serialize_db_items(get_jobs_approved_to_send(db)),
+			"needs_greeting": _serialize_db_items(get_jobs_needing_greeting(db)),
+			"send_errors": _serialize_db_items(get_jobs_with_send_errors(db)),
+			"needs_resume": _serialize_db_items(get_jobs_needing_resume(db)),
 			"task": status["active"],
 			"last_task": status["last_task"],
+			# 并发任务的完整列表（如 monitor 运行期间启动的 reply），供前端轮询结果。
+			"tasks": status["tasks"],
 		})
 	finally:
 		db.close()
@@ -468,14 +771,14 @@ def api_workbench_deliver():
 			return _json_response({"error": "请选择要投递的岗位"}, 400)
 
 		direct_send = bool(body.get("direct_send"))
-		db = _get_web_db()
-		try:
-			for job_id in job_ids:
-				update_job_status(db, job_id, "approved")
-				if not direct_send:
+		if not direct_send:
+			db = _get_web_db()
+			try:
+				for job_id in job_ids:
+					update_job_status(db, job_id, "approved")
 					add_history(db, job_id, "approved", "Web Dashboard 确认投递")
-		finally:
-			db.close()
+			finally:
+				db.close()
 
 		if not direct_send:
 			status = task_runner.status()
@@ -492,11 +795,39 @@ def api_workbench_deliver():
 				if isinstance(confirmation_event, Event):
 					confirmation_event.set()
 				return _json_response(waiting_task.snapshot())
+			# 确认后不自动发送——岗位进入"待发送招呼语"由用户手动发送
+			return _json_response({"confirmed": len(job_ids), "message": "已确认，请在「待发送招呼语」中手动发送"})
 
-		deliver_options = {"_workbench_job_ids": job_ids}
-		if direct_send:
-			deliver_options["_workbench_skip_greeting"] = True
+		# direct_send: 用户在"待发送招呼语"中手动点击发送
+		deliver_options = {
+			"_workbench_job_ids": job_ids,
+			"_workbench_skip_greeting": True,
+			"_workbench_include_send_errors": True,
+		}
 		task = task_runner.start("deliver", _task_config(deliver_options))
+		return _json_response(task)
+	except TaskAlreadyRunningError as e:
+		return _json_response({"error": str(e)}, 409)
+	except Exception as e:
+		return _json_response({"error": str(e)}, 500)
+
+
+@app.route("/api/workbench/greetings/regenerate", method="POST")
+def api_workbench_regenerate_greetings():
+	"""Regenerate selected greetings without sending them to BOSS."""
+	try:
+		body = request.json or {}
+		job_ids = [str(job_id) for job_id in body.get("job_ids", []) if str(job_id)]
+		if not job_ids:
+			return _json_response({"error": "请选择要重新生成招呼语的岗位"}, 400)
+
+		db = _get_web_db()
+		try:
+			reset_job_greeting(db, job_ids)
+		finally:
+			db.close()
+
+		task = task_runner.start("greeting", _task_config({"_workbench_job_ids": job_ids}))
 		return _json_response(task)
 	except TaskAlreadyRunningError as e:
 		return _json_response({"error": str(e)}, 409)
@@ -525,6 +856,90 @@ def api_workbench_reject():
 		return _json_response({"error": str(e)}, 500)
 
 
+@app.route("/api/jobs/import", method="POST")
+def api_job_import():
+	"""启动定向采集任务（按 URL 或按公司+职位搜索）。
+
+	Body:
+	- ``{"mode": "url", "url": "..."}`` — 按详情页 URL 采集单岗位。
+	- ``{"mode": "search", "company": "...", "title": "..."}`` — 搜索候选列表，
+	  结果通过 ``/api/jobs/import/<task_id>/candidates`` 拉取。
+
+	返回 task snapshot（异步执行）。该任务为短任务，可与 monitor/full 并行。
+	"""
+	try:
+		body = request.json or {}
+		mode = str(body.get("mode", "")).strip()
+		if mode not in {"url", "search"}:
+			return _json_response({"error": "mode 必须是 url 或 search"}, 400)
+
+		params: dict = {"mode": mode}
+		if mode == "url":
+			url = str(body.get("url", "")).strip()
+			if not url:
+				return _json_response({"error": "请填写岗位 URL"}, 400)
+			params["url"] = url
+		else:  # search
+			params["company"] = str(body.get("company", "")).strip()
+			params["title"] = str(body.get("title", "")).strip()
+			if not params["company"] and not params["title"]:
+				return _json_response({"error": "请至少填写公司名或职位名"}, 400)
+
+		# preflight 会校验简历与 AI Key；搜索关键词检查对 import 不适用。
+		messages = _preflight_messages("import", load_config(CONFIG_PATH))
+		if messages:
+			return _json_response({"error": "请先处理启动前检查", "messages": messages}, 400)
+		task = task_runner.start("import", _task_config({"_import_params": params}))
+		return _json_response(task)
+	except TaskAlreadyRunningError as e:
+		return _json_response({"error": str(e)}, 409)
+	except Exception as e:
+		return _json_response({"error": str(e)}, 500)
+
+
+@app.route("/api/jobs/import/select", method="POST")
+def api_job_import_select():
+	"""search 模式第二阶段：用户选定候选后，采集详情并生成招呼语。
+
+	Body: ``{"url": "..."}``（候选列表里那条的 url 字段）。
+	"""
+	try:
+		body = request.json or {}
+		url = str(body.get("url", "")).strip()
+		if not url:
+			return _json_response({"error": "请提供所选岗位的 URL"}, 400)
+
+		messages = _preflight_messages("import", load_config(CONFIG_PATH))
+		if messages:
+			return _json_response({"error": "请先处理启动前检查", "messages": messages}, 400)
+		task = task_runner.start(
+			"import",
+			_task_config({"_import_params": {"mode": "select", "url": url}}),
+		)
+		return _json_response(task)
+	except TaskAlreadyRunningError as e:
+		return _json_response({"error": str(e)}, 409)
+	except Exception as e:
+		return _json_response({"error": str(e)}, 500)
+
+
+@app.route("/api/jobs/import/<task_id>/candidates")
+def api_job_import_candidates(task_id):
+	"""读取 search 模式任务的候选岗位列表（task.context["candidates"]）。
+
+	前端轮询任务状态变为 completed 后调此接口拿候选并渲染选择 UI。
+	"""
+	try:
+		task = task_runner._tasks.get(task_id)
+		if not task:
+			return _json_response({"error": "任务不存在"}, 404)
+		if task.mode != "import":
+			return _json_response({"error": "该任务不是定向采集任务"}, 400)
+		return _json_response({"candidates": task.context.get("candidates", [])})
+	except Exception as e:
+		return _json_response({"error": str(e)}, 500)
+
+
 @app.route("/api/jobs/<job_id>")
 def api_job_detail(job_id):
 	db = _get_web_db()
@@ -532,7 +947,7 @@ def api_job_detail(job_id):
 		row = db.execute("SELECT * FROM jobs WHERE id = ?", (job_id,)).fetchone()
 		if not row:
 			return _json_response({"error": "岗位不存在"}, 404)
-		return _json_response(dict(row))
+		return _json_response(_serialize_db_item(row))
 	finally:
 		db.close()
 
@@ -581,26 +996,173 @@ def api_history_reply(history_id):
 		if row["action"] != "reply_pending":
 			return _json_response({"error": "只能确认待回复记录"}, 400)
 
-		from bosshunter.executor.monitor import _build_reply_resolution_detail
-
-		add_history(
-			db,
-			row["job_id"],
-			"replied",
-			_build_reply_resolution_detail(
-				"replied.v1",
-				"Web Dashboard 确认回复",
-				row["detail"],
-				message,
-				int(row["id"]),
-			),
+		# 面板点击即为必需的人为确认；实际浏览器操作交给单任务执行器，避免阻塞 API。
+		task = task_runner.start(
+			"reply",
+			_task_config({"_reply_history_id": int(row["id"]), "_reply_message": message}),
 		)
-		update_job_status(db, row["job_id"], "replied")
-		return _json_response({"success": True, "message": "回复已记录，请在招聘平台手动发送。"})
+		return _json_response(task)
+	except TaskAlreadyRunningError as e:
+		return _json_response({"error": str(e)}, 409)
 	except Exception as e:
 		return _json_response({"error": str(e)}, 500)
 	finally:
 		db.close()
+
+
+@app.route("/api/history/<history_id>/refine", method="POST")
+def api_history_refine(history_id):
+	"""根据用户的修改建议重新优化一条待确认回复，不执行发送。"""
+	db = _get_web_db()
+	try:
+		body = request.json or {}
+		suggestion = str(body.get("suggestion", "")).strip()
+		current_reply = str(body.get("current_reply", "")).strip()
+		if not suggestion:
+			return _json_response({"error": "请填写修改建议"}, 400)
+		if len(suggestion) > 1000 or len(current_reply) > 2000:
+			return _json_response({"error": "修改建议或回复内容过长"}, 400)
+
+		row = db.execute(
+			"SELECT id, action, detail FROM history WHERE id = ?",
+			(history_id,),
+		).fetchone()
+		if not row:
+			return _json_response({"error": "待回复记录不存在"}, 404)
+		if row["action"] != "reply_pending":
+			return _json_response({"error": "只能优化待确认回复"}, 400)
+
+		from bosshunter.executor.monitor import _parse_reply_detail, _refine_reply
+
+		payload = _parse_reply_detail(row["detail"])
+		hr_question = str(payload.get("hr_question", "")).strip()
+		if not current_reply:
+			current_reply = str(payload.get("ai_reply", "")).strip()
+		if not current_reply:
+			return _json_response({"error": "当前回复内容不能为空"}, 400)
+
+		refined = _refine_reply(
+			hr_question,
+			current_reply,
+			suggestion,
+			load_config(CONFIG_PATH),
+		)
+		if not refined:
+			return _json_response({"error": "AI 优化失败，请检查模型配置后重试"}, 502)
+		return _json_response({"message": refined})
+	except Exception as e:
+		return _json_response({"error": str(e)}, 500)
+	finally:
+		db.close()
+
+
+@app.route("/api/replies/generate", method="POST")
+def api_replies_generate():
+	"""手动粘贴 HR 消息，生成回复语（不写库、不发送，只返回文本）。
+
+	监测不到 HR 回复时（列表扫描漏掉、会话没进候选等），用户可把 HR 的话
+	粘贴进来，调用 AI 生成回复语，自行复制到 BOSS 发送。
+
+	请求体 JSON：
+	- hr_message: 必填，HR 的消息原文。
+	- conversation_history: 可选，之前的对话记录，帮助模型理解上下文。
+	- job_id: 可选，关联岗位 id；提供时读取该岗位的 title/company 让回复更贴合。
+	"""
+	body = request.json or {}
+	hr_message = str(body.get("hr_message", "")).strip()
+	conversation_history = str(body.get("conversation_history", "")).strip()
+	job_id = str(body.get("job_id", "") or "").strip()
+
+	if not hr_message:
+		return _json_response({"error": "请填写 HR 的消息内容"}, 400)
+	if len(hr_message) > 4000 or len(conversation_history) > 4000:
+		return _json_response({"error": "内容过长"}, 400)
+
+	# 可选：关联岗位上下文（只读，不修改）。
+	job = None
+	if job_id:
+		db = _get_web_db()
+		try:
+			row = db.execute(
+				"SELECT id, title, company FROM jobs WHERE id = ?", (job_id,)
+			).fetchone()
+			if row:
+				job = {"title": row["title"], "company": row["company"]}
+		finally:
+			db.close()
+
+	from bosshunter.executor.monitor import _generate_reply_from_text
+
+	reply = _generate_reply_from_text(
+		hr_message, job, load_config(CONFIG_PATH), conversation_history
+	)
+	if not reply:
+		return _json_response({"error": "AI 生成回复失败，请检查模型配置后重试"}, 502)
+	return _json_response({"message": reply})
+
+
+@app.route("/api/greetings/generate", method="POST")
+def api_greetings_generate():
+	"""手动粘贴岗位信息，生成招呼语（不写库、不发送，只返回文本）。
+
+	岗位不在岗位池或采集不到完整信息时，用户可把岗位描述（JD）粘贴进来，
+	调用 AI 基于当前简历生成招呼语，自行复制到 BOSS 发送。
+
+	请求体 JSON：
+	- jd: 必填，岗位描述原文。
+	- title/company/salary/city: 可选，岗位名称/公司/薪资/城市。
+	- review: 可选 bool，是否启用 AI 自检优化循环（默认关闭，交互更快）。
+	"""
+	body = request.json or {}
+	jd = str(body.get("jd", "")).strip()
+	title = str(body.get("title", "")).strip()
+	company = str(body.get("company", "")).strip()
+	salary = str(body.get("salary", "")).strip()
+	city = str(body.get("city", "")).strip()
+	review = bool(body.get("review", False))
+
+	if not jd:
+		return _json_response({"error": "请填写岗位描述（JD）"}, 400)
+	if len(jd) > 4000:
+		return _json_response({"error": "岗位描述过长"}, 400)
+	for label, value in (
+		("岗位名称", title),
+		("公司", company),
+		("薪资", salary),
+		("城市", city),
+	):
+		if len(value) > 200:
+			return _json_response({"error": f"{label}过长"}, 400)
+
+	from bosshunter.ai.greeter import (
+		_generate_for_job_with_review,
+		_generate_with_deterministic_retry,
+		_get_resume_summary,
+	)
+
+	config = load_config(CONFIG_PATH)
+	resume_summary = _get_resume_summary(config)
+	job = {
+		"id": "",
+		"title": title,
+		"company": company,
+		"salary": salary,
+		"city": city,
+		"district": "",
+		"jd": jd,
+		"company_background": "",
+		"score_reason": "",
+	}
+
+	if review:
+		result = _generate_for_job_with_review(job, resume_summary, config)
+		greeting = result[1] if result else None
+	else:
+		greeting = _generate_with_deterministic_retry(job, resume_summary, config)
+
+	if not greeting:
+		return _json_response({"error": "AI 生成招呼语失败，请检查模型配置后重试"}, 502)
+	return _json_response({"message": greeting})
 
 
 @app.route("/api/history/<history_id>/dismiss", method="POST")
@@ -766,6 +1328,80 @@ def api_resume_delete():
 		with open(CONFIG_PATH, "w", encoding="utf-8") as f:
 			yaml.dump(config, f, allow_unicode=True, default_flow_style=False, sort_keys=False)
 
+		return _json_response({"success": True})
+	except Exception as e:
+		return _json_response({"error": str(e)}, 500)
+
+
+@app.route("/api/avatar")
+def api_avatar_get():
+	"""Return metadata for the locally configured resume portrait."""
+	try:
+		config = load_config(CONFIG_PATH)
+		avatar_path = config.get("profile", {}).get("avatar_path", "")
+		if avatar_path and Path(avatar_path).is_file():
+			path = Path(avatar_path)
+			stat = path.stat()
+			return _json_response({
+				"filename": path.name,
+				"size": stat.st_size,
+				"uploaded_at": time.strftime("%Y-%m-%d %H:%M", time.localtime(stat.st_mtime)),
+				"path": str(path),
+			})
+		return _json_response(None)
+	except Exception as e:
+		return _json_response({"error": str(e)}, 500)
+
+
+@app.route("/api/avatar/upload", method="POST")
+def api_avatar_upload():
+	"""Save a local portrait and attach it to resume presentation config."""
+	try:
+		import yaml
+
+		upload = request.files.get("file")
+		if not upload:
+			return _json_response({"error": "No file uploaded"}, 400)
+
+		suffix = Path(upload.filename or "").suffix.lower()
+		if suffix not in {".jpg", ".jpeg", ".png", ".webp"}:
+			return _json_response({"error": "仅支持 JPG、PNG、WebP 图片"}, 400)
+
+		content = upload.file.read()
+		if not content:
+			return _json_response({"error": "头像文件为空"}, 400)
+		if len(content) > 5 * 1024 * 1024:
+			return _json_response({"error": "头像大小超过 5MB 限制"}, 400)
+
+		PROFILE_DIR.mkdir(parents=True, exist_ok=True)
+		destination = PROFILE_DIR / f"avatar{suffix}"
+		destination.write_bytes(content)
+
+		config = load_config(CONFIG_PATH)
+		config.setdefault("profile", {})["avatar_path"] = str(destination)
+		with open(CONFIG_PATH, "w", encoding="utf-8") as f:
+			yaml.dump(config, f, allow_unicode=True, default_flow_style=False, sort_keys=False)
+
+		return _json_response({
+			"success": True,
+			"filename": destination.name,
+			"size": len(content),
+			"path": str(destination),
+		})
+	except Exception as e:
+		return _json_response({"error": str(e)}, 500)
+
+
+@app.route("/api/avatar", method="DELETE")
+def api_avatar_delete():
+	"""Detach the portrait without deleting the user's local image."""
+	try:
+		import yaml
+
+		config = load_config(CONFIG_PATH)
+		config.setdefault("profile", {})["avatar_path"] = ""
+		with open(CONFIG_PATH, "w", encoding="utf-8") as f:
+			yaml.dump(config, f, allow_unicode=True, default_flow_style=False, sort_keys=False)
 		return _json_response({"success": True})
 	except Exception as e:
 		return _json_response({"error": str(e)}, 500)

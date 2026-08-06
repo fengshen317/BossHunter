@@ -43,7 +43,6 @@ DEFAULTS: dict[str, Any] = {
         "salary_max": 0,
         "allow_internship": False,
         "deal_breakers": [],
-        "allow_internship": False,
     },
     "search": {
         "keywords": [],
@@ -53,13 +52,17 @@ DEFAULTS: dict[str, Any] = {
     "scoring": {
         "threshold": 71,
         "max_candidates": 20,
+        "concurrency": 3,
+        # 注册资本硬性下限（万）。预筛阶段排除明确低于该值的岗位；缺失/未补全不排除。
+        "min_registered_capital_wan": 50,
     },
     "throttle": {
         "daily_limit": 30,
         "interval_min": 60,
         "interval_max": 180,
-        "browse_before_greet": True,
-        "browse_duration_min": 15,
+		"browse_before_greet": True,
+		"only_send_when_hr_online": False,
+		"browse_duration_min": 15,
         "browse_duration_max": 30,
         "send_windows": ["09:00-16:00"],
         "day_off_probability": 0.05,
@@ -70,11 +73,18 @@ DEFAULTS: dict[str, Any] = {
         "greeting_review_threshold": 7.0,
         "greeting_max_iterations": 2,
     },
+    "resume": {
+        "template": "modern",
+        "theme_color": "#0F766E",
+        "show_avatar": True,
+        "generate_ats_version": True,
+    },
     "monitor": {
         "interval": 30,  # 分钟
         "chat_url": "https://www.zhipin.com/web/geek/chat",
         "max_resume_sends_per_cycle": 5,
         "auto_reply_hr_questions": False,
+        "auto_generate_resume": True,  # HR 要简历时是否自动生成定制 PDF
     },
     "follow_up": {
         "enabled": False,
@@ -89,6 +99,9 @@ DEFAULTS: dict[str, Any] = {
         "proxy_host": "127.0.0.1",
         "proxy_port": 3456,
         "chrome_ports": [9222, 9229, 9333],
+        "preferred_browser": "auto",
+        "executable_path": "",
+        "user_data_dir": "./data/browser-profile",
         "auto_start_proxy": True,
         "enable_port_guard": True,
         "site_patterns": True,

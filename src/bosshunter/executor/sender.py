@@ -2,12 +2,24 @@
 
 import time
 import json
+import random
 from threading import Event
+from urllib.parse import parse_qs, urljoin, urlparse
 from rich.console import Console
 from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn
 
-from bosshunter.browser import new_tab, close_tab, evaluate, click_at
-from bosshunter.db import get_db, get_jobs_ready_to_send, update_job_status, add_history, add_risk_event
+from bosshunter.browser import new_tab, close_tab, evaluate, click_at, get_page_targets, RUNTIME_NOT_READY
+from bosshunter.db import (
+    add_history,
+    add_risk_event,
+    get_db,
+    get_jobs_ready_to_send,
+    recover_send_errors,
+    update_job_conversation_id,
+    update_job_hr_active,
+    update_job_status,
+    update_job_status_with_retry,
+)
 from bosshunter.throttle import RequestThrottle, SendWindowChecker, ProgressiveBackoff, should_take_day_off
 
 console = Console()
@@ -93,14 +105,18 @@ CHAT_BUTTON_SCRIPT_FOR_TESTS = """
         })
     });
     btn.scrollIntoView({block: 'center', inline: 'center'});
+    const buttonText = (btn.innerText || btn.textContent || '').trim();
+    const redirectUrl = btn.getAttribute('redirect-url') || '';
+    // 发送必须从新打开的岗位页触发平台原生沟通入口，直达聊天页在部分会话中不稳定。
     btn.click();
     return JSON.stringify({
         success: true,
-        button_text: (btn.innerText || btn.textContent || '').trim(),
+        action: 'clicked',
+        button_text: buttonText,
         ka: btn.getAttribute('ka'),
         className: String(btn.className || ''),
         tagName: btn.tagName,
-        redirectUrl: btn.getAttribute('redirect-url'),
+        redirectUrl,
         dataUrl: btn.getAttribute('data-url'),
         visible: isVisible(btn)
     });
@@ -109,6 +125,14 @@ CHAT_BUTTON_SCRIPT_FOR_TESTS = """
 
 
 def _parse_js_result(result) -> dict:
+    """Normalise a Browser Runtime evaluate() return into a result dict.
+
+    ``RUNTIME_NOT_READY`` (the local runtime could not be reached) is mapped to
+    a distinct ``runtime_not_ready`` error so callers can retry infrastructure
+    hiccups separately from genuine JS/business failures.
+    """
+    if result is RUNTIME_NOT_READY:
+        return {"success": False, "error": "runtime_not_ready"}
     if not result:
         return {"success": False, "error": "no_response"}
     if isinstance(result, dict):
@@ -117,6 +141,39 @@ def _parse_js_result(result) -> dict:
         return json.loads(result)
     except (json.JSONDecodeError, TypeError):
         return {"success": False, "error": "parse_error"}
+
+
+# Errors considered a transient infrastructure/page-timing hiccup: retryable
+# within the same job (with a short backoff) and not counted toward the
+# progressive-backoff circuit breaker.
+_RETRYABLE_ERRORS = frozenset({
+    "runtime_not_ready",
+    "no_response",
+    "open_page_failed",
+    "chat_navigation_timeout",
+    "no_chat_button",
+    "no_chat_input",
+    "no_send_button",
+})
+
+# Permanent failures: do not retry inside the job and skip progressive backoff
+# (they reflect a real page/business state, not a flaky environment).
+_PERMANENT_ERRORS = frozenset({
+    "job_page_unavailable",
+    "send_button_disabled",
+    "captcha",
+    "rate_limit",
+    "blocked",
+})
+
+
+def _classify_error(error: str | None) -> str:
+    """Return ``"retryable"``/``"permanent"``/``"stopped"`` for an error code."""
+    if error == "stopped":
+        return "stopped"
+    if error in _PERMANENT_ERRORS:
+        return "permanent"
+    return "retryable"
 
 
 def _stop_requested(stop_event) -> bool:
@@ -144,14 +201,112 @@ def _confirm_greet_popup(target_id: str) -> dict:
     return _parse_js_result(evaluate(target_id, click_confirm_js))
 
 
-def _wait_for_chat_page(target_id: str, stop_event, attempts: int = 20) -> dict:
+CHAT_INPUT_SELECTOR = (
+    '#chat-input, .chat-input textarea, .chat-input [contenteditable="true"], '
+    '.input-area textarea, [contenteditable="true"][role="textbox"], '
+    'textarea.input-area'
+)
+
+
+def _chat_target_ids() -> set[str]:
+    """获取当前页面 ID，供识别点击后新开的聊天页使用。"""
+    return {
+        str(target_id)
+        for target in get_page_targets()
+        if (target_id := target.get("targetId") or target.get("id"))
+    }
+
+
+def _resolve_chat_redirect_url(redirect_url: object, job_id: str) -> str | None:
+    """校验并补全岗位按钮提供的精确聊天地址。
+
+    Args:
+        redirect_url: 岗位页按钮的 redirect-url 属性。
+        job_id: 当前发送任务对应的岗位 ID。
+
+    Returns:
+        校验通过的完整 BOSS 聊天地址，否则返回 None。
+    """
+    if not isinstance(redirect_url, str) or not redirect_url.startswith("/web/geek/chat?"):
+        return None
+
+    parsed = urlparse(redirect_url)
+    query = parse_qs(parsed.query)
+    if query.get("jobId", [""])[0] != job_id or not query.get("id", [""])[0]:
+        return None
+
+    return urljoin("https://www.zhipin.com", redirect_url)
+
+
+def _extract_conversation_id(redirect_url: object, job_id: str) -> str | None:
+    """从经过岗位绑定校验的聊天地址中提取稳定会话标识。"""
+    resolved_url = _resolve_chat_redirect_url(redirect_url, job_id)
+    if not resolved_url:
+        return None
+    return parse_qs(urlparse(resolved_url).query).get("id", [None])[0]
+
+
+def _wait_for_chat_page(
+    target_id: str,
+    stop_event,
+    attempts: int = 20,
+    existing_target_ids: set[str] | None = None,
+) -> dict:
+    """等待聊天会话可用，兼容同页跳转、内嵌聊天框和新标签页。
+
+    BOSS 直聘点击"立即沟通"后常以 SPA 同页路由切换到 ``/web/geek/chat``，
+    并不新开浏览器 target，因此新标签页检测只能作为兜底；主判定仍以"输入框
+    可见"为准，并对 SPA 路由已切换但输入框尚未渲染的情况给予额外等待。
+    """
+    page_state_js = f"""
+    (() => {{
+        const input = document.querySelector({json.dumps(CHAT_INPUT_SELECTOR)});
+        const visible = !!input && !!(
+            input.offsetWidth ||
+            input.offsetHeight ||
+            input.getClientRects().length
+        );
+        return JSON.stringify({{
+            success: visible,
+            path: location.pathname,
+            hasInput: !!input
+        }});
+    }})()
+    """
+
+    def _check_page(tid: str) -> dict:
+        return _parse_js_result(evaluate(tid, page_state_js))
+
+    # 跟踪是否已观测到 SPA 路由切换到聊天域，便于在超时信息中区分
+    # "按钮点击无效" 与 "已进入聊天页但渲染未完成"。
+    observed_chat_path = False
+
     for _ in range(attempts):
         if _sleep_or_stop(0.5, stop_event):
             close_tab(target_id)
             return {"success": False, "error": "stopped", "history_detail": "用户已请求停止", "skip_backoff": True}
-        url_now = evaluate(target_id, "location.pathname")
-        if url_now and "/web/geek/chat" in url_now:
-            return {"success": True}
+        page_state = _check_page(target_id)
+        if "/web/geek/chat" in str(page_state.get("path", "")):
+            observed_chat_path = True
+        if page_state.get("success"):
+            return {"success": True, "target_id": target_id}
+
+        if existing_target_ids is not None:
+            for target in get_page_targets():
+                candidate_id = str(target.get("targetId") or target.get("id") or "")
+                candidate_url = str(target.get("url") or "")
+                if candidate_id and candidate_id not in existing_target_ids and "/web/geek/chat" in candidate_url:
+                    candidate_state = _check_page(candidate_id)
+                    if candidate_state.get("success"):
+                        return {"success": True, "target_id": candidate_id}
+
+    if observed_chat_path:
+        return {
+            "success": False,
+            "error": "chat_navigation_timeout",
+            "history_detail": "已进入聊天页但输入框渲染超时，可能页面加载过慢",
+            "skip_backoff": False,
+        }
     return {"success": False, "error": "chat_navigation_timeout"}
 
 
@@ -173,42 +328,69 @@ def _click_chat_button(target_id: str, stop_event, attempts: int = 6) -> dict:
     return last_result
 
 
-# JS: 在岗位详情页点击"立即沟通"并发送招呼语
-JS_SEND_GREETING = """
-(async (greeting) => {
-    // 找到"立即沟通"按钮
-    const btn = document.querySelector('.btn-startchat, .op-btn-chat, [ka="job_detail_chat"]');
-    if (!btn) return JSON.stringify({success: false, error: 'no_chat_button'});
+def _describe_no_chat_button(result: dict) -> str:
+    """Build a human-readable history detail from the chat-button probe result.
 
-    btn.click();
-    await new Promise(r => setTimeout(r, 2000));
+    The chat-button JS already collects every candidate element's text/ka/class.
+    Surfacing that here makes selector drift diagnosable without re-running.
+    """
+    candidates = result.get("candidates") if isinstance(result, dict) else None
+    if not candidates:
+        return "无法找到沟通按钮（页面未渲染任何候选元素，可能加载未完成或被风控）"
+    summaries = []
+    for item in candidates[:8]:
+        parts = [f"text={item.get('text', '')!r}"]
+        if item.get("ka"):
+            parts.append(f"ka={item['ka']}")
+        if item.get("className"):
+            parts.append(f"class={str(item['className'])[:60]}")
+        if item.get("redirectUrl"):
+            parts.append(f"redirect={item['redirectUrl']}")
+        parts.append(f"visible={item.get('visible')}")
+        summaries.append(" | ".join(parts))
+    detail = "无法找到沟通按钮，候选元素: " + " ;; ".join(summaries)
+    return detail[:300]
 
-    // 等待聊天输入框出现
-    const input = document.querySelector('.chat-input textarea, .chat-input [contenteditable], .input-area textarea');
-    if (!input) return JSON.stringify({success: false, error: 'no_input_box'});
 
-    // 输入招呼语
-    if (input.tagName === 'TEXTAREA') {
-        input.value = greeting;
-        input.dispatchEvent(new Event('input', {bubbles: true}));
-    } else {
-        input.innerHTML = greeting;
-        input.dispatchEvent(new Event('input', {bubbles: true}));
+# JS: 在岗位详情页点击"立即沟通"并发送招呼语（占位保留，实际逻辑由
+# CHAT_BUTTON_SCRIPT_FOR_TESTS + send_msg_js 分步执行）。
+
+
+def _verify_message_sent(
+    target_id: str,
+    stop_event,
+    attempts: int = 12,
+) -> dict:
+    """Verify a greeting actually reached the chat by polling the message list.
+
+    ``sendBtn.click()`` returns immediately and cannot prove the message was
+    delivered — clicking a disabled/locked button looks identical to success.
+    BOSS renders sent messages as children inside ``.message-list`` (or a
+    similar container), so we poll until a new message bubble appears.
+
+    Returns ``{success: True}`` once the list grows, or
+    ``{success: False, error: 'send_verify_failed'}`` after timing out.
+    """
+    verify_js = """
+    (() => {
+        const list = document.querySelector(
+            '.message-list, .chat-record, .message-content, [class*="message-list"]'
+        );
+        if (!list) return JSON.stringify({found: false, count: -1});
+        return JSON.stringify({found: true, count: list.children.length});
+    })()
+    """
+    for _ in range(attempts):
+        if _sleep_or_stop(0.5, stop_event):
+            return {"success": False, "error": "stopped", "history_detail": "用户已请求停止", "skip_backoff": True}
+        state = _parse_js_result(evaluate(target_id, verify_js))
+        if state.get("found") and int(state.get("count", -1)) > 0:
+            return {"success": True, "message_count": state["count"]}
+    return {
+        "success": False,
+        "error": "send_verify_failed",
+        "history_detail": "点击发送后消息未出现在聊天列表，可能被风控拦截或发送请求失败",
     }
-
-    await new Promise(r => setTimeout(r, 500));
-
-    // 点击发送
-    const sendBtn = document.querySelector('.btn-send, .send-btn, [class*="send"]');
-    if (sendBtn) {
-        sendBtn.click();
-        await new Promise(r => setTimeout(r, 1000));
-        return JSON.stringify({success: true});
-    }
-
-    return JSON.stringify({success: false, error: 'no_send_button'});
-})(arguments[0])
-"""
 
 
 def _send_greeting_once(job: dict, greeting: str, throttle_config: dict) -> tuple[dict, str | None]:
@@ -224,7 +406,6 @@ def _send_greeting_once(job: dict, greeting: str, throttle_config: dict) -> tupl
     browse_min = throttle_config.get("browse_duration_min", 15)
     browse_max = throttle_config.get("browse_duration_max", 30)
     if throttle_config.get("browse_before_greet", True):
-        import random
         browse_time = random.uniform(browse_min, browse_max)
         if _sleep_or_stop(browse_time, stop_event):
             close_tab(target_id)
@@ -246,19 +427,61 @@ def _send_greeting_once(job: dict, greeting: str, throttle_config: dict) -> tupl
                 skip_backoff: true
             });
         }
-        return JSON.stringify({success: true});
+        const activitySelectors = [
+            '.boss-active-time',
+            '[class*="boss-active"]',
+            '[class*="active-time"]',
+            '[class*="recruiter-active"]'
+        ];
+        const activityTexts = activitySelectors.flatMap((selector) =>
+            Array.from(document.querySelectorAll(selector)).map((el) =>
+                (el.innerText || el.textContent || '').trim()
+            )
+        ).filter(Boolean);
+        const recruiterText = Array.from(document.querySelectorAll(
+            '.job-boss-info, .boss-info, [class*="boss-info"], [class*="recruiter"]'
+        )).map((el) => (el.innerText || el.textContent || '').trim()).join(' ');
+        const activityMatch = recruiterText.match(/(在线|刚刚活跃|\\d+分钟前|\\d+小时内活跃|今日活跃|本周活跃)/);
+        const hrActive = activityTexts[0] || (activityMatch ? activityMatch[1] : '');
+        return JSON.stringify({
+            success: true,
+            hr_active: hrActive,
+            hr_online: hrActive === '在线' || hrActive === '刚刚活跃'
+        });
     })()
     """
     page_check = _parse_js_result(evaluate(target_id, page_check_js))
     if not page_check.get("success"):
         close_tab(target_id)
         return page_check, None
+    if throttle_config.get("only_send_when_hr_online", False) and not page_check.get("hr_online"):
+        hr_active = str(page_check.get("hr_active") or "未识别到活跃状态").strip()
+        close_tab(target_id)
+        return {
+            "success": False,
+            "error": "hr_offline",
+            "history_detail": f"发送前 HR 状态为：{hr_active}，已按在线发送规则跳过",
+            "hr_active": hr_active,
+            "preserve_status": True,
+            "skip_backoff": True,
+        }, None
 
+    existing_target_ids = _chat_target_ids()
+    existing_target_ids.add(target_id)
     chat_button_attempts = int(throttle_config.get("_chat_button_attempts", 6))
     result1a = _click_chat_button(target_id, stop_event, chat_button_attempts)
     if not result1a.get("success"):
         close_tab(target_id)
-        return {"success": False, "error": "no_chat_button", "history_detail": "无法找到沟通按钮", "skip_backoff": True}, None
+        # Preserve the candidate diagnostics collected by the chat-button
+        # script so selector drift can be triaged from the history log instead
+        # of being hidden behind a generic "无法找到沟通按钮" message.
+        history_detail = _describe_no_chat_button(result1a)
+        return {
+            "success": False,
+            "error": "no_chat_button",
+            "history_detail": history_detail,
+            "skip_backoff": True,
+        }, None
 
     if _sleep_or_stop(4, stop_event):
         close_tab(target_id)
@@ -267,7 +490,7 @@ def _send_greeting_once(job: dict, greeting: str, throttle_config: dict) -> tupl
     _confirm_greet_popup(target_id)
 
     navigation_attempts = int(throttle_config.get("_chat_navigation_attempts", 20))
-    chat_ready = _wait_for_chat_page(target_id, stop_event, navigation_attempts)
+    chat_ready = _wait_for_chat_page(target_id, stop_event, navigation_attempts, existing_target_ids)
     if chat_ready.get("error") == "stopped":
         return chat_ready, None
     if not chat_ready.get("success"):
@@ -277,7 +500,7 @@ def _send_greeting_once(job: dict, greeting: str, throttle_config: dict) -> tupl
                 close_tab(target_id)
                 return {"success": False, "error": "stopped", "history_detail": "用户已请求停止", "skip_backoff": True}, None
             _confirm_greet_popup(target_id)
-            chat_ready = _wait_for_chat_page(target_id, stop_event, navigation_attempts)
+            chat_ready = _wait_for_chat_page(target_id, stop_event, navigation_attempts, existing_target_ids)
             if chat_ready.get("error") == "stopped":
                 return chat_ready, None
 
@@ -289,31 +512,165 @@ def _send_greeting_once(job: dict, greeting: str, throttle_config: dict) -> tupl
             "skip_backoff": True,
         }, target_id
 
+    chat_target_id = str(chat_ready.get("target_id") or target_id)
+    if chat_target_id != target_id:
+        close_tab(target_id)
+
     greeting_escaped = json.dumps(greeting)
+    input_selector_escaped = json.dumps(CHAT_INPUT_SELECTOR)
+    # 拆分为两步：① 输入招呼语并点击发送 ② 轮询消息列表验证消息真的发出。
+    # BOSS 直聘的发送是异步的，仅 click() 返回不能证明成功——实测点击禁用
+    # 按钮也会"成功"返回。必须以"消息列表里出现新消息气泡"为准。
+    # 注意：BOSS 用 class 名里的 disable/disabled 表示禁用（不是 disabled
+    # 属性也不是 aria-disabled="true"），所以禁用态检测必须查 class。
     send_msg_js = f"""
-    (() => {{
-        const input = document.querySelector('#chat-input');
+    (async () => {{
+        const input = document.querySelector({input_selector_escaped});
         if (!input) return JSON.stringify({{success: false, error: 'no_chat_input'}});
 
-        let vue = null;
-        let el = input;
-        for (let i = 0; i < 15 && el; i++) {{
-            if (el.__vue__) {{ vue = el.__vue__; break; }}
-            el = el.parentElement;
+        input.focus();
+        if (input instanceof HTMLTextAreaElement || input instanceof HTMLInputElement) {{
+            const prototype = input instanceof HTMLTextAreaElement
+                ? HTMLTextAreaElement.prototype
+                : HTMLInputElement.prototype;
+            Object.getOwnPropertyDescriptor(prototype, 'value').set.call(input, {greeting_escaped});
+        }} else {{
+            input.innerText = {greeting_escaped};
+            input.textContent = {greeting_escaped};
         }}
-        if (!vue) return JSON.stringify({{success: false, error: 'no_vue'}});
+        input.dispatchEvent(new InputEvent('input', {{
+            bubbles: true,
+            inputType: 'insertText',
+            data: {greeting_escaped}
+        }}));
+        input.dispatchEvent(new Event('change', {{ bubbles: true }}));
+        input.dispatchEvent(new KeyboardEvent('keydown', {{ bubbles: true, key: ' ' }}));
+        input.dispatchEvent(new KeyboardEvent('keyup', {{ bubbles: true, key: ' ' }}));
+        // 等待 Vue/React 根据输入事件刷新发送按钮的 disabled class。
+        await new Promise(resolve => setTimeout(resolve, 150));
 
-        input.innerText = {greeting_escaped};
-        vue._data.enableSubmit = true;
-        vue.handleSubmit();
-        return JSON.stringify({{success: true}});
+        const sendSelectors = [
+            '[ka="chat_send"]',
+            '[ka^="chat_send"]',
+            '.send-message',
+            '.btn-send',
+            '.send-btn',
+            '.chat-send',
+            '.chat-send-btn'
+        ];
+        const isVisible = (el) => !!(el.offsetWidth || el.offsetHeight || el.getClientRects().length);
+        const isDisabled = (el) => {{
+            if (el.disabled) return true;
+            if (el.getAttribute('aria-disabled') === 'true') return true;
+            // BOSS 用 class 名里的 disable/disabled 标记禁用态（实测）。
+            const cls = String(el.className || '').toLowerCase();
+            // 排除 "disabled-wrap" 之类的容器，只匹配独立的 disable/disabled 词。
+            return /(^|[\\s_-])disable(d)?([\\s_-]|$)/.test(cls);
+        }};
+        const sendCandidates = sendSelectors.flatMap((sel) =>
+            Array.from(document.querySelectorAll(sel)).map((el) => ({{el, sel}}))
+        );
+        const scoreBtn = (item) => {{
+            const el = item.el;
+            const text = (el.innerText || el.textContent || '').trim();
+            let v = 0;
+            if (isVisible(el)) v += 1000;
+            if (item.sel === '[ka="chat_send"]') v += 200;
+            if (item.sel === '.send-message') v += 120;
+            if (text === '发送') v += 80;
+            if (text.includes('发送')) v += 30;
+            if (el.classList && el.classList.contains('btn-send')) v += 40;
+            return v;
+        }};
+        sendCandidates.sort((a, b) => scoreBtn(b) - scoreBtn(a));
+        const activeBtn = sendCandidates.find((item) => scoreBtn(item) > 0 && !isDisabled(item.el));
+        if (!activeBtn) {{
+            // 区分"没找到按钮"和"按钮存在但禁用"，便于诊断输入是否生效。
+            const anyBtn = sendCandidates.find((item) => scoreBtn(item) > 0);
+            return JSON.stringify(anyBtn
+                ? {{success: false, error: 'send_button_disabled', buttonClass: String(anyBtn.el.className||'')}}
+                : {{success: false, error: 'no_send_button'}});
+        }}
+        // 记录点击前的消息数量，用于后续验证。
+        const msgList = document.querySelector('.message-list, .chat-record, .message-content, [class*="message-list"]');
+        const beforeCount = msgList ? msgList.children.length : -1;
+        activeBtn.el.click();
+        return JSON.stringify({{
+            success: true,
+            method: 'button',
+            clicked: true,
+            messageListBefore: beforeCount,
+            messageListSelector: msgList ? null : null
+        }});
     }})()
     """
-    result_data = _parse_js_result(evaluate(target_id, send_msg_js))
+    result_data = _parse_js_result(evaluate(chat_target_id, send_msg_js))
+
+    # 点击成功后必须验证消息真的进入消息列表，否则会"假成功"。
+    if result_data.get("success") and result_data.get("clicked"):
+        verified = _verify_message_sent(chat_target_id, stop_event)
+        if not verified.get("success"):
+            # 把验证失败的诊断并入 result，覆盖"假成功"。
+            result_data = {
+                "success": False,
+                "error": verified.get("error", "send_verify_failed"),
+                "history_detail": verified.get(
+                    "history_detail", "点击发送后消息未出现在聊天列表，可能被风控或发送失败"
+                ),
+                "skip_backoff": False,
+            }
+
     if result_data.get("success"):
-        close_tab(target_id)
+        hr_active = str(page_check.get("hr_active") or "").strip()
+        if hr_active:
+            result_data["hr_active"] = hr_active
+            result_data["hr_online"] = bool(page_check.get("hr_online"))
+        conversation_id = _extract_conversation_id(result1a.get("redirectUrl"), str(job["id"]))
+        if conversation_id:
+            result_data["conversation_id"] = conversation_id
+        close_tab(chat_target_id)
         return result_data, None
-    return result_data, target_id
+    return result_data, chat_target_id
+
+
+def _send_greeting_with_retry(
+    job: dict,
+    greeting: str,
+    throttle_config: dict,
+) -> tuple[dict, str | None]:
+    """Wrap ``_send_greeting_once`` with in-job retries for transient failures.
+
+    Transient errors (runtime hiccup, slow page load, selector drift) are
+    retried up to ``send_max_retries`` times (default 2) with a short random
+    backoff between attempts. Permanent failures (page taken down, send button
+    disabled, risk control) return immediately. The user stop event is honoured
+    between attempts.
+
+    Returns the final ``(result, failed_target_id)`` from the last attempt.
+    ``failed_target_id`` is always ``None`` here because each retry opens (and
+    closes on failure) its own tab.
+    """
+    max_retries = max(0, int(throttle_config.get("send_max_retries", 2)))
+    backoff_min = float(throttle_config.get("send_retry_backoff_min", 5))
+    backoff_max = float(throttle_config.get("send_retry_backoff_max", 10))
+    stop_event = throttle_config.get("_workbench_stop_event")
+
+    last_result, last_target_id = _send_greeting_once(job, greeting, throttle_config)
+
+    for attempt in range(max_retries):
+        error = last_result.get("error")
+        if last_result.get("success") or _classify_error(error) != "retryable":
+            break
+        # Transient failure: brief backoff then reopen the job page fresh.
+        backoff = random.uniform(backoff_min, backoff_max)
+        if _sleep_or_stop(backoff, stop_event):
+            return {"success": False, "error": "stopped", "history_detail": "用户已请求停止", "skip_backoff": True}, None
+        console.print(
+            f"[yellow]    ! 临时性失败({error})，{attempt + 1}/{max_retries} 次重试...[/yellow]"
+        )
+        last_result, last_target_id = _send_greeting_once(job, greeting, throttle_config)
+
+    return last_result, last_target_id
 
 
 def send_greetings(config: dict, force: bool = False) -> int:
@@ -344,7 +701,20 @@ def send_greetings(config: dict, force: bool = False) -> int:
         db.close()
         return 0
 
-    jobs = get_jobs_ready_to_send(db)
+    # 退避窗口到期的临时性失败自动重回 ready 队列，避免一次抖动就让岗位
+    # 永久消失（仍受 send_error_max_retries 上限约束）。可通过配置关闭。
+    if throttle_config.get("auto_recover_send_errors", True):
+        recover_after = int(throttle_config.get("send_error_recover_seconds", 600))
+        max_retries = int(throttle_config.get("send_error_max_retries", 3))
+        recovered = recover_send_errors(db, recover_after, max_retries)
+        if recovered:
+            console.print(f"[green]♻ 已自动恢复 {recovered} 个退避到期的失败岗位[/green]")
+
+    # 失败记录只能由工作台显式选中后重试，避免常规批量发送自动反复尝试。
+    jobs = get_jobs_ready_to_send(
+        db,
+        include_send_errors=bool(config.get("_workbench_include_send_errors", False)),
+    )
     _workbench_job_ids = {str(job_id) for job_id in config.get("_workbench_job_ids", [])}
     if _workbench_job_ids:
         jobs = [job for job in jobs if str(job["id"]) in _workbench_job_ids]
@@ -407,29 +777,53 @@ def send_greetings(config: dict, force: bool = False) -> int:
 
             progress.update(task, description=f"发送: {job['company'][:10]} - {job['title'][:15]}")
 
-            result_data, failed_target_id = _send_greeting_once(job, greeting, throttle_config)
+            # 岗位内统一重试：临时性失败（runtime 抖动、页面慢、选择器漂移）
+            # 由 _send_greeting_with_retry 自带短退避重试消化；此处拿到的
+            # 是最终结果。外层不再做 no_chat_input 的二次重试。
+            result_data, failed_target_id = _send_greeting_with_retry(job, greeting, throttle_config)
             if result_data.get("error") == "stopped":
                 break
-            if result_data.get("error") == "no_chat_input" and failed_target_id:
-                console.print("[yellow]    ! 未进入具体聊天会话，重新打开岗位页再试一次[/yellow]")
+            if failed_target_id:
                 close_tab(failed_target_id)
-                result_data, failed_target_id = _send_greeting_once(job, greeting, throttle_config)
-                if result_data.get("error") == "stopped":
-                    break
 
             if not result_data.get("success"):
-                console.print(f"[yellow]    ! 发送失败，保留页面便于排查: {result_data.get('error', 'unknown')}[/yellow]")
+                console.print(f"[yellow]    ! 发送失败: {result_data.get('error', 'unknown')}[/yellow]")
 
             if result_data.get("success"):
                 throttle.mark()
                 update_job_status(db, job["id"], "sent")
-                add_history(db, job["id"], "sent", greeting[:50])
+                hr_active = str(result_data.get("hr_active") or "").strip()
+                if hr_active:
+                    update_job_hr_active(db, job["id"], hr_active)
+                conversation_id = result_data.get("conversation_id")
+                if conversation_id:
+                    update_job_conversation_id(db, job["id"], str(conversation_id))
+                history_detail = greeting[:50]
+                if hr_active:
+                    history_detail = f"{history_detail}（发送前 HR：{hr_active}）"
+                add_history(db, job["id"], "sent", history_detail)
                 sent_count += 1
                 backoff.record_success()
             else:
                 error = result_data.get("error", "unknown")
-                update_job_status(db, job["id"], "error")
+                if result_data.get("preserve_status"):
+                    hr_active = str(result_data.get("hr_active") or "").strip()
+                    if hr_active:
+                        update_job_hr_active(db, job["id"], hr_active)
+                    add_history(db, job["id"], "skipped", result_data.get("history_detail", "已按发送规则跳过"))
+                    progress.update(task, advance=1)
+                    continue
+                update_job_status_with_retry(db, job["id"], "error")
                 add_history(db, job["id"], "error", result_data.get("history_detail", f"发送失败: {error}"))
+
+                # runtime 抖动属于基础设施问题，不污染渐进退避/风控计数。
+                # 这些错误已由岗位内重试消化，仍失败说明 runtime 不可用，
+                # 直接跳过退避计数，但记录一条 risk_event 便于观测。
+                if error in ("runtime_not_ready", "no_response"):
+                    add_risk_event(db, "runtime_unavailable", f"运行时不可用: {error}")
+                    progress.update(task, advance=1)
+                    continue
+
                 if result_data.get("skip_backoff"):
                     progress.update(task, advance=1)
                     continue

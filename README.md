@@ -29,6 +29,7 @@
 - **Web 工作台升级**：新增本地可视化工作台，集中展示采集、评分、确认、发送、监测与简历生成状态。
 - **简历请求卡片识别**：可识别招聘平台聊天中的「附件简历请求」卡片，并归类为简历请求。
 - **定制简历生成**：检测到 HR 要简历后，根据岗位 JD 生成定制 PDF 简历，提供下载与手动发送入口。
+- **多模板简历排版**：支持现代、商务和 ATS 单栏模板，可嵌入本地头像、设置主题色并同时生成 ATS 版本。
 - **监测执行视图**：按「待回复 / 简历请求 / 自动跟进 / 已回复」分类查看监测结果。
 - **AI 建议回复**：检测到 HR 问题时可生成建议回复，默认需要人工确认后再发送。
 - **自动跟进记录**：对超时未回复岗位执行一次自动跟进，并在监测执行中保留跟进内容。
@@ -95,6 +96,7 @@ BossHunter 适合这些用户：
 | 智能采集 | 基于关键词与城市自动翻页采集岗位，内置去重 |
 | AI 两阶段评分 | 快速预筛（关键词匹配） → 深度评分（AI 分析 JD） |
 | 定制招呼语 | AI 根据岗位 JD + 个人简历生成个性化开场白 |
+| 多模板定制简历 | AI 调整内容重点，模板负责稳定排版；支持头像、主题色和 ATS 双版本 |
 | 人工确认 | 投递前必须经过确认，支持逐个/批量审核 |
 | 低频发送策略 | 随机间隔、时间窗口、每日上限、发送前浏览 |
 | HR 回复监听 | 自动检测 HR 回复，触发建议回复或定制简历生成 |
@@ -176,6 +178,16 @@ bosshunter run
 
 > 请先在日常 Chrome 中登录招聘平台并开启远程调试。操作间存在拟人化时间间隔，按 `Ctrl+C` 可随时停止。
 
+### Windows 一键启动
+
+双击项目根目录的 `start-bosshunter.cmd`（推荐）或 `启动BossHunter.bat`，也可以运行：
+
+```bash
+bosshunter start
+```
+
+该命令会自动查找 Chrome/Edge，以独立用户目录开启远程调试，并同时打开 BOSS 登录页和本地控制台。首次使用需要手动扫码或输入验证码；登录状态保存在 `data/browser-profile/`，后续启动会继续使用。
+
 ---
 
 ## 命令一览
@@ -187,6 +199,14 @@ bosshunter run
 ```
 
 自动执行：采集 → 评分 → 确认 → 招呼语 → 发送 → 自动监测。
+
+### 一键启动浏览器与控制台
+
+```bash
+bosshunter start                    # 自动选择 Chrome 或 Edge
+bosshunter start --browser chrome   # 指定 Chrome
+bosshunter start --browser edge     # 指定 Edge
+```
 
 ### 分步执行
 
@@ -233,6 +253,7 @@ bosshunter status --full        # 完整仪表盘
 | `scoring` | `threshold`, `prefilter_threshold` | 评分阈值 |
 | `throttle` | `daily_limit`, `interval_min/max`, `send_windows` | 低频发送策略 |
 | `ai` | `provider`, `model`, `api_key`, `base_url` | AI 服务配置 |
+| `resume` | `template`, `theme_color`, `show_avatar`, `generate_ats_version` | PDF 模板、头像展示与 ATS 版本 |
 | `monitor` | `interval`, `max_resume_sends_per_cycle` | 监听设置 |
 | `follow_up` | `enabled`, `interval_hours`, `skip_weekends` | 跟进策略 |
 

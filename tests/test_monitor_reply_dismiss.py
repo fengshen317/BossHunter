@@ -4,7 +4,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from bosshunter.db import add_history, get_db, get_jobs_needing_resume, insert_job, update_job_status
+from bosshunter.db import add_history, get_db, insert_job, update_job_status
 
 
 def _job(job_id: str) -> dict:
@@ -26,6 +26,46 @@ def _job(job_id: str) -> dict:
 
 
 class MonitorReplyDismissTests(unittest.TestCase):
+    def test_refine_reply_includes_current_text_and_user_suggestion(self):
+        """二次优化必须同时保留当前草稿、HR 问题和用户修改要求。"""
+        from bosshunter.executor import monitor
+
+        with patch.object(monitor, "_call_claude", return_value="优化后的回复") as call_ai:
+            result = monitor._refine_reply(
+                "能介绍一下你的优势吗？",
+                "我做过多个 AI 项目。",
+                "突出制造业 Agent 落地经验",
+                {"ai": {}},
+            )
+
+        self.assertEqual(result, "优化后的回复")
+        prompt = call_ai.call_args.args[0]
+        self.assertIn("能介绍一下你的优势吗？", prompt)
+        self.assertIn("我做过多个 AI 项目。", prompt)
+        self.assertIn("突出制造业 Agent 落地经验", prompt)
+
+    def test_candidate_without_actionable_hr_message_does_not_generate_reply(self):
+        """列表候选经完整会话核验后，没有 HR 待回复消息时必须跳过。"""
+        from bosshunter.executor import monitor
+
+        messages = [
+            {"sender": "hr", "text": "方便聊聊吗？"},
+            {"sender": "me", "text": "可以的，您说。"},
+            {"sender": "unknown", "text": "已读"},
+        ]
+
+        with patch.object(monitor, "_open_conversation", return_value="target-1"), \
+             patch.object(monitor, "evaluate", return_value=json.dumps(messages, ensure_ascii=False)), \
+             patch.object(monitor, "close_tab"), \
+             patch.object(monitor, "_generate_auto_reply") as generate_reply:
+            action = monitor._handle_conversation(
+                {"id": "job-safe", "company": "示例公司", "title": "AI 工程师"},
+                {"monitor": {}},
+            )
+
+        self.assertEqual(action, "skipped_user_replied")
+        generate_reply.assert_not_called()
+
     def test_dismissed_pending_reply_is_not_recreated_by_monitor(self):
         from bosshunter.executor import monitor
 
@@ -178,7 +218,7 @@ class MonitorReplyDismissTests(unittest.TestCase):
                 ]
                 self.assertFalse(monitor._detect_resume_request(messages))
 
-    def test_short_positive_hr_reply_generates_tailored_resume(self):
+    def test_short_positive_hr_reply_generates_reply_suggestion_without_resume(self):
         from bosshunter.executor import monitor
 
         messages = [
@@ -188,8 +228,6 @@ class MonitorReplyDismissTests(unittest.TestCase):
 
         with tempfile.TemporaryDirectory() as tmp:
             db_path = Path(tmp) / "data" / "bosshunter.db"
-            generated_resume = Path(tmp) / "tailored.md"
-            generated_resume.write_text("# 定制简历", encoding="utf-8")
             db = get_db(db_path)
             try:
                 insert_job(db, _job("job-short-resume-intent"))
@@ -204,12 +242,8 @@ class MonitorReplyDismissTests(unittest.TestCase):
                  patch.object(monitor, "_open_conversation", return_value="target-1"), \
                  patch.object(monitor, "evaluate", return_value=json.dumps(messages, ensure_ascii=False)), \
                  patch.object(monitor, "close_tab"), \
-                 patch.object(monitor, "_send_message_in_chat", return_value=True), \
                  patch.object(monitor.time, "sleep"), \
-                 patch(
-                     "bosshunter.ai.resume.generate_tailored_resume",
-                     return_value=generated_resume,
-                 ) as generate_resume:
+                 patch.object(monitor, "_generate_auto_reply", return_value="可以的，我整理后发您。") as generate_reply:
                 action = monitor._handle_conversation(
                     _job("job-short-resume-intent") | {"status": "sent"},
                     {"profile": {"portfolio_url": "https://example.com/resume"}},
@@ -227,16 +261,16 @@ class MonitorReplyDismissTests(unittest.TestCase):
             finally:
                 verify_db.close()
 
-        self.assertEqual(action, "needs_resume")
-        self.assertEqual(history, ["needs_resume"])
-        generate_resume.assert_called_once()
+        self.assertEqual(action, "reply_pending")
+        self.assertEqual(history, ["reply_pending"])
+        generate_reply.assert_called_once()
 
-    def test_failed_tailored_resume_generation_does_not_mark_job_needs_resume(self):
+    def test_resume_request_and_question_generate_one_combined_reply_suggestion(self):
         from bosshunter.executor import monitor
 
         messages = [
             {"sender": "me", "text": "您好，我对岗位很感兴趣。"},
-            {"sender": "hr", "text": "方便发一份你的简历过来吗？"},
+            {"sender": "hr", "text": "方便发一份你的简历过来吗？能讲讲你做销售的优势吗？"},
         ]
 
         with tempfile.TemporaryDirectory() as tmp:
@@ -255,8 +289,11 @@ class MonitorReplyDismissTests(unittest.TestCase):
                  patch.object(monitor, "_open_conversation", return_value="target-1"), \
                  patch.object(monitor, "evaluate", return_value=json.dumps(messages, ensure_ascii=False)), \
                  patch.object(monitor, "close_tab"), \
-                 patch.object(monitor, "_send_message_in_chat", return_value=True), \
-                 patch("bosshunter.ai.resume.generate_tailored_resume", return_value=None):
+                 patch.object(
+                     monitor,
+                     "_generate_auto_reply",
+                     return_value="可以，我稍后发您。我的优势是能快速理解客户需求并持续跟进。",
+                 ):
                 action = monitor._handle_conversation(
                     _job("job-resume-failed") | {"status": "sent"},
                     {"profile": {"portfolio_url": "https://example.com/resume"}},
@@ -264,10 +301,6 @@ class MonitorReplyDismissTests(unittest.TestCase):
 
             verify_db = get_db(db_path)
             try:
-                row = verify_db.execute(
-                    "SELECT status, resume_path FROM jobs WHERE id = ?",
-                    ("job-resume-failed",),
-                ).fetchone()
                 actions = [
                     item["action"]
                     for item in verify_db.execute(
@@ -275,22 +308,22 @@ class MonitorReplyDismissTests(unittest.TestCase):
                         ("job-resume-failed",),
                     ).fetchall()
                 ]
-                needing_resume = get_jobs_needing_resume(verify_db)
             finally:
                 verify_db.close()
 
-        self.assertEqual(action, "failed")
-        self.assertEqual(row["status"], "sent")
-        self.assertIsNone(row["resume_path"])
-        self.assertEqual(actions, ["resume_failed"])
-        self.assertEqual(needing_resume, [])
+        self.assertEqual(action, "reply_pending")
+        self.assertEqual(actions, ["reply_pending"])
 
-    def test_resume_failure_history_keeps_hr_message_and_system_reason_separate(self):
+    def test_system_resume_card_is_kept_in_reply_pending_context(self):
         from bosshunter.executor import monitor
 
         messages = [
             {"sender": "me", "text": "您好，我对岗位很感兴趣。"},
-            {"sender": "hr", "text": "请发一份简历。"},
+            {
+                "sender": "system",
+                "kind": "resume_request_card",
+                "text": "我想要一份您的附件简历，您是否同意",
+            },
         ]
 
         with tempfile.TemporaryDirectory() as tmp:
@@ -309,12 +342,7 @@ class MonitorReplyDismissTests(unittest.TestCase):
                  patch.object(monitor, "_open_conversation", return_value="target-1"), \
                  patch.object(monitor, "evaluate", return_value=json.dumps(messages, ensure_ascii=False)), \
                  patch.object(monitor, "close_tab"), \
-                 patch.object(monitor, "_send_message_in_chat", return_value=True), \
-                 patch("bosshunter.ai.resume.generate_tailored_resume", return_value=None), \
-                 patch(
-                     "bosshunter.ai.resume.get_last_resume_failure_reason",
-                     return_value="占位符校验失败：模型新增了 [待填写姓名]",
-                 ):
+                 patch.object(monitor, "_generate_auto_reply", return_value="可以的，我稍后发您。"):
                 action = monitor._handle_conversation(
                     _job("job-resume-reason") | {"status": "sent"},
                     {"profile": {"portfolio_url": "https://example.com/resume"}},
@@ -323,18 +351,18 @@ class MonitorReplyDismissTests(unittest.TestCase):
             verify_db = get_db(db_path)
             try:
                 detail = verify_db.execute(
-                    "SELECT detail FROM history WHERE job_id = ? AND action = 'resume_failed'",
+                    "SELECT detail FROM history WHERE job_id = ? AND action = 'reply_pending'",
                     ("job-resume-reason",),
                 ).fetchone()["detail"]
             finally:
                 verify_db.close()
 
         payload = json.loads(detail)
-        self.assertEqual(action, "failed")
-        self.assertEqual(payload["schema"], "resume_failed.v2")
-        self.assertEqual(payload["hr_question"], "请发一份简历。")
-        self.assertEqual(payload["system_reason"], "占位符校验失败：模型新增了 [待填写姓名]")
-        self.assertEqual(payload["ai_reply"], "")
+        self.assertEqual(action, "reply_pending")
+        self.assertEqual(payload["schema"], "reply_pending.v1")
+        self.assertEqual(payload["hr_question"], "我想要一份您的附件简历，您是否同意")
+        self.assertTrue(payload["resume_requested"])
+        self.assertEqual(payload["ai_reply"], "可以的，我稍后发您。")
 
 
 if __name__ == "__main__":

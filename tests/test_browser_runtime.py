@@ -18,6 +18,8 @@ class BrowserRuntimeConfigTests(unittest.TestCase):
         self.assertEqual(config["browser"]["proxy_host"], "127.0.0.1")
         self.assertEqual(config["browser"]["proxy_port"], 3456)
         self.assertEqual(config["browser"]["chrome_ports"], [9222, 9229, 9333])
+        self.assertEqual(config["browser"]["preferred_browser"], "auto")
+        self.assertEqual(config["browser"]["user_data_dir"], "./data/browser-profile")
         self.assertTrue(config["browser"]["auto_start_proxy"])
         self.assertTrue(config["browser"]["enable_port_guard"])
         self.assertTrue(config["browser"]["site_patterns"])

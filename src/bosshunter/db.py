@@ -35,11 +35,16 @@ def _init_tables(conn: sqlite3.Connection) -> None:
             hr_active TEXT,
             company_size TEXT,
             company_industry TEXT,
+            district TEXT,
+            company_background TEXT,
+            registered_capital TEXT,
             url TEXT,
             score INTEGER DEFAULT 0,
             score_reason TEXT,
             greeting TEXT,
+            conversation_id TEXT,
             status TEXT DEFAULT 'pending',
+            error_retry_count INTEGER DEFAULT 0,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
@@ -75,13 +80,42 @@ def job_exists(conn: sqlite3.Connection, job_id: str) -> bool:
     return row is not None
 
 
+def get_job(conn: sqlite3.Connection, job_id: str) -> dict | None:
+    """Return a job by ID for enrichment checks."""
+    row = conn.execute("SELECT * FROM jobs WHERE id = ?", (job_id,)).fetchone()
+    return dict(row) if row else None
+
+
 def insert_job(conn: sqlite3.Connection, job: dict[str, Any]) -> None:
     """Insert a new job record."""
+    job = {
+        "district": "",
+        "company_background": "",
+        "registered_capital": "",
+        **job,
+    }
     conn.execute("""
         INSERT OR IGNORE INTO jobs (id, title, company, salary, city, experience, jd,
-            hr_name, hr_title, hr_active, company_size, company_industry, url)
+            hr_name, hr_title, hr_active, company_size, company_industry, district,
+            company_background, registered_capital, url)
         VALUES (:id, :title, :company, :salary, :city, :experience, :jd,
-            :hr_name, :hr_title, :hr_active, :company_size, :company_industry, :url)
+            :hr_name, :hr_title, :hr_active, :company_size, :company_industry, :district,
+            :company_background, :registered_capital, :url)
+    """, job)
+    conn.commit()
+
+
+def update_job_enrichment(conn: sqlite3.Connection, job: dict[str, Any]) -> None:
+    """Fill missing company and location metadata without overwriting existing values."""
+    conn.execute("""
+        UPDATE jobs
+        SET district = COALESCE(NULLIF(district, ''), NULLIF(:district, '')),
+            company_size = COALESCE(NULLIF(company_size, ''), NULLIF(:company_size, '')),
+            company_industry = COALESCE(NULLIF(company_industry, ''), NULLIF(:company_industry, '')),
+            company_background = COALESCE(NULLIF(company_background, ''), NULLIF(:company_background, '')),
+            registered_capital = COALESCE(NULLIF(registered_capital, ''), NULLIF(:registered_capital, '')),
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = :id
     """, job)
     conn.commit()
 
@@ -104,6 +138,18 @@ def update_job_greeting(conn: sqlite3.Connection, job_id: str, greeting: str) ->
     conn.commit()
 
 
+def reset_job_greeting(conn: sqlite3.Connection, job_ids: list[str]) -> None:
+    """Clear generated greetings so selected jobs can be regenerated for review."""
+    if not job_ids:
+        return
+    placeholders = ", ".join("?" for _ in job_ids)
+    conn.execute(
+        f"UPDATE jobs SET greeting = '', status = 'approved', updated_at = CURRENT_TIMESTAMP WHERE id IN ({placeholders})",
+        job_ids,
+    )
+    conn.commit()
+
+
 def update_job_status(conn: sqlite3.Connection, job_id: str, status: str) -> None:
     """Update job status."""
     conn.execute(
@@ -111,6 +157,82 @@ def update_job_status(conn: sqlite3.Connection, job_id: str, status: str) -> Non
         (status, job_id)
     )
     conn.commit()
+
+
+def update_job_hr_active(conn: sqlite3.Connection, job_id: str, hr_active: str) -> None:
+    """Persist the HR activity observed immediately before a send attempt."""
+    if not hr_active.strip():
+        return
+    conn.execute(
+        "UPDATE jobs SET hr_active = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+        (hr_active.strip(), job_id),
+    )
+    conn.commit()
+
+
+def update_job_status_with_retry(
+    conn: sqlite3.Connection,
+    job_id: str,
+    status: str,
+) -> None:
+    """Update job status and track send-error retry attempts.
+
+    - On ``error``: increment ``error_retry_count`` so transient failures can be
+      automatically re-queued after a backoff window (see ``recover_send_errors``).
+    - On any other (success) status: reset ``error_retry_count`` to 0.
+
+    This keeps permanent business failures (e.g. page taken down) distinguishable
+    from recoverable infrastructure hiccups without weakening safety checks.
+    """
+    if status == "error":
+        conn.execute(
+            "UPDATE jobs SET status = 'error', "
+            "error_retry_count = COALESCE(error_retry_count, 0) + 1, "
+            "updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+            (job_id,),
+        )
+    else:
+        conn.execute(
+            "UPDATE jobs SET status = ?, error_retry_count = 0, "
+            "updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+            (status, job_id),
+        )
+    conn.commit()
+
+
+def recover_send_errors(
+    conn: sqlite3.Connection,
+    recover_after_seconds: int = 600,
+    max_retries: int = 3,
+) -> int:
+    """Re-queue jobs stuck in ``error`` after the backoff window elapses.
+
+    Moves jobs whose ``status='error'`` and ``error_retry_count < max_retries``
+    back to ``ready`` once ``recover_after_seconds`` have passed since their last
+    update, so transient send failures (network hiccup, slow page load, selector
+    drift) get a fresh chance without manual workbench intervention.
+
+    Returns the number of jobs recovered. Jobs that exhausted ``max_retries``
+    stay ``error`` until explicitly retried via the workbench.
+    """
+    rows = conn.execute(
+        "SELECT id FROM jobs "
+        "WHERE status = 'error' "
+        "  AND COALESCE(error_retry_count, 0) < ? "
+        "  AND (strftime('%s', 'now') - strftime('%s', updated_at)) >= ?",
+        (max_retries, recover_after_seconds),
+    ).fetchall()
+    if not rows:
+        return 0
+    recovered_ids = [row["id"] for row in rows]
+    placeholders = ", ".join("?" for _ in recovered_ids)
+    conn.execute(
+        f"UPDATE jobs SET status = 'ready', updated_at = CURRENT_TIMESTAMP "
+        f"WHERE id IN ({placeholders})",
+        recovered_ids,
+    )
+    conn.commit()
+    return len(recovered_ids)
 
 
 def add_history(conn: sqlite3.Connection, job_id: str, action: str, detail: str = "") -> None:
@@ -130,24 +252,98 @@ def get_jobs_by_status(conn: sqlite3.Connection, status: str) -> list[dict]:
     return [dict(row) for row in rows]
 
 
+def get_jobs_needing_enrichment(
+	conn: sqlite3.Connection,
+	statuses: list[str] | None = None,
+) -> list[dict]:
+	"""Get jobs missing company/location metadata for re-enrichment.
+
+	A job "needs enrichment" when any of district / company_background /
+	registered_capital is blank — these are the same fields the scraper uses
+	to decide whether to re-open a detail page. Optionally filter by status
+	(e.g. only re-enrich ready/pending jobs, leave sent jobs alone).
+
+	Args:
+		conn: Open database connection.
+		statuses: Restrict to these statuses. None = all statuses.
+	"""
+	query = (
+		"SELECT * FROM jobs "
+		"WHERE (district IS NULL OR district = '' "
+		"    OR company_background IS NULL OR company_background = '' "
+		"    OR registered_capital IS NULL OR registered_capital = '') "
+	)
+	params: list = []
+	if statuses:
+		placeholders = ", ".join("?" for _ in statuses)
+		query += f"AND status IN ({placeholders}) "
+		params.extend(statuses)
+	query += "ORDER BY created_at DESC"
+	rows = conn.execute(query, params).fetchall()
+	return [dict(row) for row in rows]
+
+
 def get_jobs_pending_confirmation(conn: sqlite3.Connection) -> list[dict]:
-    """Get scored jobs that still need manual confirmation."""
+    """获取评分通过、待人工确认的岗位（招呼语已在评分阶段生成）。"""
     rows = conn.execute("""
         SELECT * FROM jobs
         WHERE status = 'ready'
-          AND (greeting IS NULL OR TRIM(greeting) = '')
         ORDER BY score DESC
     """).fetchall()
     return [dict(row) for row in rows]
 
 
-def get_jobs_ready_to_send(conn: sqlite3.Connection) -> list[dict]:
-    """Get jobs that have generated greetings and are ready to send."""
-    rows = conn.execute("""
+def get_jobs_ready_to_send(conn: sqlite3.Connection, include_send_errors: bool = False) -> list[dict]:
+    """Get jobs with generated greetings that are eligible to send.
+
+    Args:
+        conn: Open database connection.
+        include_send_errors: Include prior send failures for an explicit manual retry.
+            Normal batch sends leave this disabled so failed jobs are not retried
+            automatically.
+    """
+    statuses = ("ready", "approved", "error") if include_send_errors else ("ready", "approved")
+    placeholders = ", ".join("?" for _ in statuses)
+    rows = conn.execute(f"""
         SELECT * FROM jobs
-        WHERE status IN ('ready', 'approved')
+        WHERE status IN ({placeholders})
           AND greeting IS NOT NULL
           AND TRIM(greeting) != ''
+        ORDER BY score DESC
+    """, statuses).fetchall()
+    return [dict(row) for row in rows]
+
+
+def get_jobs_approved_to_send(conn: sqlite3.Connection) -> list[dict]:
+    """Get user-confirmed jobs whose greeting is ready to send.
+
+    Powers the workbench's "待发招呼语" section. Unlike
+    ``get_jobs_ready_to_send`` (which the sender uses and which also covers
+    ``ready`` and recovered jobs), this only returns ``approved`` jobs so the
+    section no longer overlaps with "今日待确定" (``ready``). The send path is
+    unaffected because it still goes through ``get_jobs_ready_to_send``.
+    """
+    rows = conn.execute("""
+        SELECT * FROM jobs
+        WHERE status = 'approved'
+          AND greeting IS NOT NULL
+          AND TRIM(greeting) != ''
+        ORDER BY score DESC
+    """).fetchall()
+    return [dict(row) for row in rows]
+
+
+def get_jobs_needing_greeting(conn: sqlite3.Connection) -> list[dict]:
+    """Get jobs that need a greeting generated before sending.
+
+    包含两类：(1) 已确认 approved 但招呼语为空；(2) 评分阶段已置 ready 但
+    招呼语生成失败（AI 返回空/异常被静默吞掉）导致卡在 ready 且招呼语为空。
+    第二类若不纳入会永久不可见（sender 过滤空招呼语），必须能被 regenerate 恢复。
+    """
+    rows = conn.execute("""
+        SELECT * FROM jobs
+        WHERE status IN ('approved', 'ready')
+          AND (greeting IS NULL OR TRIM(greeting) = '')
         ORDER BY score DESC
     """).fetchall()
     return [dict(row) for row in rows]
@@ -189,6 +385,16 @@ def _migrate_v1_1(conn: sqlite3.Connection) -> None:
         conn.execute("ALTER TABLE jobs ADD COLUMN quick_score INTEGER DEFAULT 0")
     if "resume_path" not in cols:
         conn.execute("ALTER TABLE jobs ADD COLUMN resume_path TEXT DEFAULT NULL")
+    if "district" not in cols:
+        conn.execute("ALTER TABLE jobs ADD COLUMN district TEXT DEFAULT NULL")
+    if "company_background" not in cols:
+        conn.execute("ALTER TABLE jobs ADD COLUMN company_background TEXT DEFAULT NULL")
+    if "registered_capital" not in cols:
+        conn.execute("ALTER TABLE jobs ADD COLUMN registered_capital TEXT DEFAULT NULL")
+    if "conversation_id" not in cols:
+        conn.execute("ALTER TABLE jobs ADD COLUMN conversation_id TEXT DEFAULT NULL")
+    if "error_retry_count" not in cols:
+        conn.execute("ALTER TABLE jobs ADD COLUMN error_retry_count INTEGER DEFAULT 0")
     conn.commit()
 
 
@@ -197,6 +403,15 @@ def update_job_quick_score(conn: sqlite3.Connection, job_id: str, quick_score: i
     conn.execute(
         "UPDATE jobs SET quick_score = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
         (quick_score, job_id)
+    )
+    conn.commit()
+
+
+def update_job_conversation_id(conn: sqlite3.Connection, job_id: str, conversation_id: str) -> None:
+    """保存岗位对应的稳定聊天会话标识。"""
+    conn.execute(
+        "UPDATE jobs SET conversation_id = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+        (conversation_id, job_id),
     )
     conn.commit()
 

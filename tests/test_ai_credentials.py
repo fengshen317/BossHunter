@@ -2,6 +2,8 @@ import unittest
 from types import SimpleNamespace
 from unittest.mock import patch
 
+import httpx
+
 from bosshunter.ai import credentials
 
 
@@ -193,6 +195,188 @@ class AnthropicCredentialTests(unittest.TestCase):
         self.assertEqual(calls["kwargs"]["auth_token"], "token")
         self.assertEqual(calls["message"]["model"], "Claude Sonnet 4.6")
         self.assertEqual(calls["message"]["max_tokens"], 123)
+
+    def test_openai_compatible_404_is_not_silently_swallowed(self):
+        request = httpx.Request("POST", "https://api.example.com/chat/completions")
+        response = httpx.Response(404, request=request)
+
+        with (
+            patch.dict("os.environ", {}, clear=True),
+            patch("httpx.post", return_value=response),
+            self.assertRaises(httpx.HTTPStatusError),
+        ):
+            credentials.call_openai_compatible_text(
+                "prompt",
+                {
+                    "ai": {
+                        "provider": "openai_compatible",
+                        "api_key": "secret",
+                        "base_url": "https://api.example.com",
+                        "model": "model",
+                    }
+                },
+                256,
+            )
+
+    def test_openai_compatible_uses_default_timeout_when_unconfigured(self):
+        class OkResponse:
+            def raise_for_status(self):
+                pass
+
+            def json(self):
+                return {"choices": [{"message": {"content": "hi"}, "finish_reason": "stop"}]}
+
+        with (
+            patch.dict("os.environ", {}, clear=True),
+            patch("httpx.post", return_value=OkResponse()) as posted,
+        ):
+            credentials.call_openai_compatible_text(
+                "prompt",
+                {"ai": {"api_key": "secret", "base_url": "https://api.example.com", "model": "model"}},
+                256,
+            )
+
+        # 未配置 request_timeout 时应回退到 DEFAULT_REQUEST_TIMEOUT（旧的 60s 太短）。
+        self.assertEqual(posted.call_args.kwargs["timeout"], credentials.DEFAULT_REQUEST_TIMEOUT)
+
+    def test_openai_compatible_passes_configured_timeout_to_httpx(self):
+        class OkResponse:
+            def raise_for_status(self):
+                pass
+
+            def json(self):
+                return {"choices": [{"message": {"content": "hi"}, "finish_reason": "stop"}]}
+
+        with (
+            patch.dict("os.environ", {}, clear=True),
+            patch("httpx.post", return_value=OkResponse()) as posted,
+        ):
+            credentials.call_openai_compatible_text(
+                "prompt",
+                {"ai": {"api_key": "secret", "base_url": "https://api.example.com", "model": "model", "request_timeout": 240}},
+                256,
+            )
+
+        self.assertEqual(posted.call_args.kwargs["timeout"], 240)
+
+    def test_openai_compatible_clamps_invalid_timeout_to_default(self):
+        class OkResponse:
+            def raise_for_status(self):
+                pass
+
+            def json(self):
+                return {"choices": [{"message": {"content": "hi"}, "finish_reason": "stop"}]}
+
+        with (
+            patch.dict("os.environ", {}, clear=True),
+            patch("httpx.post", return_value=OkResponse()) as posted,
+        ):
+            credentials.call_openai_compatible_text(
+                "prompt",
+                {"ai": {"api_key": "secret", "base_url": "https://api.example.com", "model": "model", "request_timeout": "not-a-number"}},
+                256,
+            )
+
+        self.assertEqual(posted.call_args.kwargs["timeout"], credentials.DEFAULT_REQUEST_TIMEOUT)
+
+    def test_build_anthropic_client_kwargs_includes_timeout_when_configured(self):
+        with patch.dict("os.environ", {}, clear=True):
+            result = credentials.build_anthropic_client_kwargs({"ai": {"request_timeout": 200}})
+
+        self.assertEqual(result["timeout"], 200)
+
+    def test_build_anthropic_client_kwargs_omits_timeout_when_unconfigured(self):
+        with patch.dict("os.environ", {}, clear=True):
+            result = credentials.build_anthropic_client_kwargs({"ai": {}})
+
+        self.assertNotIn("timeout", result)
+
+    def test_openai_compatible_retries_on_503_then_succeeds(self):
+        request = httpx.Request("POST", "https://api.example.com/chat/completions")
+        resp_503 = httpx.Response(503, request=request)
+        resp_200 = httpx.Response(
+            200,
+            request=request,
+            json={"choices": [{"message": {"content": "hi"}, "finish_reason": "stop"}]},
+        )
+
+        with (
+            patch.dict("os.environ", {}, clear=True),
+            patch("httpx.post", side_effect=[resp_503, resp_200]) as posted,
+            patch("time.sleep"),  # 避免测试真的睡眠
+        ):
+            result = credentials.call_openai_compatible_text(
+                "prompt",
+                {"ai": {"api_key": "secret", "base_url": "https://api.example.com", "model": "model"}},
+                256,
+            )
+
+        self.assertEqual(result, "hi")
+        self.assertEqual(posted.call_count, 2)
+
+    def test_openai_compatible_retries_on_429_with_backoff(self):
+        request = httpx.Request("POST", "https://api.example.com/chat/completions")
+        resp_429 = httpx.Response(429, request=request)
+        resp_200 = httpx.Response(
+            200,
+            request=request,
+            json={"choices": [{"message": {"content": "ok"}, "finish_reason": "stop"}]},
+        )
+
+        with (
+            patch.dict("os.environ", {}, clear=True),
+            patch("httpx.post", side_effect=[resp_429, resp_429, resp_200]) as posted,
+            patch("time.sleep") as slept,
+        ):
+            result = credentials.call_openai_compatible_text(
+                "prompt",
+                {"ai": {"api_key": "secret", "base_url": "https://api.example.com", "model": "model"}},
+                256,
+            )
+
+        self.assertEqual(result, "ok")
+        self.assertEqual(posted.call_count, 3)
+        # 重试 2 次 → 退避 2 次。
+        self.assertEqual(slept.call_count, 2)
+
+    def test_openai_compatible_exhausts_retries_then_raises_on_persistent_503(self):
+        request = httpx.Request("POST", "https://api.example.com/chat/completions")
+        resp_503 = httpx.Response(503, request=request)
+
+        with (
+            patch.dict("os.environ", {}, clear=True),
+            patch("httpx.post", return_value=resp_503) as posted,
+            patch("time.sleep"),
+            self.assertRaises(httpx.HTTPStatusError),
+        ):
+            credentials.call_openai_compatible_text(
+                "prompt",
+                {"ai": {"api_key": "secret", "base_url": "https://api.example.com", "model": "model"}},
+                256,
+            )
+
+        # 默认 max_retries=3 → 总调用 = 首次 + 3 次重试 = 4 次。
+        self.assertEqual(posted.call_count, credentials.DEFAULT_HTTP_MAX_RETRIES + 1)
+
+    def test_openai_compatible_does_not_retry_on_404(self):
+        # 守护契约：非可重试状态码（404）必须立即抛出，不重试。
+        request = httpx.Request("POST", "https://api.example.com/chat/completions")
+        resp_404 = httpx.Response(404, request=request)
+
+        with (
+            patch.dict("os.environ", {}, clear=True),
+            patch("httpx.post", return_value=resp_404) as posted,
+            patch("time.sleep") as slept,
+            self.assertRaises(httpx.HTTPStatusError),
+        ):
+            credentials.call_openai_compatible_text(
+                "prompt",
+                {"ai": {"api_key": "secret", "base_url": "https://api.example.com", "model": "model"}},
+                256,
+            )
+
+        self.assertEqual(posted.call_count, 1)
+        slept.assert_not_called()
 
 
 if __name__ == "__main__":

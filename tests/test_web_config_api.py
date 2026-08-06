@@ -92,6 +92,22 @@ class WebConfigApiTests(unittest.TestCase):
 		self.assertEqual(cleaned["ai"]["provider"], "anthropic")
 		self.assertEqual(cleaned["ai"]["model"], "claude-sonnet-4-6")
 
+	def test_sanitize_config_accepts_openai_compatible_provider(self):
+		with tempfile.TemporaryDirectory() as tmp:
+			config_path = Path(tmp) / "config.yaml"
+			config_path.write_text(yaml.dump({"ai": {"provider": "anthropic"}}, sort_keys=False), encoding="utf-8")
+
+			with patch.object(server, "CONFIG_PATH", config_path):
+				cleaned = server._sanitize_config_for_write({
+					"ai": {
+						"provider": "openai_compatible",
+						"model": "deepseek-v4-flash",
+						"base_url": "https://api.deepseek.com",
+					}
+				})
+
+		self.assertEqual(cleaned["ai"]["provider"], "openai_compatible")
+
 	def test_redacted_config_does_not_return_raw_auth_token(self):
 		config = {"ai": {"auth_token": "auth-token-12345678", "model": "claude"}}
 

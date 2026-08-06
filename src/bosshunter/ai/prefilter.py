@@ -2,7 +2,7 @@
 
 import re
 
-from bosshunter.job_filters import matching_deal_breaker
+from bosshunter.job_filters import is_agency_company, matching_deal_breaker, parse_registered_capital_wan
 
 
 _INTERNSHIP_KEYWORDS = ("实习", "intern", "internship", "管培")
@@ -18,6 +18,11 @@ def quick_score(job: dict, config: dict) -> tuple[int, str]:
     if breaker:
         return 0, f"触发排除词: {breaker}"
 
+    # 代招/猎头/外包：公司名模糊（"某大型XX公司"）或直接命名为人力/咨询类。
+    # 采集阶段可能因公司名缺失漏掉，评分时用补全后的 company 再拦一道。
+    if is_agency_company(job.get("company") or ""):
+        return 0, "代招/猎头公司"
+
     if not profile.get("allow_internship", False) and _contains_internship_signal(job):
         return 0, "实习/管培岗位"
 
@@ -25,6 +30,13 @@ def quick_score(job: dict, config: dict) -> tuple[int, str]:
     salary_max = _parse_salary_max_k(job.get("salary") or "")
     if salary_min > 0 and salary_max is not None and salary_max < salary_min:
         return 0, f"薪资低于硬性要求: {_format_k(salary_max)}K < {_format_k(salary_min)}K"
+
+    # 注册资本硬过滤：只有明确解析出数值且低于阈值才排除。
+    # 缺失/未补全（None）保留，避免误伤尚未 reenrich 的岗位。
+    min_capital = _as_number(config.get("scoring", {}).get("min_registered_capital_wan", 50))
+    capital = parse_registered_capital_wan(job.get("registered_capital") or "")
+    if capital is not None and capital < min_capital:
+        return 0, f"注册资本过低: {capital:.0f}万 < {min_capital:.0f}万"
 
     return 100, "预筛通过"
 

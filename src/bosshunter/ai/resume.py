@@ -8,6 +8,7 @@ from pathlib import Path
 from rich.console import Console
 
 from bosshunter.ai.credentials import call_anthropic_text
+from bosshunter.ai.resume_templates import DEFAULT_TEMPLATE, DEFAULT_THEME_COLOR, build_resume_html
 from bosshunter.browser import close_tab, new_tab, print_pdf
 from bosshunter.db import get_db
 
@@ -33,9 +34,8 @@ RESUME_TAILOR_PROMPT = """你是一位专业简历顾问。请输出一份正常
 11. 不要输出JD逐条对照、覆盖情况、匹配说明，只把真实可支撑的匹配点自然写入简历正文
 12. 必须围绕岗位标题和核心要求重排内容，首屏突出最相关经历，不要几乎照搬原简历
 13. 可以压缩或删除弱相关项目，但必须完整保留常规简历结构，尤其是基本信息、个人优势、工作经历、教育经历、相关技能
-14. 如果岗位涉及媒体、PR、公关、传播、科技记者，请优先突出已有的新媒体内容、品牌传播、媒体资源、专家访谈、公众号/视频号、技术型业务表达经验
-15. 如果岗位涉及小红书、抖音、短视频、内容运营、AIGC内容、热点资讯、平台增长，请优先保留候选人已有的平台案例和量化结果，包括阅读/观看、点赞收藏、粉丝增长、用户群运营等真实证据
-16. 必须输出完整简历，不得半句结束；最后一行单独输出 {completion_marker}，系统保存前会自动移除该行
+14. 如果岗位强调某一业务方向（如平台运营、行业研究、技术落地等），请优先突出候选人简历中已有的、与该方向直接相关的真实案例和量化结果，不要虚构缺失的经历
+15. 必须输出完整简历，不得半句结束；最后一行单独输出 {completion_marker}，系统保存前会自动移除该行
 
 ## 投递岗位
 - 职位：{title}
@@ -108,11 +108,6 @@ REQUIRED_RESUME_SECTIONS = [
 ]
 
 ROLE_KEYWORD_GROUPS = [
-    {
-        "name": "媒体/PR/传播",
-        "triggers": ("PR", "媒体", "公关", "传播", "记者", "舆情"),
-        "required": ("PR", "媒体", "公关", "传播", "新闻稿", "采访", "公众号", "视频号", "品牌"),
-    },
     {
         "name": "AI/科技",
         "triggers": ("AI", "人工智能", "AIGC", "大模型", "智能", "科技"),
@@ -411,43 +406,26 @@ def _call_claude(prompt: str, config: dict) -> str | None:
         return None
 
 
-def _render_pdf(markdown_text: str, output_path: Path) -> bool:
+def _render_pdf(
+    markdown_text: str,
+    output_path: Path,
+    *,
+    template_name: str = DEFAULT_TEMPLATE,
+    avatar_path: Path | str | None = None,
+    show_avatar: bool = True,
+    theme_color: str = DEFAULT_THEME_COLOR,
+) -> bool:
     """Render markdown to PDF via Chrome CDP (Page.printToPDF).
 
     Falls back to xhtml2pdf if CDP is unavailable.
     """
-    import markdown2
-
-    # Convert markdown to HTML
-    html_body = markdown2.markdown(markdown_text, extras=["tables", "fenced-code-blocks"])
-
-    # Wrap with CJK-friendly CSS
-    full_html = f"""<!DOCTYPE html>
-<html>
-<head>
-<meta charset="utf-8">
-<style>
-    body {{
-        font-family: "Microsoft YaHei", "SimSun", "WenQuanYi Micro Hei", sans-serif;
-        font-size: 11pt;
-        line-height: 1.6;
-        margin: 40px;
-        color: #333;
-    }}
-    h1 {{ font-size: 18pt; color: #1a1a1a; border-bottom: 2px solid #333; padding-bottom: 5px; }}
-    h2 {{ font-size: 14pt; color: #2c3e50; margin-top: 20px; }}
-    h3 {{ font-size: 12pt; color: #34495e; }}
-    ul {{ padding-left: 20px; }}
-    li {{ margin-bottom: 4px; }}
-    table {{ border-collapse: collapse; width: 100%; margin: 10px 0; }}
-    th, td {{ border: 1px solid #ddd; padding: 6px 10px; text-align: left; }}
-    th {{ background: #f5f5f5; }}
-</style>
-</head>
-<body>
-{html_body}
-</body>
-</html>"""
+    full_html = build_resume_html(
+        markdown_text,
+        template_name=template_name,
+        avatar_path=avatar_path,
+        show_avatar=show_avatar,
+        theme_color=theme_color,
+    )
 
     # Strategy 1: Use Chrome CDP to print PDF (preferred, no extra deps)
     if _render_pdf_via_cdp(full_html, output_path):
@@ -612,7 +590,27 @@ def generate_tailored_resume(job_id: str, config: dict) -> Path | None:
 
     # Try PDF rendering
     pdf_path = output_dir / f"{base_name}.pdf"
-    if _render_pdf(tailored_md, pdf_path):
+    resume_cfg = config.get("resume", {}) if isinstance(config.get("resume"), dict) else {}
+    profile_cfg = config.get("profile", {}) if isinstance(config.get("profile"), dict) else {}
+    template_name = str(resume_cfg.get("template") or DEFAULT_TEMPLATE)
+    theme_color = str(resume_cfg.get("theme_color") or DEFAULT_THEME_COLOR)
+    avatar_path = profile_cfg.get("avatar_path")
+    show_avatar = bool(resume_cfg.get("show_avatar", True))
+    if resume_cfg or avatar_path:
+        pdf_rendered = _render_pdf(
+            tailored_md,
+            pdf_path,
+            template_name=template_name,
+            avatar_path=avatar_path,
+            show_avatar=show_avatar,
+            theme_color=theme_color,
+        )
+    else:
+        # Keep direct callers and existing integrations compatible with the
+        # original two-argument renderer contract.
+        pdf_rendered = _render_pdf(tailored_md, pdf_path)
+
+    if pdf_rendered:
         pdf_pages = _pdf_page_count(pdf_path)
         if pdf_pages and pdf_pages > resume_max_pages:
             console.print(
@@ -620,6 +618,18 @@ def generate_tailored_resume(job_id: str, config: dict) -> Path | None:
             )
 
         console.print(f"[green]✓ PDF 已生成: {pdf_path}[/green]")
+        if bool(resume_cfg.get("generate_ats_version", False)) and template_name != "ats":
+            ats_path = output_dir / f"{base_name}_ATS.pdf"
+            if _render_pdf(
+                tailored_md,
+                ats_path,
+                template_name="ats",
+                show_avatar=False,
+                theme_color="#222222",
+            ):
+                console.print(f"[green]✓ ATS PDF 已生成: {ats_path}[/green]")
+            else:
+                console.print("[yellow]ATS PDF 生成失败，视觉版不受影响[/yellow]")
         # Update DB
         db.execute(
             "UPDATE jobs SET resume_path = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",

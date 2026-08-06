@@ -1,44 +1,67 @@
 """AI Greeter - Generate personalized greeting messages with self-review."""
 
 import json
+import re
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
 from rich.console import Console
 from rich.progress import Progress, SpinnerColumn, TextColumn
 
 from bosshunter.ai.credentials import call_anthropic_text
-from bosshunter.db import get_db, get_jobs_by_status, update_job_greeting, update_job_status
+from bosshunter.db import get_db, get_jobs_needing_greeting, update_job_greeting, update_job_status, reset_job_greeting
 
 console = Console()
+
+# 并发生成招呼语时的默认线程数；过高会触发 AI 接口的速率限制。
+DEFAULT_GREETING_CONCURRENCY = 4
+
+
+def _greeting_concurrency(config: dict) -> int:
+    """读取并钳制招呼语生成的并发度，至少为 1。"""
+    raw = config.get("ai", {}).get("greeting_concurrency", DEFAULT_GREETING_CONCURRENCY)
+    try:
+        return max(1, int(raw))
+    except (TypeError, ValueError):
+        return DEFAULT_GREETING_CONCURRENCY
 
 GREETING_PROMPT = """你是一位求职者，需要在BOSS直聘上给HR发送打招呼消息。请根据以下信息生成一条个性化、自然的招呼语。
 
 ## 我的背景
 {resume_summary}
 
-## 目标岗位
+## 目标岗位与公司
 - 职位：{title}
 - 公司：{company}
 - 薪资：{salary}
+- 工作地点：{city}{district}
+- 公司背景：{company_background}
 - 岗位要求摘要：{jd_summary}
-- 匹配分析：{match_reason}
+- 候选人匹配点：{match_reason}
 
 ## 额外亮点（适时融入，不要生硬罗列）
 {extra_highlights}
 
-## 要求
-1. 字数控制在50-150字
-2. 风格自然，像真人发的IM消息，不要太正式
-3. 突出1-2个最匹配的优势
-4. 表达对岗位的兴趣，但不要谄媚
-5. 不要用"您好，我是xxx"这种模板开头，要有差异化
-6. 适配手机端阅读
-7. 在合适的位置自然带出作品集链接（不要每次都放，根据岗位匹配度决定）
-8. 【严禁】不得捏造我没有的经历、头衔或身份，只能使用"我的背景"中明确提到的信息
-9. 【严禁】不得把岗位JD中的描述（如公司头衔、项目名）当作我的经历来写
-10. 严格使用"我的背景"中的原文描述，不得改写或美化
+## 写作方法
+请写成 2-3 句连续的 IM 消息，控制在 70-140 字：
+1. 第一句从岗位真实需求、公司业务或具体场景切入，说明你为什么关注它；不要复述职位名称。
+2. 第二句**根据本岗位 JD 强调的方向**，从简历中选取与该方向最相关的 1 个经历或成果（不必是最强项目），说明它如何对应这份工作；不同岗位应突出不同项目侧重点，避免每条招呼语都引用同一个项目；优先使用工具、项目、指标或职责细节。
+3. 最后一句用轻量的行动意图收尾，例如“如果团队正推进 X，我很愿意补充相关案例聊聊”，不要机械索要机会。
+
+## 参考示例
+✅ 正例（具体切入+可核验数据+轻行动意图）：
+“你们在把 LangGraph 落到订单问数场景这件事很有意思。我在制造业 AI 报告系统里负责过类似工作流编排，把通义千问和知识库接进生产报告生成，日均稳定产出 20+ 份。如果团队也在解决工作流稳定性这类问题，我很愿意带着踩坑细节聊聊。”
+❌ 反例（套话开场，无具体证据）：
+“您好，看到贵司在招聘这个岗位，我对这个岗位很感兴趣，相信我能胜任，希望有机会进一步沟通。”
+
+## 硬性限制
+1. 禁止以“您好”“你好”“你们好”“看到贵司”“看到你们”“看到团队”“我对这个岗位很感兴趣”“我对该岗位”“相信我能胜任”“希望能有机会”“期待您的回复”开头或作为核心表达。
+2. 禁止空泛形容词堆砌，例如“热爱学习、抗压、责任心强、综合能力强”。
+3. 不要写分数、不要复述“缺失技能”，不要出现“JD”“HR”“贵司”等招聘话术。
+4. 【严禁】不得捏造简历中没有的经历、头衔、数字或项目；不得把岗位 JD 的描述写成我的经历。
+5. 作品集链接仅在简历明确包含、且与岗位直接相关时出现一次。
+6. 只输出最终招呼语文本，不加标题、引号、编号或解释。
 {critique_section}
-请直接输出招呼语文本，不要加任何标记或解释。
 """
 
 REVIEW_PROMPT = """请评估以下BOSS直聘招呼语的质量。
@@ -50,13 +73,29 @@ REVIEW_PROMPT = """请评估以下BOSS直聘招呼语的质量。
 {greeting}
 
 ## 评估维度（每项1-10分）
-1. 自然度：是否像真人发的IM消息，而非模板
-2. 相关性：是否针对该岗位突出匹配点
-3. 差异化：是否能从众多招呼中脱颖而出
+1. 自然度：是否像真人发出的短消息，而非招聘模板
+2. 相关性：是否有岗位切入点和一条具体、可核验的简历证据
+3. 差异化：是否避开“看到贵司”“很感兴趣”等套话
+4. 真实性：是否没有捏造候选人经历或误把岗位要求当经历
 
 请严格按JSON格式输出，不要输出其他内容：
-{{"naturalness": 8, "relevance": 7, "differentiation": 6, "avg": 7.0, "critique": "改进建议（20字内）"}}
+{{"naturalness": 8, "relevance": 7, "differentiation": 6, "truthfulness": 10, "avg": 7.0, "critique": "改进建议（20字内）"}}
 """
+
+_BANNED_GREETING_PATTERNS = (
+    "您好",
+    "你好",
+    "你们好",
+    "看到贵司",
+    "看到你们",
+    "看到团队",
+    "看到Anker",
+    "我对这个岗位很感兴趣",
+    "我对该岗位",
+    "相信我能胜任",
+    "希望能有机会",
+    "期待您的回复",
+)
 
 
 def _get_resume_summary(config: dict) -> str:
@@ -97,10 +136,25 @@ def _review_greeting(greeting: str, job: dict, config: dict) -> dict | None:
     return None
 
 
+def _quality_issues(greeting: str) -> list[str]:
+    """Return deterministic quality issues that an AI self-review can miss."""
+    normalized = re.sub(r"\s+", "", greeting)
+    issues: list[str] = []
+    if len(normalized) < 45 or len(normalized) > 160:
+        issues.append("长度不在 45-160 字范围内")
+    if any(pattern in normalized for pattern in _BANNED_GREETING_PATTERNS):
+        issues.append("包含模板化开场或承诺")
+    if normalized.count("我") > 5:
+        issues.append("第一人称过多，语气不够自然")
+    if not any(mark in normalized for mark in ("，", "。", "；", "！")):
+        issues.append("缺少自然的短句结构")
+    return issues
+
+
 def _generate_greeting_once(job: dict, resume_summary: str, config: dict, critique: str = "") -> str | None:
     """Generate a single greeting attempt."""
     jd_summary = job["jd"][:500] if job["jd"] else "无详细描述"
-    critique_section = f"\n7. 上次生成的问题: {critique}，请避免此问题\n" if critique else ""
+    critique_section = f"\n上次生成的问题：{critique}。请针对性修正。\n" if critique else ""
 
     # Build extra highlights from config (portfolio URL, personal strengths, etc.)
     profile_cfg = config.get("profile", {})
@@ -116,8 +170,11 @@ def _generate_greeting_once(job: dict, resume_summary: str, config: dict, critiq
         title=job["title"],
         company=job["company"],
         salary=job["salary"] or "面议",
+        city=job.get("city", ""),
+        district=f"·{job['district']}" if job.get("district") else "",
+        company_background=job.get("company_background") or job.get("company_industry") or "未采集",
         jd_summary=jd_summary,
-        match_reason=job.get("score_reason", ""),
+        match_reason=(job.get("score_reason") or "").split("| 缺失:")[0],
         critique_section=critique_section,
         extra_highlights=extra_highlights,
     )
@@ -128,24 +185,161 @@ def _generate_greeting_once(job: dict, resume_summary: str, config: dict, critiq
 
     # Clean up
     greeting = greeting.strip('"\'')
-    # Enforce max length
-    if len(greeting) > 150:
-        cut = greeting[:150]
+    # Enforce max length. Prefer cutting at a sentence-ending mark; if none,
+    # fall back to the last comma/semicolon so the message ends with punctuation
+    # rather than a truncated fragment (实测旧的硬切会让 22% 招呼语结尾悬空)。
+    if len(greeting) > 160:
+        cut = greeting[:160]
         for sep in ("。", "！", "～", "！", "\n"):
             idx = cut.rfind(sep)
             if idx > 50:
                 greeting = cut[:idx + 1]
                 break
         else:
-            greeting = cut
+            # 回退到最后一个任意标点（含 ，；、），保证结尾不悬空。
+            # 注意空格不算标点——回退到空格会留下英文词中间的断点。
+            last_punct = max(
+                (cut.rfind(sep) for sep in ("，", "；", "、")),
+                default=-1,
+            )
+            greeting = cut[: last_punct + 1] if last_punct > 50 else cut
 
     return greeting
 
 
+def _generate_with_deterministic_retry(
+	job: dict,
+	resume_summary: str,
+	config: dict,
+) -> str | None:
+	"""Generate once, then retry once if deterministic quality rules fail.
+
+	Used by the scoring-stage batch path (``with_review=False``) so that
+	banned-phrase/length issues are still caught without paying for an AI
+	self-review. Only local rules run — no extra AI review API call. If the
+	second attempt still fails the rules, the best result is returned anyway
+	(no data loss), mirroring the lenient behaviour the scoring path had before.
+	"""
+	greeting = _generate_greeting_once(job, resume_summary, config)
+	if not greeting:
+		return None
+	issues = _quality_issues(greeting)
+	if not issues:
+		return greeting
+	# Deterministic rule failed: regenerate once with the critique surfaced.
+	regenerated = _generate_greeting_once(
+		job, resume_summary, config, critique="；".join(issues)
+	)
+	return regenerated or greeting
+
+
+def _generate_for_job_with_review(job: dict, resume_summary: str, config: dict) -> tuple[str, str] | None:
+    """为单个岗位生成招呼语（含自审循环），线程安全。
+
+    将原 generate_greetings 循环体的逻辑抽出为纯函数：不读写数据库、不打印 console，
+    便于并发执行。唯一优化：当确定性规则 _quality_issues 已能指出问题时，跳过当轮的
+    AI 审查调用（确定性 critique 已足够指导下一轮生成，避免每次迭代都额外调一次 AI）。
+    其余行为与原串行版完全一致。
+
+    Returns:
+        (job_id, greeting) 成功；失败返回 None。
+    """
+    ai_cfg = config.get("ai", {})
+    review_threshold = ai_cfg.get("greeting_review_threshold", 7.0)
+    max_iterations = ai_cfg.get("greeting_max_iterations", 2)
+
+    best_greeting: str | None = None
+
+    for iteration in range(max_iterations + 1):
+        critique = ""
+        if iteration > 0 and best_greeting:
+            deterministic_issues = _quality_issues(best_greeting)
+            # 确定性规则已发现问题时直接用作 critique，跳过本轮 AI 审查；
+            # 否则才花一次 AI 审查判定质量是否达标。
+            if deterministic_issues:
+                critique = "；".join(deterministic_issues)
+            else:
+                review = _review_greeting(best_greeting, job, config)
+                review_passed = (
+                    review
+                    and review.get("avg", 0) >= review_threshold
+                    and review.get("truthfulness", 0) >= 8
+                )
+                if review_passed:
+                    break  # 质量已达标
+                critique_parts = [review.get("critique", "")] if review else []
+                critique = "；".join(part for part in critique_parts if part)
+
+        greeting = _generate_greeting_once(job, resume_summary, config, critique)
+        if not greeting:
+            break
+
+        if iteration == 0:
+            best_greeting = greeting
+            if max_iterations == 0:
+                break
+        else:
+            # 新生成的招呼语已融入上轮 critique，保留新结果。
+            best_greeting = greeting
+
+    if not best_greeting:
+        return None
+    return (str(job["id"]), best_greeting)
+
+
+def generate_greetings_batch(
+    jobs: list[dict],
+    resume_summary: str,
+    config: dict,
+    with_review: bool = True,
+) -> list[tuple[str, str]]:
+    """并发生成多个岗位的招呼语（线程池），返回 (job_id, greeting) 列表。
+
+    scorer（评分阶段附带生成）与 generate_greetings（带自审的完整生成）的共享并发入口。
+    仅对 AI 调用（I/O 阻塞）并发；本函数不读写数据库、不打印 console，调用方负责落库。
+    并发度读取 config["ai"]["greeting_concurrency"]，默认 DEFAULT_GREETING_CONCURRENCY。
+
+    Args:
+        with_review: True 走 _generate_for_job_with_review（含自审循环），
+            False 走 _generate_greeting_once（单次生成，无自审，用于评分阶段）。
+    """
+    if not jobs:
+        return []
+
+    concurrency = _greeting_concurrency(config)
+    results: list[tuple[str, str]] = []
+
+    with ThreadPoolExecutor(max_workers=min(concurrency, len(jobs))) as executor:
+        if with_review:
+            futures = [
+                executor.submit(_generate_for_job_with_review, job, resume_summary, config)
+                for job in jobs
+            ]
+        else:
+            def _run_once(job: dict) -> tuple[str, str] | None:
+                # 评分阶段也做一道确定性质量校验（禁词/长度），命中则重试 1 次，
+                # 不调 AI 审查 API，避免禁词/套话招呼语直接落库。
+                greeting = _generate_with_deterministic_retry(job, resume_summary, config)
+                return (str(job["id"]), greeting) if greeting else None
+
+            futures = [executor.submit(_run_once, job) for job in jobs]
+
+        for future in futures:
+            result = future.result()
+            if result:
+                results.append(result)
+
+    return results
+
+
 def generate_greetings(config: dict) -> int:
-    """Generate greetings for approved jobs with optional self-review. Returns count generated."""
+    """为缺少招呼语的已确认岗位生成招呼语（含自审循环）。返回生成数量。
+
+    优先使用 get_jobs_needing_greeting 查询，只处理 status='approved' 且 greeting 为空的岗位，
+    已有招呼语的岗位会被自动跳过（招呼语现在在评分阶段就已生成）。
+    """
     db = get_db()
-    jobs = get_jobs_by_status(db, "approved")
+    jobs = get_jobs_needing_greeting(db)
     _workbench_job_ids = {str(job_id) for job_id in config.get("_workbench_job_ids", [])}
     if _workbench_job_ids:
         jobs = [job for job in jobs if str(job["id"]) in _workbench_job_ids]
@@ -161,52 +355,94 @@ def generate_greetings(config: dict) -> int:
         db.close()
         return 0
 
-    ai_cfg = config.get("ai", {})
-    review_threshold = ai_cfg.get("greeting_review_threshold", 7.0)
-    max_iterations = ai_cfg.get("greeting_max_iterations", 2)
-
+    # 并发度：从 ai.greeting_concurrency 读取，默认 DEFAULT_GREETING_CONCURRENCY。
+    # 仅对纯函数 _generate_for_job_with_review（AI 调用，I/O 阻塞）并发；
+    # 数据库写入与进度更新回到主线程串行执行，规避 SQLite 跨线程与 Rich 并发打印。
     count = 0
+    total = len(jobs)
 
     with Progress(
         SpinnerColumn(),
         TextColumn("[progress.description]{task.description}"),
         console=console
     ) as progress:
-        task = progress.add_task(f"生成招呼语 (0/{len(jobs)})", total=len(jobs))
+        task = progress.add_task(f"生成招呼语 (0/{total})", total=total)
 
-        for job in jobs:
-            # Generate with self-review loop
-            best_greeting = None
-
-            for iteration in range(max_iterations + 1):
-                critique = ""
-                if iteration > 0 and best_greeting:
-                    # We have a previous attempt — review it
-                    review = _review_greeting(best_greeting, job, config)
-                    if review and review.get("avg", 10) >= review_threshold:
-                        break  # Good enough
-                    critique = review.get("critique", "") if review else ""
-
-                greeting = _generate_greeting_once(job, resume_summary, config, critique)
-                if not greeting:
-                    break
-
-                if iteration == 0:
-                    best_greeting = greeting
-                    # If no review iterations configured, skip review
-                    if max_iterations == 0:
-                        break
-                else:
-                    # Compare: keep the new one (it incorporates feedback)
-                    best_greeting = greeting
-
-            if not best_greeting:
-                continue
-
-            update_job_greeting(db, job["id"], best_greeting)
-            update_job_status(db, job["id"], "ready")
-            count += 1
-            progress.update(task, advance=1, description=f"生成招呼语 ({count}/{len(jobs)})")
+        with ThreadPoolExecutor(max_workers=min(_greeting_concurrency(config), total or 1)) as executor:
+            futures = {
+                executor.submit(_generate_for_job_with_review, job, resume_summary, config): job
+                for job in jobs
+            }
+            # 流式收集：每完成一个就回主线程写库 + 推进进度，避免输出错乱与跨线程写库。
+            for future in as_completed(futures):
+                result = future.result()
+                if result:
+                    job_id, greeting = result
+                    update_job_greeting(db, job_id, greeting)
+                    update_job_status(db, job_id, "ready")
+                    count += 1
+                progress.update(task, advance=1, description=f"生成招呼语 ({count}/{total})")
 
     db.close()
+    return count
+
+
+def regenerate_greeting(job_id: str, config: dict) -> str | None:
+    """重新生成单个岗位的招呼语。
+
+    清空原有招呼语后重新调用 AI 生成，返回新的招呼语文本。
+    生成失败返回 None。
+
+    Args:
+        job_id: 岗位 ID
+        config: 应用配置
+
+    Returns:
+        新招呼语文本，失败返回 None
+    """
+    db = get_db()
+    reset_job_greeting(db, [job_id])
+
+    resume_summary = _get_resume_summary(config)
+    if not resume_summary:
+        console.print("[red]无法读取简历[/red]")
+        db.close()
+        return None
+
+    # 获取岗位信息用于生成
+    job = db.execute("SELECT * FROM jobs WHERE id = ?", (job_id,)).fetchone()
+    if not job:
+        console.print(f"[red]未找到岗位: {job_id}[/red]")
+        db.close()
+        return None
+
+    job_dict = dict(job)
+    greeting = _generate_greeting_once(job_dict, resume_summary, config)
+
+    if greeting:
+        update_job_greeting(db, job_id, greeting)
+        update_job_status(db, job_id, "ready")
+        console.print(f"[green]✓ 招呼语已重新生成: {job_dict['company']} - {job_dict['title']}[/green]")
+    else:
+        console.print(f"[red]✗ 招呼语生成失败: {job_dict['company']} - {job_dict['title']}[/red]")
+
+    db.close()
+    return greeting
+
+
+def regenerate_greetings(job_ids: list[str], config: dict) -> int:
+    """批量重新生成招呼语。返回成功数量。
+
+    Args:
+        job_ids: 岗位 ID 列表
+        config: 应用配置
+
+    Returns:
+        成功重新生成的数量
+    """
+    count = 0
+    for job_id in job_ids:
+        greeting = regenerate_greeting(job_id, config)
+        if greeting:
+            count += 1
     return count

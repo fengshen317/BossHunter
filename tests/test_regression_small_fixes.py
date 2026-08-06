@@ -133,20 +133,33 @@ class ConfigValidationTests(unittest.TestCase):
 
 
 class AiPromptRegressionTests(unittest.TestCase):
-    def test_scorer_prompt_treats_platform_metrics_as_evidence(self):
+    def test_scorer_prompt_has_no_hardcoded_domain_bias(self):
+        """评分 prompt 不得硬编码特定领域的偏好（曾固化过新媒体/GIS 特判，
+        对其他背景的简历是噪声）。改为反向护栏：断言这些字符串已移除。"""
         from bosshunter.ai.scorer import SCORING_PROMPT
 
-        self.assertIn("小红书/抖音", SCORING_PROMPT)
-        self.assertIn("爆款内容", SCORING_PROMPT)
-        self.assertIn("从0到1起号", SCORING_PROMPT)
-        self.assertIn("不要在missing中写", SCORING_PROMPT)
+        self.assertNotIn("小红书", SCORING_PROMPT)
+        self.assertNotIn("抖音", SCORING_PROMPT)
+        self.assertNotIn("爆款", SCORING_PROMPT)
+        self.assertNotIn("起号", SCORING_PROMPT)
+        self.assertNotIn("卫星遥感", SCORING_PROMPT)
+        self.assertNotIn("GIS", SCORING_PROMPT)
+        # 新的通用指令应存在（从简历提取真实领域，不因标签扣分）
+        self.assertIn("从候选人简历中提取", SCORING_PROMPT)
 
-    def test_tailored_resume_prompt_preserves_platform_growth_cases(self):
+    def test_tailored_resume_prompt_has_no_hardcoded_domain_bias(self):
+        """简历定制 prompt 不得硬编码新媒体/平台领域的特判（曾固化过
+        小红书/抖音/媒体资源等，对其他背景简历是噪声）。改为反向护栏。"""
         from bosshunter.ai.resume import RESUME_TAILOR_PROMPT
 
-        self.assertIn("平台案例和量化结果", RESUME_TAILOR_PROMPT)
-        self.assertIn("阅读/观看", RESUME_TAILOR_PROMPT)
-        self.assertIn("粉丝增长", RESUME_TAILOR_PROMPT)
+        self.assertNotIn("小红书", RESUME_TAILOR_PROMPT)
+        self.assertNotIn("抖音", RESUME_TAILOR_PROMPT)
+        self.assertNotIn("短视频", RESUME_TAILOR_PROMPT)
+        self.assertNotIn("粉丝增长", RESUME_TAILOR_PROMPT)
+        self.assertNotIn("媒体资源", RESUME_TAILOR_PROMPT)
+        self.assertNotIn("公众号", RESUME_TAILOR_PROMPT)
+        # 新的通用指令应存在（按业务方向突出真实案例）
+        self.assertIn("业务方向", RESUME_TAILOR_PROMPT)
 
 
 class PrefilterHardGateTests(unittest.TestCase):
@@ -294,7 +307,8 @@ class DashboardPageTests(unittest.TestCase):
         # Act / Assert
         self.assertIn("sendReadyGreetings", self.source)
         self.assertIn("direct_send: true", self.source)
-        self.assertIn("已直接进入发送流程", self.source)
+        self.assertIn("正在提交", self.source)
+        self.assertIn("getTaskStopReason", self.source)
         self.assertNotIn("confirmDeliver(pendingGreetingJobs.map", self.source)
         self.assertNotIn("confirmDeliver([job.id])}>发送招呼语", self.source)
 
@@ -325,6 +339,11 @@ class DashboardPageTests(unittest.TestCase):
         self.assertIn("/dismiss", self.source)
         self.assertIn("reply_dismissed", self.source)
         self.assertIn("放弃", self.source)
+
+    def test_replied_conversation_remains_visible_after_resume_request(self):
+        """曾请求过简历的会话，回复成功后也必须进入“已回复”列表。"""
+        self.assertIn("item.action === 'replied' || item.action === 'auto_replied'", self.source)
+        self.assertNotIn("resumeRequestJobIds", self.source)
 
     def test_monitor_surfaces_resume_generation_failures_as_pending_items(self):
         # Arrange: DashboardPage source is loaded in setUp.

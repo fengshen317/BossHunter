@@ -43,5 +43,6 @@ Thumbs.db
 # Claude Code / local agent notes
 .claude/
 .superpowers/
+.zcode/
 docs/superpowers/
 AGENTS.md

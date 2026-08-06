@@ -1,17 +1,21 @@
-"""Monitor module - Watch for HR replies, auto-reply, and send resumes."""
+"""Monitor module - Watch for HR replies and generate reply suggestions."""
 
 import time
 import json
+import hashlib
 from threading import Event
+from urllib.parse import parse_qs, urlencode, urlparse
 
 from rich.console import Console
 
 from bosshunter.ai.credentials import call_anthropic_text
-from bosshunter.browser import new_tab, close_tab, evaluate, click, wait_for_load, get_page_info
+from bosshunter.browser import new_tab, close_tab, evaluate, click, wait_for_load, navigate
 from bosshunter.db import (
-    get_db, get_jobs_by_status,
-    update_job_status, add_history,
+    get_db, get_jobs_by_status, insert_job,
+    update_job_status, update_job_conversation_id, add_history,
 )
+# 复用 sender 的输入框选择器，避免两处选择器定义漂移。
+from bosshunter.executor.sender import CHAT_INPUT_SELECTOR
 from bosshunter.throttle import RequestThrottle, SendWindowChecker
 
 console = Console()
@@ -28,6 +32,7 @@ JS_EXTRACT_CHAT_LIST = """
         const nameBox = item.querySelector('.name-box');
         const lastMsgEl = item.querySelector('.last-msg-text');
         const msgStatus = item.querySelector('.message-status');
+        const unreadBadge = item.querySelector('.notice-badge');
 
         if (!nameText) return;
 
@@ -35,18 +40,45 @@ JS_EXTRACT_CHAT_LIST = """
         const company = spans.length >= 2 ? spans[1].textContent.trim() : '';
         const hrTitle = spans.length >= 3 ? spans[spans.length - 1].textContent.trim() : '';
 
-        // Determine if HR replied: no message-status means the last message is FROM HR
+        // 提取会话链接里的 conversation_id，供未跟踪的 HR 主动会话建影子岗位并直达会话。
+        const linkEl = item.querySelector('a[href*="/web/geek/chat?"], a[href*="chat?id"], a[href*="geek/chat"]');
+        let conversation_id = '';
+        if (linkEl) {
+            const href = linkEl.getAttribute('href') || '';
+            const m = href.match(/[?&]id=([^&]+)/);
+            if (m) conversation_id = m[1];
+        }
+
+        // Determine if HR replied: no message-status means the last message is FROM HR.
+        // 注意：列表预览阶段无法可靠区分“这条是我发的”还是“HR 发的、我已读未回”——
+        // status-read 既可能表示本人消息已读回执，也可能表示对方消息我已读过。
+        // 因此这里只把 is_our_message 作为诊断字段保留，绝不用于过滤候选；
+        // 真正的归属和“我有没有回过”判断交给 _handle_conversation 打开完整会话后，
+        // 用 .item-myself/.item-friend 精确判定（可靠且不会污染状态/历史）。
         const statusClass = msgStatus ? msgStatus.className : '';
-        const isOurMessage = statusClass.includes('status-read') || statusClass.includes('status-delivery');
-        const hasReply = !!lastMsgEl && !isOurMessage;
+        const isOurMessage = statusClass.includes('status-read')
+            || statusClass.includes('status-delivery')
+            || statusClass.includes('status-sent');
+        const lastMessage = lastMsgEl ? lastMsgEl.textContent.trim() : '';
+        const unreadCount = unreadBadge ? Number.parseInt(unreadBadge.textContent.trim(), 10) || 0 : 0;
+        const isSystemHint = /^您正在与Boss.*沟通$/.test(lastMessage);
+        const hasReply = unreadCount > 0 || (!!lastMessage && !isOurMessage && !isSystemHint);
+        // 候选筛选：宽松但安全。只要预览有真实文本（非系统占位文案），就进入核验候选。
+        // 这是 bug 前的安全网设计——宁可多打开几个会话核验，也不能漏掉 HR 的真回复。
+        // 误纳的候选（最后一条是我发的、或我已回复过的）会在 _handle_conversation 里
+        // 被安全跳过（skipped_user_replied），不会改状态、不会写假历史。
+        const needsInspection = !!lastMessage && !isSystemHint;
 
         results.push({
             hr_name: nameText.textContent.trim(),
             company: company,
             hr_title: hrTitle,
-            last_message: lastMsgEl ? lastMsgEl.textContent.trim().substring(0, 200) : '',
+            last_message: lastMessage.substring(0, 200),
             has_reply: hasReply,
+            needs_inspection: needsInspection,
+            unread_count: unreadCount,
             is_our_message: isOurMessage,
+            conversation_id: conversation_id,
             element_index: results.length
         });
     });
@@ -59,21 +91,6 @@ JS_EXTRACT_CONVERSATION = r"""
 (() => {
     const MESSAGE_SELECTORS = '.chat-message, .message-item';
     const TEXT_SELECTORS = '.msg-text, .text, .message-text';
-    const CARD_SELECTORS = [
-        '.card',
-        '.card-wrap',
-        '.message-card',
-        '.system-card',
-        '.resume-card',
-        '[class*="card"]',
-        '[class*="Card"]',
-        '[class*="resume"]',
-        '[class*="Resume"]',
-        '[class*="attachment"]',
-        '[class*="Attachment"]'
-    ].join(',');
-    const ACTION_SELECTORS = 'button, a, [role=button], .btn, [class*="btn"], [class*="button"], [class*="Button"]';
-
     function normalizeText(value) {
         return (value || '').replace(/\s+/g, ' ').trim();
     }
@@ -90,28 +107,16 @@ JS_EXTRACT_CONVERSATION = r"""
         return normalizeText(el.innerText || el.textContent || el.getAttribute('aria-label') || el.getAttribute('title') || '');
     }
 
-    function pushUnique(parts, value) {
-        const text = normalizeText(value);
-        if (text && !parts.includes(text)) parts.push(text);
-    }
-
     function collectVisibleText(root) {
-        const parts = [];
+        // 普通文本消息只读取正文节点。旧逻辑还会继续遍历正文内部所有
+        // class 含 card/button 的父子节点，导致同一段文字被拼接多次。
         const textEl = root.querySelector(TEXT_SELECTORS);
-        if (textEl) pushUnique(parts, visibleText(textEl));
+        const primaryText = textEl ? visibleText(textEl) : '';
+        if (primaryText) return primaryText;
 
-        const cards = root.querySelectorAll(CARD_SELECTORS);
-        cards.forEach(card => {
-            pushUnique(parts, visibleText(card));
-            card.querySelectorAll(ACTION_SELECTORS).forEach(action => {
-                pushUnique(parts, visibleText(action));
-                pushUnique(parts, action.getAttribute('aria-label'));
-                pushUnique(parts, action.getAttribute('title'));
-            });
-        });
-
-        if (!parts.length) pushUnique(parts, visibleText(root));
-        return normalizeText(parts.join(' '));
+        // 富卡片没有标准正文节点时读取容器一次即可；innerText 已包含按钮文案，
+        // 不再重复遍历卡片的祖先、后代和 action 元素。
+        return visibleText(root);
     }
 
     function isResumeRequestCard(text) {
@@ -120,15 +125,38 @@ JS_EXTRACT_CONVERSATION = r"""
         return hasAttachmentResume && hasIntent;
     }
 
-    const msgs = document.querySelectorAll(MESSAGE_SELECTORS);
+    const msgs = Array.from(document.querySelectorAll(MESSAGE_SELECTORS)).filter(msg => {
+        // 去重：若该节点内部还嵌套了别的消息节点，说明它只是外层容器（如
+        // .chat-message 包着 .message-item），不是单条消息，必须剔除。
+        // 旧逻辑查 parentElement.closest(MESSAGE_SELECTORS)——方向反了：BOSS 的
+        // .message-item 父级是 .im-list，.im-list 向上能命中祖先 .chat-message，
+        // 于是所有真正的消息（.message-item）都被误判为“嵌套”而过滤掉，
+        // 只剩 .chat-message 容器本身；容器再靠 querySelector 命中第一个
+        // .item-friend 子节点，把整段（含本人招呼）全标成 hr。
+        return !msg.querySelector(MESSAGE_SELECTORS);
+    });
     const results = [];
     msgs.forEach(msg => {
-        const isMe = msg.classList.contains('is-self') || msg.classList.contains('message-self')
-            || msg.querySelector('.msg-self') !== null;
+        // BOSS 直聘真实类名：item-myself=我的消息 / item-friend=对方消息 / item-system=系统消息。
+        // 归属优先看节点自身的 class（实测 .message-item 直接带 item-myself/item-friend）；
+        // 自身没有时再退而查祖先或后代，作为 DOM 漂移兜底。
+        // 未识别归属的节点一律算 unknown，绝不默认算 HR——否则会把本人发言当成待回复问题。
+        const ownerSelectors = [
+            '.item-myself', '.message-self', '.is-self', '.msg-self',
+            '.item-friend', '.message-friend', '.is-friend', '.msg-friend',
+            '.item-system', '.system-card'
+        ].join(',');
+        let owner = msg.matches(ownerSelectors)
+            ? msg
+            : (msg.closest(ownerSelectors) || msg.querySelector(ownerSelectors));
+        const ownerClass = owner ? String(owner.className || '') : '';
+        const isMe = /(^|\s)(item-myself|message-self|is-self|msg-self)(\s|$)/.test(ownerClass);
+        const isHr = /(^|\s)(item-friend|message-friend|is-friend|msg-friend)(\s|$)/.test(ownerClass);
+        const isSystem = /(^|\s)(item-system|system-card)(\s|$)/.test(ownerClass);
         const text = collectVisibleText(msg);
         if (text) {
             results.push({
-                sender: isMe ? 'me' : 'hr',
+                sender: isSystem ? 'system' : (isMe ? 'me' : (isHr ? 'hr' : 'unknown')),
                 text: text.substring(0, 500),
                 kind: isResumeRequestCard(text) ? 'resume_request_card' : 'message'
             });
@@ -170,6 +198,99 @@ JS_VERIFY_RESUME_SENT = """
         }
     }
     return JSON.stringify({sent: false});
+})()
+"""
+
+# JS: 在已打开的聊天页填入消息并点击发送按钮。
+# 与 sender.py 的招呼语发送保持一致：用原生 setter + input 事件让
+# Vue/React 的 v-model 同步到 data，再点击发送按钮，而不是直接调内部
+# handleSubmit——旧做法 innerText 不触发 v-model，handleSubmit 读到的
+# 是空内容直接 return，但 JS 不抛异常，导致"假成功"。
+# 返回点击前的消息数量，供调用方轮询验证消息真的发出。
+JS_SEND_CHAT_MESSAGE = r"""
+(async () => {
+    const input = document.querySelector(%(input_selector)s);
+    if (!input) return JSON.stringify({success: false, error: 'no_chat_input'});
+
+    input.focus();
+    if (input instanceof HTMLTextAreaElement || input instanceof HTMLInputElement) {
+        const prototype = input instanceof HTMLTextAreaElement
+            ? HTMLTextAreaElement.prototype
+            : HTMLInputElement.prototype;
+        Object.getOwnPropertyDescriptor(prototype, 'value').set.call(input, %(message)s);
+    } else {
+        input.innerText = %(message)s;
+        input.textContent = %(message)s;
+    }
+    input.dispatchEvent(new InputEvent('input', {
+        bubbles: true,
+        inputType: 'insertText',
+        data: %(message)s
+    }));
+    input.dispatchEvent(new Event('change', {bubbles: true}));
+    input.dispatchEvent(new KeyboardEvent('keydown', {bubbles: true, key: ' '}));
+    input.dispatchEvent(new KeyboardEvent('keyup', {bubbles: true, key: ' '}));
+    // 等 Vue/React 根据输入事件刷新发送按钮的 disabled 状态。
+    await new Promise(resolve => setTimeout(resolve, 150));
+
+    const sendSelectors = [
+        '[ka="chat_send"]', '[ka^="chat_send"]',
+        '.send-message', '.btn-send', '.send-btn', '.chat-send', '.chat-send-btn'
+    ];
+    const isVisible = (el) => !!(el.offsetWidth || el.offsetHeight || el.getClientRects().length);
+    const isDisabled = (el) => {
+        if (el.disabled) return true;
+        if (el.getAttribute('aria-disabled') === 'true') return true;
+        // BOSS 用 class 名里的 disable/disabled 标记禁用态（实测）。
+        return /(^|[\s_-])disable(d)?([\s_-]|$)/.test(String(el.className || '').toLowerCase());
+    };
+    const candidates = sendSelectors.flatMap(sel =>
+        Array.from(document.querySelectorAll(sel)).map(el => ({el, sel}))
+    );
+    const score = (it) => {
+        const text = (it.el.innerText || it.el.textContent || '').trim();
+        let v = isVisible(it.el) ? 1000 : 0;
+        if (it.sel === '[ka="chat_send"]') v += 200;
+        if (it.sel === '.send-message') v += 120;
+        if (text === '发送') v += 80;
+        if (text.includes('发送')) v += 30;
+        if (it.el.classList && it.el.classList.contains('btn-send')) v += 40;
+        return v;
+    };
+    candidates.sort((a, b) => score(b) - score(a));
+    const btn = candidates.find(it => score(it) > 0 && !isDisabled(it.el));
+    if (!btn) {
+        const any = candidates.find(it => score(it) > 0);
+        return JSON.stringify(any
+            ? {success: false, error: 'send_button_disabled'}
+            : {success: false, error: 'no_send_button'});
+    }
+    // 记录点击前的消息数量，用于后续验证消息真的进入列表。
+    const list = document.querySelector('.message-list, .chat-record, .message-content, [class*="message-list"]');
+    const beforeCount = list ? list.children.length : -1;
+    btn.el.click();
+    return JSON.stringify({success: true, clicked: true, before_count: beforeCount});
+})()
+"""
+
+# JS: 发送后验证——输入框已清空（发送成功的强信号）或消息列表数量增长。
+# BOSS 发送成功必清空输入框（v-model 重置），发送失败则保留内容；
+# 消息列表数量增长是辅助信号，避免输入框选择器在部分页面漂移时误判。
+JS_CHAT_SEND_VERIFY = r"""
+(() => {
+    const input = document.querySelector(%(input_selector)s);
+    let currentText = '';
+    if (input) {
+        if (input instanceof HTMLTextAreaElement || input instanceof HTMLInputElement) {
+            currentText = input.value || '';
+        } else {
+            currentText = input.innerText || input.textContent || '';
+        }
+    }
+    const inputCleared = input && !currentText.trim();
+    const list = document.querySelector('.message-list, .chat-record, .message-content, [class*="message-list"]');
+    const listCount = list ? list.children.length : -1;
+    return JSON.stringify({input_cleared: inputCleared, list_found: !!list, list_count: listCount});
 })()
 """
 
@@ -287,6 +408,51 @@ def _get_hr_messages_after_last_reply(messages: list[dict]) -> list[dict]:
     return [m for m in after if m["sender"] == "hr"]
 
 
+def _deduplicate_conversation_messages(messages: list[dict]) -> list[dict]:
+    """Collapse adjacent duplicate DOM results without removing real repeated replies."""
+    deduplicated: list[dict] = []
+    for message in messages:
+        normalized = " ".join(str(message.get("text", "")).split())
+        identity = (
+            str(message.get("sender", "")),
+            str(message.get("kind", "message")),
+            normalized,
+        )
+        if deduplicated:
+            previous = deduplicated[-1]
+            previous_identity = (
+                str(previous.get("sender", "")),
+                str(previous.get("kind", "message")),
+                " ".join(str(previous.get("text", "")).split()),
+            )
+            if identity == previous_identity:
+                continue
+        deduplicated.append(message)
+    return deduplicated
+
+
+def _get_actionable_messages_after_last_reply(messages: list[dict]) -> list[dict]:
+    """Return HR messages plus actionable platform cards after the user's last reply.
+
+    BOSS may render an attachment-resume request as a system card. Keeping that card
+    in the reply context lets the AI answer it, while unrelated system cards stay out
+    of the pending-question fingerprint and dashboard text.
+    """
+    last_my_idx = -1
+    for i, msg in enumerate(messages):
+        if msg.get("sender") == "me":
+            last_my_idx = i
+
+    after = messages[last_my_idx + 1:] if last_my_idx >= 0 else messages
+    return [
+        msg
+        for msg in after
+        if msg.get("sender") == "hr"
+        or msg.get("kind") == "resume_request_card"
+        or _looks_like_resume_request_card(str(msg.get("text", "")))
+    ]
+
+
 def _truncate_text(text: str, limit: int) -> str:
     """Limit text length for history payloads."""
     text = text or ""
@@ -295,12 +461,18 @@ def _truncate_text(text: str, limit: int) -> str:
 
 def _build_reply_detail(messages: list[dict], ai_reply: str, schema: str = "reply_pending.v1") -> str:
     """Build structured history detail containing the HR question and AI reply."""
-    hr_messages = _get_hr_messages_after_last_reply(messages)
+    hr_messages = _get_actionable_messages_after_last_reply(messages)
     hr_question = "\n".join(str(msg.get("text", "")) for msg in hr_messages[-3:]).strip()
     reply_fingerprint = _reply_fingerprint_from_hr_question(hr_question)
     payload = {
         "schema": schema,
         "hr_question": _truncate_text(hr_question, 1000),
+        "resume_requested": _detect_resume_request(messages)
+        or any(
+            msg.get("kind") == "resume_request_card"
+            or _looks_like_resume_request_card(str(msg.get("text", "")))
+            for msg in hr_messages
+        ),
         "reply_fingerprint": reply_fingerprint,
         "ai_reply": _truncate_text(ai_reply or "", 1000),
         "conversation_tail": [
@@ -341,7 +513,7 @@ def _reply_fingerprint_from_hr_question(hr_question: str) -> str:
 
 
 def _reply_fingerprint_from_messages(messages: list[dict]) -> str:
-    hr_messages = _get_hr_messages_after_last_reply(messages)
+    hr_messages = _get_actionable_messages_after_last_reply(messages)
     hr_question = "\n".join(str(msg.get("text", "")) for msg in hr_messages[-3:]).strip()
     return _reply_fingerprint_from_hr_question(hr_question)
 
@@ -399,7 +571,11 @@ def _check_if_portfolio_sent(messages: list[dict], portfolio_url: str = "") -> b
 def _generate_auto_reply(messages: list[dict], job: dict, config: dict) -> str | None:
     """Generate a natural reply based on conversation context."""
     # Build conversation context
-    conv_text = "\n".join([f"{'我' if m['sender'] == 'me' else 'HR'}: {m['text']}" for m in messages[-10:]])
+    sender_labels = {"me": "我", "hr": "HR", "system": "平台卡片"}
+    conv_text = "\n".join(
+        f"{sender_labels.get(str(message.get('sender')), '平台消息')}: {message.get('text', '')}"
+        for message in messages[-10:]
+    )
 
     # Read resume summary from file
     from pathlib import Path
@@ -425,56 +601,290 @@ def _generate_auto_reply(messages: list[dict], job: dict, config: dict) -> str |
 4. 不要重复之前已经说过的内容
 5. 如果HR在约面试时间，积极配合
 6. 不要捏造经历或头衔
+7. 如果HR既索要简历又提出问题，回复中必须同时回应这两个意图
+8. 如果HR只索要简历，礼貌确认会发送即可，不要声称已经发送
 
 请直接输出回复文本，不要加任何标记。"""
 
     return _call_claude(prompt, config)
 
 
-def _send_message_in_chat(target_id: str, message: str) -> bool:
-    """Send a text message in the current open chat via Vue handleSubmit."""
-    js_send = f"""
-    (() => {{
-        const input = document.querySelector('#chat-input');
-        if (!input) return JSON.stringify({{success: false, error: 'no_input'}});
+def _refine_reply(hr_question: str, current_reply: str, suggestion: str, config: dict) -> str | None:
+    """Refine a pending reply according to the user's explicit revision suggestion."""
+    prompt = f"""你正在帮助求职者修改一条准备发给 HR 的回复。
 
-        // Find Vue instance
-        let vue = null;
-        let el = input;
-        for (let i = 0; i < 15 && el; i++) {{
-            if (el.__vue__) {{ vue = el.__vue__; break; }}
-            el = el.parentElement;
-        }}
-        if (!vue) return JSON.stringify({{success: false, error: 'no_vue'}});
+## HR 的消息
+{hr_question}
 
-        input.innerText = {json.dumps(message)};
-        vue._data.enableSubmit = true;
-        vue.handleSubmit();
-        return JSON.stringify({{success: true}});
-    }})()
+## 当前回复
+{current_reply}
+
+## 用户的修改建议
+{suggestion}
+
+## 要求
+1. 严格落实用户的修改建议，同时保持礼貌、自然、适合 BOSS 直聘聊天。
+2. 不得捏造用户未提供的经历、能力、时间或承诺。
+3. 保留当前回复中未被修改建议否定的有效信息。
+4. 只输出优化后的回复正文，不要解释修改过程，不要添加引号或标题。
+"""
+    return _call_claude(prompt, config)
+
+
+def _generate_reply_from_text(
+    hr_message: str,
+    job: dict | None,
+    config: dict,
+    conversation_history: str = "",
+) -> str | None:
+    """根据用户手动粘贴的 HR 消息文本生成回复语。
+
+    监测不到 HR 回复时（列表扫描漏掉、会话没进候选等），用户可以把 HR 的话
+    粘贴进来，本函数复用与 _generate_auto_reply 一致的回复生成规则，但不依赖
+    浏览器抓取的 messages 列表，也不写任何数据库/历史——只返回回复语文本，
+    由用户自行复制到 BOSS 发送。
+
+    Args:
+        hr_message: 用户粘贴的 HR 消息原文（必填）。
+        job: 可选的岗位上下文（title/company），用于让回复更贴合岗位；为空时省略岗位段。
+        config: 配置字典，用于读取 resume_path 和 AI 凭据。
+        conversation_history: 可选的之前对话记录（用户也可粘贴），帮助模型理解上下文。
+
+    Returns:
+        生成的回复语文本，或 None（AI 调用失败）。
     """
+    hr_message = (hr_message or "").strip()
+    if not hr_message:
+        return None
+
+    # 复用 _generate_auto_reply 的简历摘要读取逻辑，保持回复风格一致。
+    from pathlib import Path
+    resume_path = Path(config.get("profile", {}).get("resume_path", "./resume.md"))
+    resume_summary = resume_path.read_text(encoding="utf-8")[:800] if resume_path.exists() else "（未配置简历）"
+
+    job = job or {}
+    title = str(job.get("title", "") or "").strip()
+    company = str(job.get("company", "") or "").strip()
+    job_section = (
+        f"- 职位：{title}\n- 公司：{company}" if (title or company) else "（未提供岗位信息）"
+    )
+
+    history_section = conversation_history.strip() if conversation_history.strip() else "（无）"
+
+    prompt = f"""你是一位求职者，正在BOSS直聘上和HR沟通。用户手动把HR的最新消息粘贴给你，请生成一条自然、礼貌的回复。
+
+## HR 的最新消息
+{hr_message}
+
+## 之前的对话记录（如有）
+{history_section}
+
+## 我的背景
+{resume_summary}
+
+## 岗位信息
+{job_section}
+
+## 要求
+1. 根据HR消息的意图来回复，自然对话
+2. 语气像真人在手机上打字，不要太正式
+3. 字数控制在30-100字
+4. 如果HR在约面试时间，积极配合
+5. 不要捏造经历或头衔
+6. 如果HR既索要简历又提出问题，回复中必须同时回应这两个意图
+7. 如果HR只索要简历，礼貌确认会发送即可，不要声称已经发送
+
+请直接输出回复文本，不要加任何标记。"""
+
+    return _call_claude(prompt, config)
+
+
+def _verify_chat_message_sent(target_id: str, before_count: int, input_selector: str, attempts: int = 12) -> bool:
+    """轮询确认消息真的发出。
+
+    两个成功信号，任一满足即判定成功：
+    1) 输入框内容已清空——BOSS 发送成功必清空输入框，发送失败则保留内容。
+       这是主信号，不依赖消息列表选择器（避免类名漂移导致"发送成功却判定失败"）。
+    2) 消息列表数量增长——辅助信号，防输入框选择器在部分页面不匹配。
+
+    Args:
+        target_id: 聊天页 target id。
+        before_count: 点击发送前消息列表的子元素数量；-1 表示未找到消息列表。
+        input_selector: 聊天输入框的 CSS 选择器（与发送时一致）。
+        attempts: 最多轮询次数（每次间隔 0.5s）。
+    """
+    verify_js = JS_CHAT_SEND_VERIFY % {"input_selector": json.dumps(input_selector, ensure_ascii=False)}
+    for _ in range(max(1, attempts)):
+        time.sleep(0.5)
+        raw = evaluate(target_id, verify_js)
+        if not raw:
+            continue
+        try:
+            state = json.loads(raw) if isinstance(raw, str) else raw
+        except (json.JSONDecodeError, TypeError):
+            continue
+        if state.get("input_cleared"):
+            return True
+        if state.get("list_found"):
+            count = int(state.get("list_count", -1))
+            # 能找到消息列表：要求数量严格增长；找不到（-1）：要求至少出现一条。
+            if before_count >= 0:
+                if count > before_count:
+                    return True
+            elif count > 0:
+                return True
+    return False
+
+
+def _send_message_in_chat(target_id: str, message: str) -> bool:
+    """在已打开的聊天页发送一条文本消息，并验证消息确实发出。
+
+    Returns:
+        True 仅当消息真正出现在聊天列表里；否则 False。
+        绝不基于"JS 没抛异常"就判定成功——点击发送按钮后必须轮询验证，
+        否则会像旧实现一样出现"显示成功但实际未回复"的假成功。
+    """
+    js_send = JS_SEND_CHAT_MESSAGE % {
+        "input_selector": json.dumps(CHAT_INPUT_SELECTOR, ensure_ascii=False),
+        "message": json.dumps(message, ensure_ascii=False),
+    }
     result = evaluate(target_id, js_send)
     if not result:
         return False
     try:
         data = json.loads(result) if isinstance(result, str) else result
-        return data.get("success", False)
     except (json.JSONDecodeError, TypeError):
         return False
 
+    if not data.get("success") or not data.get("clicked"):
+        return False
+
+    try:
+        before_count = int(data.get("before_count")) if data.get("before_count") is not None else -1
+    except (TypeError, ValueError):
+        before_count = -1
+
+    if not _verify_chat_message_sent(target_id, before_count, CHAT_INPUT_SELECTOR):
+        console.print("[yellow]    消息未确认发出（输入框未清空且消息列表未增长），可能被拦截或失败[/yellow]")
+        return False
+    return True
+
+
+def _build_stable_chat_url(conversation_id: object, job_id: object) -> str | None:
+    """根据稳定会话标识构造不含临时安全令牌的聊天地址。"""
+    conversation_value = str(conversation_id or "").strip()
+    job_value = str(job_id or "").strip()
+    if not conversation_value or not job_value:
+        return None
+    return f"https://www.zhipin.com/web/geek/chat?{urlencode({'id': conversation_value, 'jobId': job_value})}"
+
+
+def _parse_job_chat_redirect(redirect_url: object, job_id: str) -> tuple[str, str] | None:
+    """校验岗位页聊天地址，并返回稳定会话标识与聊天 URL。"""
+    if not isinstance(redirect_url, str) or not redirect_url.startswith("/web/geek/chat?"):
+        return None
+    query = parse_qs(urlparse(redirect_url).query)
+    conversation_id = query.get("id", [""])[0]
+    redirect_job_id = query.get("jobId", [""])[0]
+    if not conversation_id or redirect_job_id != job_id:
+        return None
+    stable_url = _build_stable_chat_url(conversation_id, job_id)
+    return (conversation_id, stable_url) if stable_url else None
+
+
+def _conversation_page_state(target_id: str) -> dict:
+    """读取聊天页是否存在可见输入框及当前选中联系人。"""
+    raw = evaluate(
+        target_id,
+        """
+        (() => {
+            const input = document.querySelector('#chat-input');
+            const inputVisible = !!input && !!(
+                input.offsetWidth ||
+                input.offsetHeight ||
+                input.getClientRects().length
+            );
+            const selected = document.querySelector('.friend-content.selected');
+            return JSON.stringify({
+                success: inputVisible,
+                input_visible: inputVisible,
+                selected_text: selected ? (selected.innerText || selected.textContent || '').trim() : ''
+            });
+        })()
+        """,
+    )
+    if isinstance(raw, dict):
+        return raw
+    try:
+        return json.loads(raw) if isinstance(raw, str) else {}
+    except json.JSONDecodeError:
+        return {}
+
+
+def _wait_for_conversation_ready(target_id: str, attempts: int = 20) -> bool:
+    """等待具体聊天会话加载完成，而不是只等待聊天列表页 URL。"""
+    for _ in range(max(1, attempts)):
+        if _conversation_page_state(target_id).get("input_visible"):
+            return True
+        time.sleep(0.5)
+    return False
+
+
+def _conversation_state_matches_job(state: dict, job: dict) -> bool:
+    """验证列表点击后的选中联系人属于目标岗位。"""
+    if not state.get("input_visible"):
+        return False
+
+    selected_text = "".join(str(state.get("selected_text") or "").split())
+    if not selected_text:
+        return False
+
+    hr_name = "".join(str(job.get("hr_name") or "").split())
+    if hr_name:
+        return hr_name in selected_text
+
+    company = "".join(str(job.get("company") or "").split())
+    company_prefix = company[:4]
+    return bool(company_prefix and company_prefix in selected_text)
+
+
+def _wait_for_selected_conversation(target_id: str, job: dict, attempts: int = 10) -> bool:
+    """等待列表点击生效，并确认选中的联系人没有串会话。"""
+    for _ in range(max(1, attempts)):
+        if _conversation_state_matches_job(_conversation_page_state(target_id), job):
+            return True
+        time.sleep(0.5)
+    return False
+
+
+def _remember_conversation_id(job_id: str, conversation_id: str) -> None:
+    """把旧岗位恢复出的稳定会话标识写回数据库。"""
+    db = get_db()
+    try:
+        update_job_conversation_id(db, job_id, conversation_id)
+    finally:
+        db.close()
+
 
 def _open_conversation(job: dict, config: dict) -> str | None:
-    """Open a conversation with HR. Returns target_id or None.
+    """精确打开 HR 会话，失败时才回退到聊天列表文本匹配。
 
     Strategies tried in order:
-      A) Job detail page → click "继续沟通"
-      B) Chat list → match by HR name + company
-      C) Chat list → match by company name only (fallback when hr_name is empty)
-    Each strategy retries once on failure.
+      A) 使用数据库保存的 conversation_id 直达会话
+      B) 从岗位详情页读取"继续沟通"的精确地址并回填 conversation_id
+      C) 聊天列表按 HR 名称 + 公司匹配，点击后再次验证
     """
+    stable_url = _build_stable_chat_url(job.get("conversation_id"), job.get("id"))
+    if stable_url:
+        target_id = new_tab(stable_url)
+        if target_id and _wait_for_conversation_ready(target_id):
+            return target_id
+        if target_id:
+            close_tab(target_id)
+
     job_url = job.get("url", "")
 
-    # Strategy A: Via job URL (try up to 2 times)
+    # 老数据恢复：只读取“继续沟通”的精确地址，不触发“立即沟通”。
     if job_url:
         for attempt in range(2):
             target_id = new_tab(job_url)
@@ -488,24 +898,41 @@ def _open_conversation(job: dict, config: dict) -> str | None:
             wait_for_load(target_id, timeout=10)
             time.sleep(1)
 
-            # Click "继续沟通" or similar chat button
-            if click(target_id, ".btn-startchat") or click(target_id, "[ka*='chat']"):
-                time.sleep(3)
-                wait_for_load(target_id, timeout=10)
-                time.sleep(2)
-                # Verify we're in a chat page
-                info = get_page_info(target_id)
-                if info and "chat" in (info.get("url") or ""):
-                    return target_id
-                # Sometimes click navigates to chat
-                if info and "zhipin.com" in (info.get("url") or ""):
+            raw = evaluate(
+                target_id,
+                """
+                (() => {
+                    const buttons = Array.from(document.querySelectorAll('a.btn-startchat[redirect-url]'));
+                    const button = buttons.find((el) => {
+                        const text = (el.innerText || el.textContent || '').trim();
+                        const visible = !!(el.offsetWidth || el.offsetHeight || el.getClientRects().length);
+                        return visible && text.includes('继续沟通');
+                    });
+                    return JSON.stringify({
+                        success: !!button,
+                        button_text: button ? (button.innerText || button.textContent || '').trim() : '',
+                        redirect_url: button ? button.getAttribute('redirect-url') : ''
+                    });
+                })()
+                """,
+            )
+            try:
+                button_state = raw if isinstance(raw, dict) else json.loads(raw)
+            except (json.JSONDecodeError, TypeError):
+                button_state = {}
+
+            redirect = _parse_job_chat_redirect(button_state.get("redirect_url"), str(job["id"]))
+            if button_state.get("success") and redirect:
+                conversation_id, precise_url = redirect
+                if navigate(target_id, precise_url) and _wait_for_conversation_ready(target_id):
+                    _remember_conversation_id(str(job["id"]), conversation_id)
                     return target_id
 
             close_tab(target_id)
             if attempt == 0:
                 time.sleep(2)
 
-    # Strategy B/C: Open chat list and click conversation
+    # 兼容旧数据和页面异常：最后才从列表按文本匹配。
     target_id = _open_conversation_from_chat_list(job, config)
     return target_id
 
@@ -525,6 +952,9 @@ def _open_conversation_from_chat_list(job: dict, config: dict) -> str | None:
     hr_name = (job.get("hr_name") or "").strip()
     company = (job.get("company") or "").strip()
 
+    hr_name_json = json.dumps(hr_name, ensure_ascii=False)
+    company_json = json.dumps(company, ensure_ascii=False)
+
     # Build JS that tries: 1) exact hr_name+company match, 2) company-only match
     js_click_chat = f"""
     (async () => {{
@@ -538,8 +968,8 @@ def _open_conversation_from_chat_list(job: dict, config: dict) -> str | None:
             const name = (nameEl ? nameEl.textContent : '').trim();
             const comp = spans.length >= 2 ? spans[1].textContent.trim() : '';
 
-            const hrName = '{hr_name}';
-            const targetComp = '{company}';
+            const hrName = {hr_name_json};
+            const targetComp = {company_json};
 
             // Exact match: HR name + company
             if (hrName && name === hrName && (comp.includes(targetComp) || targetComp.includes(comp))) {{
@@ -591,8 +1021,8 @@ def _open_conversation_from_chat_list(job: dict, config: dict) -> str | None:
     try:
         click_result = json.loads(result) if isinstance(result, str) else result
         if click_result.get("success"):
-            time.sleep(1)
-            return target_id
+            if _wait_for_selected_conversation(target_id, job):
+                return target_id
     except (json.JSONDecodeError, TypeError):
         pass
 
@@ -611,8 +1041,8 @@ def _open_conversation_from_chat_list(job: dict, config: dict) -> str | None:
         try:
             click_result = json.loads(result) if isinstance(result, str) else result
             if click_result.get("success"):
-                time.sleep(1)
-                return target_id
+                if _wait_for_selected_conversation(target_id, job):
+                    return target_id
         except (json.JSONDecodeError, TypeError):
             pass
 
@@ -687,14 +1117,10 @@ def check_replies(config: dict) -> list[dict]:
     resume_sent_jobs = get_jobs_by_status(db, "resume_sent")
     follow_up_jobs = get_jobs_by_status(db, "follow_up_sent")
     needs_resume_jobs = get_jobs_by_status(db, "needs_resume")
-    all_tracked_jobs = sent_jobs + replied_jobs + resume_sent_jobs + follow_up_jobs + needs_resume_jobs
+    manual_jobs = get_jobs_by_status(db, "manual")
+    all_tracked_jobs = sent_jobs + replied_jobs + resume_sent_jobs + follow_up_jobs + needs_resume_jobs + manual_jobs
 
-    if not all_tracked_jobs:
-        console.print("[dim]没有需要监测的对话[/dim]")
-        db.close()
-        return []
-
-    console.print(f"[bold]监测 {len(all_tracked_jobs)} 个对话的回复情况...[/bold]")
+    console.print(f"[bold]扫描聊天列表，并核对 {len(all_tracked_jobs)} 个已跟踪对话...[/bold]")
 
     # Open chat page
     target_id = new_tab(chat_url)
@@ -730,26 +1156,43 @@ def check_replies(config: dict) -> list[dict]:
 
     console.print(f"[dim]获取到 {len(conversations)} 条对话[/dim]")
 
-    # Match conversations to tracked jobs and find ones with HR replies
+    # Match conversations to tracked jobs and collect candidates for inspection.
+    # ⚠ 这里只做“候选收集”，绝不基于列表预览修改岗位状态或写 HR 回复历史——
+    # 预览文本 last_message 是“会话里最后一条消息”，往往就是我自己发出的招呼/
+    # 回复。如果在这里就把 sent→replied，会把“我发的消息”误判成“HR回复”。
+    # 真正是否需要回复，交给 _handle_conversation 打开完整会话、按 .item-myself
+    # 归属和“我是否已回复过”判定。状态推进也挪到那里之后统一做。
+    # 注意：匹配不到跟踪岗位的会话（HR 主动打招呼、用户在 BOSS 上手动聊的）
+    # 也要处理——为它们建一条影子岗位记录，纳入自动回复监测，而不是仅提示。
     results = []
     for conv in conversations:
-        if not conv.get("has_reply"):
+        if not conv.get("needs_inspection", conv.get("has_reply", False)):
             continue
 
         matched_job = _match_conversation_to_job(conv, all_tracked_jobs)
         if matched_job:
-            # Update status to replied if it was 'sent'
-            if matched_job.get("status") == "sent":
-                update_job_status(db, matched_job["id"], "replied")
-                add_history(db, matched_job["id"], "replied", f"HR回复: {conv.get('last_message', '')[:50]}")
-
-            results.append({
-                "job": matched_job,
-                "conversation": conv,
-            })
+            # 不在此处改状态、不写“HR回复”历史。预览未核验，先标“待核验”。
             console.print(
-                f"[green]  ✓ {matched_job['company']} - {matched_job['title']} 有新回复[/green]"
+                f"[dim]  · {matched_job['company']} - {matched_job['title']} 待打开核验[/dim]"
             )
+        else:
+            # 未跟踪会话：建影子岗位，复用 _handle_conversation 生成回复语。
+            matched_job = _ensure_manual_job(db, conv)
+            if matched_job:
+                console.print(
+                    f"[cyan]  ↳ HR主动沟通: {conv.get('hr_name', '')}（{conv.get('company', '')}）"
+                    f"已纳入监测[/cyan]"
+                )
+            else:
+                console.print(
+                    f"[yellow]  ⚠ {conv.get('hr_name', '')}（{conv.get('company', '')}）"
+                    f"有待核验消息但信息不全，无法纳入自动处理，请手动查看[/yellow]"
+                )
+
+        results.append({
+            "job": matched_job,
+            "conversation": conv,
+        })
 
     if not results:
         console.print("[dim]暂无新回复[/dim]")
@@ -796,10 +1239,64 @@ def _match_conversation_to_job(conv: dict, jobs: list[dict]) -> dict | None:
     return None
 
 
+def _manual_job_id(hr_name: str, company: str, conversation_id: str = "") -> str:
+    """生成 HR 主动会话的影子岗位 id（稳定、可重现）。
+
+    优先用会话 id（唯一），提取不到则退化为 hr_name+company 的 hash。
+    """
+    if conversation_id:
+        return "manual_" + conversation_id
+    base = f"{hr_name}|{company}"
+    return "manual_" + hashlib.sha1(base.encode("utf-8")).hexdigest()[:16]
+
+
+def _ensure_manual_job(db, conv: dict) -> dict | None:
+    """为未跟踪的 HR 主动会话在 jobs 表建一条影子岗位记录。
+
+    只有 HR 主动打招呼、不在采集投递跟踪列表里的会话才需要。
+    影子岗位用 ``manual_`` 前缀 id 隔离，status='manual'、score=0，
+    不会进入投递/评分/人工确认流程，但可被监测流程复用生成回复语。
+    """
+    hr_name = (conv.get("hr_name") or "").strip()
+    company = (conv.get("company") or "").strip()
+    if not hr_name and not company:
+        return None
+
+    conversation_id = str(conv.get("conversation_id") or "").strip()
+    job_id = _manual_job_id(hr_name, company, conversation_id)
+
+    row = db.execute("SELECT * FROM jobs WHERE id = ?", (job_id,)).fetchone()
+    if row:
+        return dict(row)
+
+    job = {
+        "id": job_id,
+        "title": "HR主动沟通",
+        "company": company,
+        "hr_name": hr_name,
+        "hr_title": "",
+        "hr_active": "",
+        "company_size": "",
+        "company_industry": "",
+        "salary": "",
+        "city": "",
+        "experience": "",
+        "jd": "",
+        "url": "",
+    }
+    insert_job(db, job)
+    update_job_status(db, job_id, "manual")
+    if conversation_id:
+        update_job_conversation_id(db, job_id, conversation_id)
+    # 返回完整数据库行，让调用方（_handle_conversation）能取到 status 等字段。
+    row = db.execute("SELECT * FROM jobs WHERE id = ?", (job_id,)).fetchone()
+    return dict(row) if row else job
+
+
 def _handle_conversation(job: dict, config: dict) -> str:
     """Handle a single conversation that has an HR reply.
 
-    Returns action taken: 'skipped_user_replied', 'skipped_existing_resume', 'rejected', 'needs_resume', 'auto_replied', 'failed'
+    Returns action taken: 'skipped_user_replied', 'rejected', 'reply_pending', 'auto_replied', 'failed'
     """
     console.print(f"\n  [bold]处理: {job['company']} - {job['title']}[/bold]")
 
@@ -823,12 +1320,22 @@ def _handle_conversation(job: dict, config: dict) -> str:
     except (json.JSONDecodeError, TypeError):
         close_tab(target_id)
         return "failed"
+    messages = _deduplicate_conversation_messages(messages)
 
     # Check if I already replied after the last HR message
     if _check_if_i_already_replied(messages):
         console.print("[dim]    我已回复，跳过本轮[/dim]")
         close_tab(target_id)
         return "skipped_user_replied"
+
+    if not _get_actionable_messages_after_last_reply(messages):
+        # 列表候选只是“需要打开核验”，完整会话中没有待回复 HR 消息时不得调用 AI。
+        console.print("[dim]    完整会话中没有待回复的 HR 消息，跳过[/dim]")
+        close_tab(target_id)
+        return "skipped_user_replied"
+
+    # 到这里才确认：完整会话里确有 HR 发出、且我尚未回复的消息——这才是真“HR 回复”。
+    console.print("[green]    ✓ 确认 HR 回复，待生成回复建议[/green]")
 
     # Check if HR is rejecting
     if _detect_rejection(messages):
@@ -840,94 +1347,28 @@ def _handle_conversation(job: dict, config: dict) -> str:
         close_tab(target_id)
         return "rejected"
 
-    # Check if HR is asking for resume
-    resume_request_from_card = _has_resume_request_card(messages)
-    if _detect_resume_request(messages):
-        console.print("[cyan]    HR要求简历，生成定制化简历...[/cyan]")
-
-        db = get_db()
-        already_generated_resume = _has_generated_resume_for_job(db, job["id"])
-        db.close()
-        if already_generated_resume:
-            console.print("[dim]    定制简历已生成过，跳过重复生成和重复记录[/dim]")
-            close_tab(target_id)
-            return "skipped_existing_resume"
-
-        # Generate tailored resume, then hand off to user for manual sending
-        from bosshunter.ai.resume import generate_tailored_resume, get_last_resume_failure_reason
-
-        resume_failure_reason = ""
-        try:
-            resume_path = generate_tailored_resume(job["id"], config)
-            if not resume_path:
-                resume_failure_reason = get_last_resume_failure_reason(job["id"])
-        except Exception as exc:
-            resume_path = None
-            resume_failure_reason = f"生成过程发生异常：{exc}"
-            console.print(f"[red]    定制简历生成异常：{exc}[/red]")
-        if resume_path:
-            console.print(f"[bold green]    ✓ 定制简历已生成: {resume_path}[/bold green]")
-            console.print(f"[bold yellow]    ⚠ 请手动发送上述简历给 {job['company']} HR[/bold yellow]")
-        else:
-            console.print("[yellow]    ! 定制简历生成失败，请手动处理[/yellow]")
-
-        # Auto-send portfolio link for normal text resume requests only.
-        # Card-triggered requests are recognition-only: generate and mark needs_resume.
-        if not resume_request_from_card:
-            portfolio_url = config.get("profile", {}).get("portfolio_url", "")
-            if not _check_if_portfolio_sent(messages, portfolio_url):
-                time.sleep(2)
-                link_msg = f"这是我的在线简历，方便您查看：{portfolio_url}"
-                if _send_message_in_chat(target_id, link_msg):
-                    console.print("[green]    ✓ 在线简历链接已发送[/green]")
-                else:
-                    console.print("[yellow]    ! 在线简历链接发送失败[/yellow]")
-            else:
-                console.print("[dim]    在线简历链接已发过，跳过[/dim]")
-
-        if not resume_path:
-            history_detail = _build_resume_failure_detail(
-                messages,
-                resume_failure_reason or "定制简历生成失败，未获得更具体的错误信息",
-            )
-            db = get_db()
-            add_history(db, job["id"], "resume_failed", history_detail)
-            db.close()
-            close_tab(target_id)
-            return "failed"
-
-        # Update status to needs_resume so user knows to send the PDF
-        if resume_request_from_card:
-            history_detail = _build_reply_detail(
-                messages,
-                f"附件简历卡片请求已识别，未自动发送在线简历，定制PDF待手动发送: {resume_path}",
-                "needs_resume.v1",
-            )
-        else:
-            history_detail = _build_reply_detail(
-                messages,
-                f"在线简历已发送，定制PDF待手动发送: {resume_path}",
-                "needs_resume.v1",
-            )
-
-        db = get_db()
-        update_job_status(db, job["id"], "needs_resume")
-        add_history(db, job["id"], "needs_resume", history_detail)
-        db.close()
-
-        close_tab(target_id)
-        return "needs_resume"
-
     db = get_db()
     dismissed_pending_reply = _has_dismissed_pending_reply(db, job["id"], messages)
+    resolved_same_question = _has_resolved_same_question(db, job["id"], messages)
+    pending_same_question = _has_pending_same_question(db, job["id"], messages)
     db.close()
     if dismissed_pending_reply:
         console.print("[dim]    该回复建议已放弃，跳过本轮[/dim]")
         close_tab(target_id)
         return "skipped_dismissed_reply"
+    if resolved_same_question:
+        # 同一 HR 问题已回复/放弃过，不再重复生成待回复建议。
+        console.print("[dim]    该问题已回复过，跳过本轮[/dim]")
+        close_tab(target_id)
+        return "skipped_dismissed_reply"
+    if pending_same_question:
+        # 同一问题已有未确认的待回复建议，避免每次监测循环重复生成。
+        console.print("[dim]    该问题已有待确认回复建议，跳过本轮[/dim]")
+        close_tab(target_id)
+        return "skipped_dismissed_reply"
 
-    # HR replied but not asking for resume — generate a natural reply
-    console.print("[cyan]    生成自动回复...[/cyan]")
+    # 所有未回复的 HR 消息都走同一回复生成链路；简历请求不再抢占问题回复。
+    console.print("[cyan]    生成回复建议...[/cyan]")
     reply = _generate_auto_reply(messages, job, config)
     if not reply:
         console.print("[yellow]    回复生成失败[/yellow]")
@@ -977,7 +1418,9 @@ def _has_generated_resume_for_job(db, job_id: str) -> bool:
     ).fetchone()
     status = _row_text(row, "status")
     resume_path = _row_text(row, "resume_path").strip()
-    return status == "resume_sent" or bool(resume_path)
+    # needs_resume 表示简历请求已处理（已生成待发送，或简历生成已关闭仅提示），
+    # 视为已处理避免下一轮监测重复生成/重复提示。
+    return status in ("resume_sent", "needs_resume") or bool(resume_path)
 
 
 def _has_follow_up_history(db, job_id: str) -> bool:
@@ -1008,6 +1451,68 @@ def _has_dismissed_pending_reply(db, job_id: str, messages: list[dict] | None = 
     if not dismissed_fingerprint or messages is None:
         return True
     return dismissed_fingerprint == _reply_fingerprint_from_messages(messages)
+
+
+def _has_resolved_same_question(db, job_id: str, messages: list[dict] | None = None) -> bool:
+    """Return true when the pending HR question was already replied or dismissed.
+
+    防止同一 HR 问题在用户确认回复/放弃后，被监测器重复生成 reply_pending。
+    BOSS 会话里用户已回复的消息若未被正确识别（发送态/选择器误判），
+    监测器会再次看到 HR 的旧消息并重新生成待回复建议——靠 fingerprint 比对
+    已回复/已放弃的记录来跳过，避免"已回复的内容还在待处理"。
+    """
+    if messages is None:
+        return False
+    current_fp = _reply_fingerprint_from_messages(messages)
+    if not current_fp:
+        return False
+    rows = db.execute(
+        """
+        SELECT action, detail
+        FROM history
+        WHERE job_id = ?
+          AND action IN ('reply_dismissed', 'replied', 'auto_replied')
+        ORDER BY id DESC
+        LIMIT 10
+        """,
+        (job_id,),
+    ).fetchall()
+    for row in rows:
+        action = _row_text(row, "action")
+        if action not in ("reply_dismissed", "replied", "auto_replied"):
+            continue
+        # 监测器自动记录的纯文本 replied（"HR回复: ..."）无 fingerprint，
+        # 提取为空字符串，不会与当前问题误匹配。
+        if _reply_fingerprint_from_detail(_row_text(row, "detail")) == current_fp:
+            return True
+    return False
+
+
+def _has_pending_same_question(db, job_id: str, messages: list[dict] | None = None) -> bool:
+    """Return true when an identical HR question already has an open reply_pending.
+
+    同一问题在生成 reply_pending 后（用户尚未确认），下一次监测循环会再次
+    命中——若不跳过，会重复生成多条相同的待回复建议。影子岗位尤其容易触发，
+    因为其状态始终为 manual、每次监测都会走进生成逻辑。
+    """
+    if messages is None:
+        return False
+    current_fp = _reply_fingerprint_from_messages(messages)
+    if not current_fp:
+        return False
+    row = db.execute(
+        """
+        SELECT detail
+        FROM history
+        WHERE job_id = ?
+          AND action = 'reply_pending'
+        ORDER BY id DESC
+        LIMIT 1
+        """,
+        (job_id,),
+    ).fetchone()
+    fp = _reply_fingerprint_from_detail(_row_text(row, "detail"))
+    return bool(fp) and fp == current_fp
 
 
 def _check_follow_ups(config: dict, throttle, replied_job_ids: set | None = None) -> int:
@@ -1124,9 +1629,9 @@ def _generate_follow_up(job: dict, config: dict) -> str | None:
 def monitor_and_send_resumes(config: dict) -> dict:
     """Full monitoring cycle:
     1. Detect HR replies
-    2. For each reply: check if user already replied → skip or auto-handle
-    3. If HR asks resume → optimize + send PDF + send portfolio link
-    4. If HR just replied → generate natural reply
+    2. For each reply: check if user already replied → skip or handle
+    3. Generate one reply covering every intent in the latest HR messages
+    4. Save it for manual confirmation, or send it when auto-reply is enabled
 
     Returns summary dict with counts.
     """
@@ -1135,13 +1640,13 @@ def monitor_and_send_resumes(config: dict) -> dict:
     if not isinstance(stop_event, Event):
         stop_event = None
     if stop_event and stop_event.is_set():
-        return {"skipped": 0, "replied": 0, "needs_resume": 0, "rejected": 0, "failed": 0}
+        return {"skipped": 0, "pending": 0, "replied": 0, "rejected": 0, "failed": 0}
 
     # Time window check (09:00-16:00)
     window_checker = SendWindowChecker(throttle_config.get("send_windows", ["09:00-16:00"]))
     if not window_checker.is_active():
         console.print("[yellow]当前不在工作时间窗口内 (09:00-16:00)[/yellow]")
-        return {"skipped": 0, "replied": 0, "needs_resume": 0, "rejected": 0, "failed": 0}
+        return {"skipped": 0, "pending": 0, "replied": 0, "rejected": 0, "failed": 0}
 
     throttle = RequestThrottle(
         throttle_config.get("interval_min", 60),
@@ -1152,7 +1657,15 @@ def monitor_and_send_resumes(config: dict) -> dict:
     console.print("\n[bold cyan]═══ 第一步：处理HR回复 ═══[/bold cyan]")
     replied_conversations = check_replies(config)
 
-    summary = {"skipped": 0, "replied": 0, "needs_resume": 0, "rejected": 0, "failed": 0}
+    summary = {
+        "skipped": 0,
+        "pending": 0,
+        "replied": 0,
+        "rejected": 0,
+        "failed": 0,
+        "unmatched": 0,
+        "unmatched_convs": [],
+    }
 
     # Collect all job IDs that had HR replies this cycle (used to block follow-up)
     replied_job_ids: set = set()
@@ -1165,15 +1678,42 @@ def monitor_and_send_resumes(config: dict) -> dict:
             if stop_event and stop_event.is_set():
                 break
             job = item["job"]
+            if job is None:
+                # 信息不全无法建影子岗位的极端情况：只提示用户手动查看
+                conv = item["conversation"] or {}
+                summary["unmatched"] += 1
+                summary["unmatched_convs"].append({
+                    "hr_name": conv.get("hr_name", ""),
+                    "company": conv.get("company", ""),
+                })
+                console.print(
+                    f"[yellow]  ⚠ 会话「{conv.get('hr_name', '')} / {conv.get('company', '')}」"
+                    f"有新回复但信息不全，无法纳入自动处理，请手动查看[/yellow]"
+                )
+                continue
             replied_job_ids.add(job["id"])
+            prior_status = str(job.get("status") or "").strip()
             action = _handle_conversation(job, config)
+
+            # 只有打开完整会话后确认“确有 HR 待回复消息”（reply_pending / auto_replied）
+            # 才把 sent 推进到 replied。最后一条是我自己发的（skipped_user_replied）
+            # 或已处理过（skipped_dismissed_reply）一律不推进——这正是“我发的消息被
+            # 误判成 HR 回复”的根因，必须把状态推进放到确认之后。
+            # 注意：这里不写假的 “HR回复: 预览文本” 历史。reply_pending/auto_replied
+            # 各自已经写入带 fingerprint 的结构化历史，足以支撑漏斗统计与去重。
+            if action in ("reply_pending", "auto_replied") and prior_status == "sent":
+                db = get_db()
+                try:
+                    update_job_status(db, job["id"], "replied")
+                finally:
+                    db.close()
 
             if action in ("skipped_user_replied", "skipped_existing_resume", "skipped_dismissed_reply"):
                 summary["skipped"] += 1
+            elif action == "reply_pending":
+                summary["pending"] += 1
             elif action == "auto_replied":
                 summary["replied"] += 1
-            elif action == "needs_resume":
-                summary["needs_resume"] += 1
             elif action == "rejected":
                 summary["rejected"] += 1
             else:
@@ -1184,13 +1724,14 @@ def monitor_and_send_resumes(config: dict) -> dict:
 
         console.print("\n[bold green]═══ 回复处理完成 ═══[/bold green]")
         console.print(f"  跳过(已手动回复): {summary['skipped']}")
+        console.print(f"  待确认回复建议: {summary['pending']}")
         console.print(f"  自动回复: {summary['replied']}")
-        if summary.get("needs_resume"):
-            console.print(f"  [bold yellow]待手动发简历: {summary['needs_resume']}（定制简历已生成，请手动发送）[/bold yellow]")
         if summary["rejected"]:
             console.print(f"  [dim]拒绝: {summary['rejected']}[/dim]")
         if summary["failed"]:
             console.print(f"  [yellow]失败: {summary['failed']}[/yellow]")
+        if summary.get("unmatched"):
+            console.print(f"  [yellow]未跟踪会话回复(请手动查看): {summary['unmatched']}[/yellow]")
     else:
         console.print("[dim]本轮无新HR回复[/dim]")
 

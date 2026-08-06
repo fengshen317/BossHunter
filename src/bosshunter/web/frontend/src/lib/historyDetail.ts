@@ -3,6 +3,7 @@ import type { HistoryItem } from '@/hooks/useDashboard'
 export interface ParsedHistoryDetail {
   schema: string
   hrQuestion: string
+  resumeRequested: boolean
   aiReply: string
   systemReason: string
   conversationTail: Array<{ sender: string; text: string }>
@@ -14,6 +15,7 @@ export function parseHistoryDetail(item: HistoryItem): ParsedHistoryDetail {
     return {
       schema: item.detail_payload.schema || 'unknown',
       hrQuestion: item.detail_payload.hr_question || '',
+      resumeRequested: Boolean(item.detail_payload.resume_requested),
       aiReply: item.action === 'resume_failed' ? '' : payloadReply,
       systemReason: item.detail_payload.system_reason || (item.action === 'resume_failed' ? payloadReply : ''),
       conversationTail: item.detail_payload.conversation_tail || [],
@@ -24,6 +26,7 @@ export function parseHistoryDetail(item: HistoryItem): ParsedHistoryDetail {
     return {
       schema: 'legacy_text',
       hrQuestion: '',
+      resumeRequested: false,
       aiReply: '',
       systemReason: '',
       conversationTail: [],
@@ -37,6 +40,7 @@ export function parseHistoryDetail(item: HistoryItem): ParsedHistoryDetail {
       return {
         schema: parsed.schema || 'unknown',
         hrQuestion: parsed.hr_question || '',
+        resumeRequested: Boolean(parsed.resume_requested),
         aiReply: item.action === 'resume_failed' ? '' : payloadReply,
         systemReason: parsed.system_reason || (item.action === 'resume_failed' ? payloadReply : ''),
         conversationTail: Array.isArray(parsed.conversation_tail) ? parsed.conversation_tail : [],
@@ -49,6 +53,7 @@ export function parseHistoryDetail(item: HistoryItem): ParsedHistoryDetail {
   return {
     schema: 'legacy_text',
     hrQuestion: '',
+    resumeRequested: false,
     aiReply: item.action === 'resume_failed' ? '' : item.detail,
     systemReason: item.action === 'resume_failed' ? item.detail : '',
     conversationTail: [],

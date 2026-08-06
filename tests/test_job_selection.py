@@ -1,3 +1,4 @@
+import json
 import tempfile
 import unittest
 from datetime import datetime
@@ -6,6 +7,7 @@ from unittest.mock import patch
 
 from bosshunter.db import (
     get_db,
+    get_jobs_approved_to_send,
     get_jobs_pending_confirmation,
     get_jobs_ready_to_send,
     get_jobs_with_send_errors,
@@ -15,8 +17,10 @@ from bosshunter.db import (
     update_job_status,
 )
 from bosshunter.executor.sender import CHAT_BUTTON_SCRIPT_FOR_TESTS
+from bosshunter.executor.sender import _chat_target_ids
 from bosshunter.executor.sender import send_greetings
 from bosshunter.executor.sender import _send_greeting_once
+from bosshunter.executor.sender import _wait_for_chat_page
 
 
 def _job(job_id: str, title: str = "Engineer") -> dict:
@@ -78,14 +82,15 @@ class JobSelectionTests(unittest.TestCase):
             '{"success": true}',  # page check
             '{"success": true, "button_text": "继续沟通"}',  # DOM click
             '{"success": true, "action": "no_popup"}',  # confirm popup
-            "/job_detail/continue-chat.html",  # DOM click did not navigate
+            '{"success": false, "path": "/job_detail/continue-chat.html"}',  # DOM click did not navigate
             '{"success": true, "action": "no_popup"}',  # confirm after real click
-            "/web/geek/chat",  # real click reached chat
+            '{"success": true, "path": "/web/geek/chat"}',  # real click reached chat
             '{"success": true}',  # send message
         ]
 
         with patch("bosshunter.executor.sender.new_tab", return_value="target-1"), \
              patch("bosshunter.executor.sender.evaluate", side_effect=evaluate_results), \
+             patch("bosshunter.executor.sender.get_page_targets", return_value=[]), \
              patch("bosshunter.executor.sender.click_at", return_value=True) as click_at, \
              patch("bosshunter.executor.sender.close_tab") as close_tab, \
              patch("bosshunter.executor.sender.time.sleep"):
@@ -102,6 +107,45 @@ class JobSelectionTests(unittest.TestCase):
         self.assertLess(fallback_selector.index("a.btn-startchat"), fallback_selector.index("btn-startchat-wrap"))
         close_tab.assert_called_once_with("target-1")
 
+    def test_continue_chat_clicks_job_page_button_before_sending(self):
+        """已有会话也必须从新打开的岗位页点击沟通入口。"""
+        job = {
+            "id": "continue-chat",
+            "url": "https://www.zhipin.com/job_detail/continue-chat.html",
+        }
+        redirect_url = "/web/geek/chat?id=hr-id&jobId=continue-chat"
+        evaluate_results = [
+            '{"success": true}',  # page check
+            json.dumps(
+                {
+                    "success": True,
+                    "action": "clicked",
+                    "button_text": "继续沟通",
+                    "redirectUrl": redirect_url,
+                }
+            ),
+            '{"success": true, "action": "no_popup"}',
+            '{"success": true, "path": "/web/geek/chat", "hasInput": true}',
+            '{"success": true}',  # send message
+        ]
+
+        with patch("bosshunter.executor.sender.new_tab", return_value="target-1"), \
+             patch("bosshunter.executor.sender.evaluate", side_effect=evaluate_results), \
+             patch("bosshunter.executor.sender.get_page_targets", return_value=[]), \
+             patch("bosshunter.executor.sender.close_tab") as close_tab, \
+             patch("bosshunter.executor.sender.time.sleep"):
+            result, target_id = _send_greeting_once(
+                job,
+                "您好，我对这个岗位很感兴趣。",
+                {"browse_before_greet": False, "_chat_navigation_attempts": 1},
+            )
+
+        self.assertIsNone(target_id)
+        self.assertTrue(result["success"])
+        self.assertEqual(result["conversation_id"], "hr-id")
+        self.assertIn("btn.click();", CHAT_BUTTON_SCRIPT_FOR_TESTS)
+        close_tab.assert_called_once_with("target-1")
+
     def test_send_greeting_waits_for_chat_button_before_failing(self):
         job = {
             "id": "slow-chat-button",
@@ -112,12 +156,13 @@ class JobSelectionTests(unittest.TestCase):
             '{"success": false, "error": "no_chat_button"}',
             '{"success": true, "button_text": "继续沟通"}',
             '{"success": true, "action": "no_popup"}',
-            "/web/geek/chat",
+            '{"success": true, "path": "/web/geek/chat"}',
             '{"success": true}',
         ]
 
         with patch("bosshunter.executor.sender.new_tab", return_value="target-1"), \
              patch("bosshunter.executor.sender.evaluate", side_effect=evaluate_results) as evaluate_mock, \
+             patch("bosshunter.executor.sender.get_page_targets", return_value=[]), \
              patch("bosshunter.executor.sender.close_tab") as close_tab, \
              patch("bosshunter.executor.sender.time.sleep"):
             result, target_id = _send_greeting_once(
@@ -135,7 +180,71 @@ class JobSelectionTests(unittest.TestCase):
         self.assertEqual(evaluate_mock.call_count, len(evaluate_results))
         close_tab.assert_called_once_with("target-1")
 
-    def test_send_greetings_reopens_job_page_once_when_chat_input_missing(self):
+    def test_send_greeting_uses_chat_tab_opened_by_button(self):
+        job = {
+            "id": "new-chat-tab",
+            "url": "https://www.zhipin.com/job_detail/new-chat-tab.html",
+        }
+        evaluate_results = [
+            '{"success": true}',  # page check
+            '{"success": true, "button_text": "继续沟通"}',
+            '{"success": true, "action": "no_popup"}',
+            '{"success": false, "path": "/job_detail/new-chat-tab.html"}',
+            '{"success": true, "path": "/web/geek/chat", "hasInput": true}',
+            '{"success": true}',  # send message in the new tab
+        ]
+        target_results = [
+            [{"targetId": "target-1", "url": job["url"]}],
+            [
+                {"targetId": "target-1", "url": job["url"]},
+                {"targetId": "target-chat", "url": "https://www.zhipin.com/web/geek/chat?id=hr"},
+            ],
+        ]
+
+        with patch("bosshunter.executor.sender.new_tab", return_value="target-1"), \
+             patch("bosshunter.executor.sender.evaluate", side_effect=evaluate_results) as evaluate_mock, \
+             patch("bosshunter.executor.sender.get_page_targets", side_effect=target_results), \
+             patch("bosshunter.executor.sender.close_tab") as close_tab, \
+             patch("bosshunter.executor.sender.time.sleep"):
+            result, target_id = _send_greeting_once(
+                job,
+                "您好，我对这个岗位很感兴趣。",
+                {"browse_before_greet": False, "_chat_navigation_attempts": 1},
+            )
+
+        self.assertIsNone(target_id)
+        self.assertTrue(result["success"])
+        self.assertEqual(evaluate_mock.call_args.args[0], "target-chat")
+        self.assertEqual(close_tab.call_args_list[0].args[0], "target-1")
+        self.assertEqual(close_tab.call_args_list[1].args[0], "target-chat")
+
+    def test_chat_target_ids_uses_runtime_target_id_contract(self):
+        """真实运行时使用 targetId，测试必须覆盖该接口契约。"""
+        with patch(
+            "bosshunter.executor.sender.get_page_targets",
+            return_value=[
+                {"targetId": "runtime-target"},
+                {"id": "legacy-target"},
+                {"url": "https://example.com"},
+            ],
+        ):
+            target_ids = _chat_target_ids()
+
+        self.assertEqual(target_ids, {"runtime-target", "legacy-target"})
+
+    def test_chat_list_page_without_visible_input_is_not_ready(self):
+        """聊天列表页不能因为 URL 命中就被误判为具体会话。"""
+        with patch(
+            "bosshunter.executor.sender.evaluate",
+            return_value='{"success": false, "path": "/web/geek/chat", "hasInput": false}',
+        ), patch("bosshunter.executor.sender.time.sleep"):
+            result = _wait_for_chat_page("chat-list", None, attempts=1)
+
+        self.assertFalse(result["success"])
+        self.assertEqual(result["error"], "chat_navigation_timeout")
+
+    def test_send_greetings_retries_transient_failure_inside_job(self):
+        """临时性失败（no_chat_input）现在由岗位内重试消化，最终成功计入已发送。"""
         job = _job("retry-chat-input")
         job["greeting"] = "您好，我对这个岗位很感兴趣。"
 
@@ -149,6 +258,8 @@ class JobSelectionTests(unittest.TestCase):
             finally:
                 db.close()
 
+            # 第一次 no_chat_input（重试），第二次成功。重试逻辑在
+            # _send_greeting_with_retry 内部，外层 send_greetings 只调用一次。
             attempts = [
                 ({"success": False, "error": "no_chat_input"}, "target-1"),
                 ({"success": True}, None),
@@ -158,14 +269,18 @@ class JobSelectionTests(unittest.TestCase):
                  patch("bosshunter.executor.sender.should_take_day_off", return_value=False), \
                  patch("bosshunter.executor.sender.SendWindowChecker.is_active", return_value=True), \
                  patch("bosshunter.executor.sender._send_greeting_once", side_effect=attempts) as send_once, \
-                 patch("bosshunter.executor.sender.close_tab") as close_tab:
+                 patch("bosshunter.executor.sender.close_tab") as close_tab, \
+                 patch("bosshunter.executor.sender.time.sleep"):
                 sent = send_greetings({"throttle": {"daily_limit": 10}}, force=True)
 
             self.assertEqual(sent, 1)
             self.assertEqual(send_once.call_count, 2)
-            close_tab.assert_called_once_with("target-1")
+            # 重试前的失败 target 已被 _send_greeting_once 内部失败分支清理，
+            # 外层不再额外 close_tab（成功时 failed_target_id 为 None）。
+            self.assertFalse(close_tab.called)
 
     def test_pending_confirmation_excludes_jobs_with_greetings(self):
+        """确认清单现在包含有招呼语的 ready 岗位——招呼语在评分阶段已生成。"""
         with tempfile.TemporaryDirectory() as tmp:
             db = get_db(Path(tmp) / "bosshunter.db")
             try:
@@ -182,7 +297,8 @@ class JobSelectionTests(unittest.TestCase):
             finally:
                 db.close()
 
-        self.assertEqual([job["id"] for job in jobs], ["scored"])
+        # 新行为：有招呼语的 ready 岗位也出现在确认清单中（按评分降序）
+        self.assertEqual([job["id"] for job in jobs], ["sendable", "scored"])
 
     def test_ready_to_send_requires_a_non_empty_greeting(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -209,6 +325,46 @@ class JobSelectionTests(unittest.TestCase):
 
         self.assertCountEqual([job["id"] for job in jobs], ["approved", "sendable"])
 
+    def test_approved_to_send_excludes_ready_and_overlaps_no_confirmation(self):
+        """「待发招呼语」只含 approved 岗位，与「今日待确定」(ready) 不重叠。"""
+        with tempfile.TemporaryDirectory() as tmp:
+            db = get_db(Path(tmp) / "bosshunter.db")
+            try:
+                # ready + 招呼语 → 属于「今日待确定」，不应在「待发招呼语」
+                insert_job(db, _job("ready-job"))
+                update_job_status(db, "ready-job", "ready")
+                update_job_greeting(db, "ready-job", "Hi, ready to confirm.")
+
+                # approved + 招呼语 → 属于「待发招呼语」
+                insert_job(db, _job("approved-job"))
+                update_job_status(db, "approved-job", "approved")
+                update_job_greeting(db, "approved-job", "Hi, ready to send.")
+
+                # approved 但无招呼语 → 不属于「待发招呼语」
+                insert_job(db, _job("no-greeting-approved"))
+                update_job_status(db, "no-greeting-approved", "approved")
+
+                # error + 招呼语 → 不属于「待发招呼语」
+                insert_job(db, _job("errored"))
+                update_job_status(db, "errored", "error")
+                update_job_greeting(db, "errored", "Hi, failed before.")
+
+                approved_to_send = get_jobs_approved_to_send(db)
+                pending_confirmation = get_jobs_pending_confirmation(db)
+            finally:
+                db.close()
+
+        self.assertCountEqual(
+            [job["id"] for job in approved_to_send], ["approved-job"]
+        )
+        self.assertCountEqual(
+            [job["id"] for job in pending_confirmation], ["ready-job"]
+        )
+        # 关键：两个区块的岗位 ID 没有任何交集
+        approved_ids = {job["id"] for job in approved_to_send}
+        ready_ids = {job["id"] for job in pending_confirmation}
+        self.assertEqual(approved_ids & ready_ids, set())
+
     def test_send_errors_return_only_jobs_with_generated_greetings(self):
         with tempfile.TemporaryDirectory() as tmp:
             db = get_db(Path(tmp) / "bosshunter.db")
@@ -229,6 +385,46 @@ class JobSelectionTests(unittest.TestCase):
                 db.close()
 
         self.assertEqual([job["id"] for job in jobs], ["send-failed"])
+
+    def test_explicit_retry_can_include_send_error_with_greeting(self):
+        """工作台重试可取到 error 状态的已生成招呼语岗位。"""
+        with tempfile.TemporaryDirectory() as tmp:
+            db = get_db(Path(tmp) / "bosshunter.db")
+            try:
+                insert_job(db, _job("send-failed"))
+                update_job_status(db, "send-failed", "error")
+                update_job_greeting(db, "send-failed", "Retry this greeting.")
+
+                normal_jobs = get_jobs_ready_to_send(db)
+                retry_jobs = get_jobs_ready_to_send(db, include_send_errors=True)
+            finally:
+                db.close()
+
+        self.assertEqual(normal_jobs, [])
+        self.assertEqual([job["id"] for job in retry_jobs], ["send-failed"])
+
+    def test_selected_send_error_is_sent_when_manually_retried(self):
+        """显式选择的失败岗位应进入发送器，而不再被 ready 筛选过滤。"""
+        with tempfile.TemporaryDirectory() as tmp:
+            db_path = Path(tmp) / "bosshunter.db"
+            db = get_db(db_path)
+            try:
+                insert_job(db, _job("send-failed"))
+                update_job_status(db, "send-failed", "error")
+                update_job_greeting(db, "send-failed", "Retry this greeting.")
+            finally:
+                db.close()
+
+            config = {
+                "throttle": {"daily_limit": 10, "interval_min": 0, "interval_max": 0},
+                "_workbench_job_ids": ["send-failed"],
+                "_workbench_include_send_errors": True,
+            }
+            with patch("bosshunter.db.DB_PATH", db_path), \
+                 patch("bosshunter.executor.sender._send_greeting_once", return_value=({"success": True}, None)):
+                sent = send_greetings(config, force=True)
+
+        self.assertEqual(sent, 1)
 
     def test_send_greetings_force_bypasses_send_window_restriction(self):
         # Arrange

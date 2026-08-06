@@ -14,13 +14,22 @@ from bosshunter.throttle import SendWindowChecker
 MODE_LABELS = {
     "full": "运行全流程",
     "collect": "单独采集",
+    "score": "仅评分待处理岗位",
+    "reenrich": "补全企业信息",
+    "greeting": "重新生成招呼语",
     "monitor": "单独监测",
     "deliver": "确认投递",
+    "reply": "确认回复",
+    "import": "定向采集岗位",
 }
 
 TERMINAL_STATUSES = {"completed", "failed", "stopped"}
 ACTIVE_STATUSES = {"running", "stopping"}
 DEADLINE_MODES = {"full", "monitor", "deliver"}
+# 可与长期任务并行的短任务。它们只操作独立的 BOSS 会话/详情页/搜索页，
+# 打开独立标签页，不影响监测/采集共享的列表页与数据库（WAL 并发安全），
+# 因此不必与长任务互斥。同类型短任务之间仍互斥。
+PARALLEL_SAFE_MODES = {"reply", "import"}
 
 
 class TaskAlreadyRunningError(RuntimeError):
@@ -76,9 +85,12 @@ class WorkbenchTaskRunner:
         with self._lock:
             active = self._active_task_locked()
             if active:
-                raise TaskAlreadyRunningError(
-                    f"当前已有后台任务「{active.label}」正在运行或停止中，请等待其完全结束"
-                )
+                # 并行安全任务（reply）可在长任务运行期间启动；其余组合仍互斥。
+                can_parallel = mode in PARALLEL_SAFE_MODES and active.mode not in PARALLEL_SAFE_MODES
+                if not can_parallel:
+                    raise TaskAlreadyRunningError(
+                        f"当前已有后台任务「{active.label}」正在运行或停止中，请等待其完全结束"
+                    )
 
             task = WorkbenchTask(id=str(uuid4()), mode=mode, label=MODE_LABELS[mode])
             deadline = _deadline_from_config(mode, config)

@@ -8,7 +8,7 @@ console = Console()
 
 
 def run_pipeline(config: dict) -> None:
-    """Run the full pipeline: scrape → score → confirm → greet → send → monitor."""
+    """运行完整流程: 采集 → 评分+招呼语 → 确认 → 发送 → 监听。"""
     configure(config)
 
     # Step 1: Check Browser Runtime connection
@@ -34,8 +34,8 @@ def run_pipeline(config: dict) -> None:
     else:
         console.print(f"[green]  ✓ 采集 {count} 个新岗位[/green]\n")
 
-    # Step 3: AI scoring (with pre-filter)
-    console.print("[bold]Step 3/6: AI 评分筛选[/bold]")
+    # Step 3: AI scoring (now includes greeting generation for passing jobs)
+    console.print("[bold]Step 3/5: AI 评分 + 生成招呼语[/bold]")
     from bosshunter.ai.scorer import score_jobs
     scored, filtered = score_jobs(config)
     if scored == 0 and count > 0:
@@ -43,26 +43,23 @@ def run_pipeline(config: dict) -> None:
         return
     console.print(f"[green]  ✓ {scored} 个通过, {filtered} 个过滤[/green]\n")
 
-    # Step 4: Confirm which jobs to pursue
-    console.print("[bold]Step 4/6: 确认投递清单[/bold]")
+    # Step 4: Confirm which jobs to pursue (greetings already generated, user can preview)
+    console.print("[bold]Step 4/5: 确认投递清单（可预览招呼语）[/bold]")
     from bosshunter.ui.confirm import show_confirmation
     approved = show_confirmation(config)
     if not approved:
         console.print("[yellow]  已取消发送[/yellow]")
         return
 
-    # Step 5: Generate greetings for confirmed jobs, then send
-    console.print("\n[bold]Step 5/6: 生成招呼语并发送[/bold]")
-    from bosshunter.ai.greeter import generate_greetings
-    greet_count = generate_greetings(config)
-    console.print(f"[green]  ✓ 生成 {greet_count} 条招呼语[/green]")
+    # Step 5: Send greetings (already generated in Step 3), then start monitoring
+    console.print("\n[bold]Step 5/5: 发送招呼语[/bold]")
 
     from bosshunter.executor.sender import send_greetings
     sent = send_greetings(config)
     console.print(f"\n[bold green]═══ 发送完成！{sent} 条招呼语 ═══[/bold green]")
 
-    # Step 6: Auto-start monitor loop
-    console.print("\n[bold]Step 6/6: 启动持续监测[/bold]")
+    # Auto-start monitor loop
+    console.print("\n[bold]启动持续监测[/bold]")
     interval_min = config.get("monitor", {}).get("interval", 30)
     interval_sec = interval_min * 60
     console.print(f"[dim]每 {interval_min} 分钟检查一次HR回复和跟进，按 Ctrl+C 停止[/dim]\n")

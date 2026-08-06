@@ -29,7 +29,9 @@
       "icon": "Star",
       "fields": [
         {"key": "threshold", "label": "通过阈值", "type": "slider", "min": 0, "max": 100, "default": 71, "description": "低于此分自动过滤"},
-        {"key": "max_candidates", "label": "每轮最大候选数", "type": "number", "min": 1, "max": 100, "default": 20}
+        {"key": "max_candidates", "label": "每轮最大候选数", "type": "number", "min": 1, "max": 100, "default": 20},
+        {"key": "concurrency", "label": "AI 评分并发数", "type": "number", "min": 1, "max": 5, "default": 3, "description": "同时发起的深度评分请求数；调高会更快，但可能触发模型服务限流"},
+        {"key": "min_registered_capital_wan", "label": "注册资本下限 (万)", "type": "number", "min": 0, "max": 10000, "default": 50, "description": "注册资本明确低于此值的岗位在评分前直接过滤；缺失/未补全不排除"}
       ]
     },
     {
@@ -41,10 +43,17 @@
         {"key": "interval_min", "label": "最短间隔 (秒)", "type": "number", "min": 10, "max": 600, "default": 60},
         {"key": "interval_max", "label": "最长间隔 (秒)", "type": "number", "min": 10, "max": 600, "default": 180},
         {"key": "browse_before_greet", "label": "发送前模拟浏览", "type": "switch", "default": true},
+        {"key": "only_send_when_hr_online", "label": "仅向在线 HR 发送", "type": "switch", "default": false, "description": "发送前读取岗位页的 HR 活跃状态；仅当显示“在线”或“刚刚活跃”时发送，其他岗位保留在待发送队列"},
         {"key": "browse_duration_min", "label": "浏览最短时长 (秒)", "type": "number", "min": 5, "max": 120, "default": 15},
         {"key": "browse_duration_max", "label": "浏览最长时长 (秒)", "type": "number", "min": 5, "max": 120, "default": 30},
         {"key": "send_windows", "label": "发送时间窗口", "type": "tags", "default": ["09:00-16:00"], "description": "格式: HH:MM-HH:MM；后台任务会在最后一个窗口结束时自动停止"},
-        {"key": "day_off_probability", "label": "随机休息概率", "type": "number", "min": 0, "max": 1, "step": 0.01, "default": 0.05}
+        {"key": "day_off_probability", "label": "随机休息概率", "type": "number", "min": 0, "max": 1, "step": 0.01, "default": 0.05},
+        {"key": "send_max_retries", "label": "单岗位重试次数", "type": "number", "min": 0, "max": 5, "default": 2, "description": "临时性失败（运行时抖动、页面慢）在岗位内重试的次数"},
+        {"key": "send_retry_backoff_min", "label": "重试最短间隔 (秒)", "type": "number", "min": 1, "max": 60, "default": 5},
+        {"key": "send_retry_backoff_max", "label": "重试最长间隔 (秒)", "type": "number", "min": 1, "max": 120, "default": 10},
+        {"key": "auto_recover_send_errors", "label": "自动恢复失败岗位", "type": "switch", "default": true, "description": "退避到期后自动把临时失败岗位重新加入发送队列"},
+        {"key": "send_error_recover_seconds", "label": "失败退避时长 (秒)", "type": "number", "min": 60, "max": 7200, "default": 600, "description": "失败岗位等待多久后重新加入队列"},
+        {"key": "send_error_max_retries", "label": "最大重试上限", "type": "number", "min": 1, "max": 10, "default": 3, "description": "超过此次数后岗位永久标记为失败，需手动重试"}
       ]
     },
     {
@@ -52,10 +61,23 @@
       "label": "AI 设置",
       "icon": "Brain",
       "fields": [
-        {"key": "provider", "label": "提供商", "type": "select", "options": ["anthropic"], "default": "anthropic", "description": "当前后端仅支持 Anthropic"},
+        {"key": "provider", "label": "提供商", "type": "select", "options": ["anthropic", "openai_compatible"], "default": "anthropic", "description": "DeepSeek 等 OpenAI 兼容接口请选择 openai_compatible"},
         {"key": "model", "label": "模型名称", "type": "text", "default": "claude-sonnet-4-6"},
         {"key": "api_key", "label": "API Key", "type": "password", "description": "也可通过环境变量设置"},
-        {"key": "base_url", "label": "Base URL", "type": "text", "placeholder": "留空使用默认", "default": ""}
+        {"key": "base_url", "label": "Base URL", "type": "text", "placeholder": "留空使用默认", "default": ""},
+        {"key": "request_timeout", "label": "请求超时(秒)", "type": "number", "min": 10, "max": 600, "default": 180, "description": "单次 AI 请求超时；推理模型(如 deepseek-v4-flash)思维链较长，建议 ≥120，过短会出现 read timeout"},
+        {"key": "http_max_retries", "label": "失败重试次数", "type": "number", "min": 0, "max": 5, "default": 3, "description": "遇到 5xx/429/网络抖动时自动重试次数(指数退避)；设 0 禁用"}
+      ]
+    },
+    {
+      "key": "resume",
+      "label": "简历排版",
+      "icon": "FileText",
+      "fields": [
+        {"key": "template", "label": "视觉模板", "type": "select", "options": ["modern", "executive", "ats"], "default": "modern"},
+        {"key": "theme_color", "label": "主题色", "type": "color", "default": "#0F766E"},
+        {"key": "show_avatar", "label": "显示头像", "type": "switch", "default": true},
+        {"key": "generate_ats_version", "label": "同时生成 ATS 版本", "type": "switch", "default": true}
       ]
     },
     {
@@ -65,8 +87,7 @@
       "fields": [
         {"key": "interval", "label": "检查间隔 (分钟)", "type": "number", "min": 1, "max": 120, "default": 30},
         {"key": "chat_url", "label": "聊天页 URL", "type": "text", "default": "https://www.zhipin.com/web/geek/chat"},
-        {"key": "max_resume_sends_per_cycle", "label": "每轮最多发简历数", "type": "number", "min": 1, "max": 20, "default": 5},
-        {"key": "auto_reply_hr_questions", "label": "检测到 HR 问题时自动回复", "type": "switch", "default": false, "description": "关闭时只生成回复建议，需要在监测执行中确认后发送"}
+        {"key": "auto_reply_hr_questions", "label": "检测到 HR 消息时自动回复", "type": "switch", "default": false, "description": "关闭时为所有未回复的 HR 消息生成回复建议，需要在监测执行中确认后发送"}
       ]
     },
     {

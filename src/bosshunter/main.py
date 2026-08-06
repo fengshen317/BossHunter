@@ -1,6 +1,7 @@
 """BossHunter CLI - 主入口"""
 
 import os
+import threading
 from pathlib import Path
 
 import click
@@ -135,9 +136,32 @@ def scrape(ctx: click.Context, keyword: str | None, limit: int | None) -> None:
 
 
 @cli.command()
+@click.option("--limit", "-l", default=None, type=int, help="最多补全岗位数（分批控制频次，默认不限制）")
+@click.option(
+	"--status", "-s", "statuses", multiple=True,
+	help="只补全指定状态的岗位（可重复指定，如 -s ready -s pending）。默认所有状态",
+)
+@click.pass_context
+def reenrich(ctx: click.Context, limit: int | None, statuses: tuple[str, ...]) -> None:
+	"""补全已采集岗位缺失的企业信息（地区/公司背景/注册资本）
+
+	重新打开详情页填充空白字段，不影响评分、状态、招呼语。
+	适合早期采集时未抓取企业信息的岗位补全。
+	"""
+	from bosshunter.scraper.jobs import reenrich_jobs
+
+	config = ctx.obj["config"]
+	status_list = list(statuses) if statuses else None
+	count = reenrich_jobs(config, limit, status_list)
+	console.print(f"[green]✓[/green] 补全完成，更新 {count} 个岗位")
+	_hint_web()
+	_hint_star_support()
+
+
+@cli.command()
 @click.pass_context
 def score(ctx: click.Context) -> None:
-    """对采集的岗位进行AI评分"""
+    """对采集的岗位进行AI评分，通过后自动生成招呼语"""
     from bosshunter.ai.scorer import score_jobs
 
     config = ctx.obj["config"]
@@ -149,25 +173,35 @@ def score(ctx: click.Context) -> None:
 
 @cli.command()
 @click.pass_context
-def greet(ctx: click.Context) -> None:
-    """为已确认的岗位生成招呼语"""
-    from bosshunter.ai.greeter import generate_greetings
-
-    config = ctx.obj["config"]
-    console.print("[bold]生成招呼语...[/bold]")
-    count = generate_greetings(config)
-    console.print(f"[green]✓[/green] 已生成 {count} 条招呼语")
-    _hint_star_support()
-
-
-@cli.command()
-@click.pass_context
 def confirm(ctx: click.Context) -> None:
-    """展示投递清单并确认"""
+    """展示投递清单并确认（含招呼语预览，可按 r 重新生成）"""
     from bosshunter.ui.confirm import show_confirmation
 
     config = ctx.obj["config"]
     show_confirmation(config)
+
+
+@cli.command()
+@click.option("--job-id", default=None, help="重新生成指定岗位的招呼语")
+@click.pass_context
+def greet(ctx: click.Context, job_id: str | None) -> None:
+    """为岗位生成/重新生成招呼语"""
+    config = ctx.obj["config"]
+
+    if job_id:
+        from bosshunter.ai.greeter import regenerate_greeting
+        console.print(f"[bold]重新生成招呼语: {job_id}[/bold]")
+        greeting = regenerate_greeting(job_id, config)
+        if greeting:
+            console.print(f"[green]✓[/green] 招呼语已重新生成")
+        else:
+            console.print("[red]✗ 招呼语生成失败[/red]")
+    else:
+        from bosshunter.ai.greeter import generate_greetings
+        console.print("[bold]补充生成招呼语...[/bold]")
+        count = generate_greetings(config)
+        console.print(f"[green]✓[/green] 已生成 {count} 条招呼语")
+    _hint_star_support()
 
 
 @cli.command()
@@ -201,7 +235,7 @@ def status(ctx: click.Context, full: bool) -> None:
 @cli.command()
 @click.pass_context
 def run(ctx: click.Context) -> None:
-    """一键运行完整流程: 采集→评分→确认→招呼语→发送"""
+    """一键运行完整流程: 采集→评分+招呼语→确认→发送→监听"""
     from bosshunter.pipeline import run_pipeline
 
     config = ctx.obj["config"]
@@ -250,6 +284,8 @@ def monitor(ctx: click.Context, once: bool, interval: int | None) -> None:
             parts.append(f"跟进{summary['follow_up']}条")
         if summary.get("rejected"):
             parts.append(f"拒绝{summary['rejected']}条")
+        if summary.get("unmatched"):
+            parts.append(f"[yellow]未跟踪回复{summary['unmatched']}条(请手动查看)[/yellow]")
         console.print(f"\n[bold]本次: {', '.join(parts)}[/bold]")
     else:
         console.print(f"[bold cyan]═══ 持续监听模式 (间隔 {interval_min} 分钟) ═══[/bold cyan]\n")
@@ -282,6 +318,65 @@ def web(ctx: click.Context, port: int, no_open: bool) -> None:
     _hint_star_support(ctx.obj["base_dir"])
     console.print()
     run_server(host="127.0.0.1", port=port, open_browser=not no_open)
+
+
+@cli.command()
+@click.option("--port", "-p", default=8686, type=int, help="控制台端口（默认 8686）")
+@click.option(
+    "--browser",
+    "browser_choice",
+    type=click.Choice(["auto", "chrome", "edge"], case_sensitive=False),
+    default=None,
+    help="启动 Chrome、Edge，或自动选择",
+)
+@click.option("--debug-port", default=None, type=int, help="浏览器远程调试端口（默认读取配置）")
+@click.pass_context
+def start(ctx: click.Context, port: int, browser_choice: str | None, debug_port: int | None) -> None:
+    """一键启动浏览器、BOSS 登录页与 Web 控制台"""
+    from bosshunter.browser.launcher import find_browser_executable, launch_browser
+    from bosshunter.web.server import run_server, set_base_dir
+
+    config = ctx.obj["config"]
+    base_dir = ctx.obj["base_dir"]
+    browser_config = config.get("browser", {})
+    preferred_browser = browser_choice or str(browser_config.get("preferred_browser") or "auto")
+    executable = find_browser_executable(preferred_browser, browser_config.get("executable_path"))
+    if executable is None:
+        raise click.ClickException(
+            "未找到 Chrome 或 Edge。请安装浏览器，或在 config.yaml 的 browser.executable_path 中填写路径。"
+        )
+
+    configured_ports = browser_config.get("chrome_ports", [9222])
+    selected_debug_port = debug_port or int(configured_ports[0] if configured_ports else 9222)
+    configured_profile = Path(str(browser_config.get("user_data_dir") or "./data/browser-profile"))
+    user_data_dir = configured_profile if configured_profile.is_absolute() else base_dir / configured_profile
+    dashboard_url = f"http://127.0.0.1:{port}"
+
+    def open_browser() -> None:
+        """Launch after the HTTP server starts accepting local connections."""
+        try:
+            launch_browser(
+                executable=executable,
+                debug_port=selected_debug_port,
+                user_data_dir=user_data_dir,
+                dashboard_url=dashboard_url,
+            )
+        except OSError as exc:
+            console.print(f"[red]浏览器启动失败：{exc}[/red]")
+
+    set_base_dir(base_dir)
+    timer = threading.Timer(1.0, open_browser)
+    timer.daemon = True
+    timer.start()
+
+    console.print("[bold cyan]═══ BossHunter 一键启动 ═══[/bold cyan]")
+    console.print(f"[green]✓[/green] 浏览器: {executable}")
+    console.print(f"[green]✓[/green] 独立登录目录: {user_data_dir}")
+    console.print(f"[green]✓[/green] 控制台: {dashboard_url}")
+    console.print("[yellow]请在打开的 BOSS 页面中扫码或手动登录，登录状态会保留供下次使用。[/yellow]")
+    console.print("[dim]关闭此终端会停止控制台，但不会清除浏览器登录状态。[/dim]\n")
+    _hint_star_support(base_dir)
+    run_server(host="127.0.0.1", port=port, open_browser=False)
 
 
 if __name__ == "__main__":

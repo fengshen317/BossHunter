@@ -15,6 +15,31 @@ CDP_DEFAULT_URL = "http://127.0.0.1:9222"
 NAV_TIMEOUT_MS = 15000
 
 
+class _RuntimeNotReady:
+    """Sentinel marking that a call failed because the runtime wasn't ready.
+
+    ``evaluate`` returns this (instead of ``None``) when ``_ready()`` is False,
+    so callers can distinguish an infrastructure hiccup from a genuine JS
+    business failure. Distinguishing the two lets the sender retry the former
+    without polluting the progressive-backoff error counter.
+
+    The sentinel is falsy (``__bool__`` -> False) so existing callers that guard
+    with ``if not result`` keep treating "runtime unavailable" as "no result",
+    while sender code can still check ``result is RUNTIME_NOT_READY``.
+    """
+
+    __slots__ = ()
+
+    def __bool__(self) -> bool:
+        return False
+
+    def __repr__(self) -> str:  # pragma: no cover - debug aid
+        return "RUNTIME_NOT_READY"
+
+
+RUNTIME_NOT_READY: Any = _RuntimeNotReady()
+
+
 def configure(config: dict[str, Any] | None = None) -> None:
     """Set process-wide browser configuration used by runtime helpers."""
     set_browser_config(config)
@@ -54,7 +79,15 @@ def new_tab(url: str) -> str | None:
     """Open a new background tab and return target ID."""
     if not _ready():
         return None
-    return _client().new_tab(url)
+    client = _client()
+    target_id = client.new_tab(url)
+    if target_id and url != "about:blank":
+        # Chrome 某些版本在后台创建标签时会忽略 Target.createTarget 的 URL，
+        # 返回 about:blank；补一次 navigate，避免采集/补全误判为岗位失效。
+        info = client.info(target_id)
+        if not info or info.get("url") in {None, "", "about:blank"}:
+            client.navigate(target_id, url)
+    return target_id
 
 
 def close_tab(target_id: str) -> bool:
@@ -72,9 +105,15 @@ def navigate(target_id: str, url: str) -> bool:
 
 
 def evaluate(target_id: str, expression: str, timeout: float = 30) -> Any:
-    """Execute JavaScript in a tab and return the runtime value."""
+    """Execute JavaScript in a tab and return the runtime value.
+
+    Returns ``RUNTIME_NOT_READY`` when the local Browser Runtime could not be
+    reached (so callers can distinguish an infrastructure hiccup from a real JS
+    failure), or ``None`` when the runtime responded with no value. Both are
+    falsy, so existing ``if not result`` guards behave the same.
+    """
     if not _ready():
-        return None
+        return RUNTIME_NOT_READY
     return _client().evaluate(target_id, expression, timeout)
 
 
