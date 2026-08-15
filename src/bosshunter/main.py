@@ -11,7 +11,7 @@ from bosshunter import __version__
 from bosshunter.config import load_config
 
 console = Console()
-GITHUB_URL = "https://github.com/powerycy/BossHunter"
+
 
 
 def _hint_web():

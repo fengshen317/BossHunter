@@ -12,6 +12,7 @@ from bosshunter.db import (
     get_jobs_ready_to_send,
     get_jobs_with_send_errors,
     insert_job,
+    reset_job_greeting,
     update_job_greeting,
     update_job_score,
     update_job_status,
@@ -279,6 +280,46 @@ class JobSelectionTests(unittest.TestCase):
             # 外层不再额外 close_tab（成功时 failed_target_id 为 None）。
             self.assertFalse(close_tab.called)
 
+    def test_closed_job_is_persisted_as_terminal_status(self):
+        """发送前发现岗位关闭时应进入终态，避免后续发送或回复跟踪。"""
+        job = _job("closed-before-send")
+        job["greeting"] = "您好，我对该岗位很感兴趣。"
+
+        with tempfile.TemporaryDirectory() as tmp:
+            db_path = Path(tmp) / "bosshunter.db"
+            db = get_db(db_path)
+            try:
+                insert_job(db, job)
+                update_job_status(db, job["id"], "approved")
+                update_job_greeting(db, job["id"], job["greeting"])
+            finally:
+                db.close()
+
+            result = {
+                "success": False,
+                "error": "job_closed",
+                "history_detail": "发送前检测到岗位已关闭",
+                "skip_backoff": True,
+            }
+            with patch("bosshunter.db.DB_PATH", db_path), \
+                 patch("bosshunter.executor.sender._send_greeting_once", return_value=(result, None)):
+                sent = send_greetings({"throttle": {"daily_limit": 10}}, force=True)
+
+            verify_db = get_db(db_path)
+            try:
+                status = verify_db.execute(
+                    "SELECT status FROM jobs WHERE id = ?", (job["id"],)
+                ).fetchone()["status"]
+                action = verify_db.execute(
+                    "SELECT action FROM history WHERE job_id = ? ORDER BY id DESC LIMIT 1", (job["id"],)
+                ).fetchone()["action"]
+            finally:
+                verify_db.close()
+
+        self.assertEqual(sent, 0)
+        self.assertEqual(status, "closed")
+        self.assertEqual(action, "closed")
+
     def test_pending_confirmation_excludes_jobs_with_greetings(self):
         """确认清单现在包含有招呼语的 ready 岗位——招呼语在评分阶段已生成。"""
         with tempfile.TemporaryDirectory() as tmp:
@@ -425,6 +466,25 @@ class JobSelectionTests(unittest.TestCase):
                 sent = send_greetings(config, force=True)
 
         self.assertEqual(sent, 1)
+
+    def test_sent_job_can_be_reset_for_another_manual_greeting(self):
+        """已联系岗位可重新生成，但必须回到人工确认链路。"""
+        with tempfile.TemporaryDirectory() as tmp:
+            db = get_db(Path(tmp) / "bosshunter.db")
+            try:
+                insert_job(db, _job("sent-again"))
+                update_job_status(db, "sent-again", "sent")
+                update_job_greeting(db, "sent-again", "Old greeting")
+
+                reset_job_greeting(db, ["sent-again"])
+                job = db.execute(
+                    "SELECT status, greeting FROM jobs WHERE id = ?", ("sent-again",)
+                ).fetchone()
+            finally:
+                db.close()
+
+        self.assertEqual(job["status"], "approved")
+        self.assertEqual(job["greeting"], "")
 
     def test_send_greetings_force_bypasses_send_window_restriction(self):
         # Arrange

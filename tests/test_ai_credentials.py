@@ -378,6 +378,28 @@ class AnthropicCredentialTests(unittest.TestCase):
         self.assertEqual(posted.call_count, 1)
         slept.assert_not_called()
 
+    def test_openai_compatible_tool_calls_are_normalized(self):
+        """OpenAI 工具调用应解析为统一的名称和对象参数。"""
+        response = httpx.Response(
+            200,
+            request=httpx.Request("POST", "https://api.example.com/chat/completions"),
+            json={
+                "choices": [{"message": {"content": None, "tool_calls": [{
+                    "id": "call-1", "function": {"name": "collect_jobs", "arguments": '{"keywords":["Agent"]}'},
+                }]}}],
+            },
+        )
+        with patch.dict("os.environ", {}, clear=True), patch("httpx.post", return_value=response) as posted:
+            result = credentials.call_ai_with_tools(
+                "采集 Agent 岗位",
+                {"ai": {"provider": "openai_compatible", "api_key": "secret", "base_url": "https://api.example.com"}},
+                [{"type": "function", "function": {"name": "collect_jobs", "parameters": {"type": "object"}}}],
+            )
+
+        self.assertEqual(result["tool_calls"][0]["name"], "collect_jobs")
+        self.assertEqual(result["tool_calls"][0]["arguments"], {"keywords": ["Agent"]})
+        self.assertIn("tools", posted.call_args.kwargs["json"])
+
 
 if __name__ == "__main__":
     unittest.main()

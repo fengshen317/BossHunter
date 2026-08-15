@@ -1,7 +1,7 @@
-"""Support starting BossHunter with ``python -m bosshunter``."""
+"""使用 ``python -m bosshunter`` 启动统一后端。"""
 
-from bosshunter.main import cli
+from bosshunter.backend import main
 
 
 if __name__ == "__main__":
-    cli()
+	main()

@@ -10,7 +10,8 @@ import os
 import time
 from copy import deepcopy
 from pathlib import Path
-from threading import Event
+from queue import Empty, Queue
+from threading import Event, Thread
 
 from bottle import Bottle, request, response, static_file, abort
 
@@ -22,6 +23,7 @@ from bosshunter.db import (
 	get_daily_activity,
 	get_db,
 	get_funnel_stats,
+	get_job,
 	get_jobs_by_status,
 	get_jobs_approved_to_send,
 	get_jobs_needing_resume,
@@ -63,11 +65,15 @@ DATA_DIR = BASE_DIR / "data"
 RESUME_DIR = DATA_DIR / "resumes"
 PROFILE_DIR = DATA_DIR / "profile"
 CONFIG_PATH = BASE_DIR / "config.yaml"
+_assistant_service = None
 
 
 def set_base_dir(base_dir: Path | str) -> None:
 	"""Set the runtime directory used for config.yaml, data, and uploads."""
-	global BASE_DIR, DATA_DIR, RESUME_DIR, PROFILE_DIR, CONFIG_PATH
+	global BASE_DIR, DATA_DIR, RESUME_DIR, PROFILE_DIR, CONFIG_PATH, _assistant_service
+	if _assistant_service is not None:
+		_assistant_service.close()
+		_assistant_service = None
 	BASE_DIR = Path(base_dir).resolve()
 	DATA_DIR = BASE_DIR / "data"
 	RESUME_DIR = DATA_DIR / "resumes"
@@ -78,6 +84,16 @@ def set_base_dir(base_dir: Path | str) -> None:
 def _get_web_db():
 	"""Open the dashboard database from the resolved runtime data directory."""
 	return get_db(DATA_DIR / "bosshunter.db")
+
+
+def _get_assistant_service():
+	"""按当前运行目录延迟创建 LangGraph 服务。"""
+	global _assistant_service
+	if _assistant_service is None:
+		from bosshunter.assistant import AssistantService
+
+		_assistant_service = AssistantService(BASE_DIR, CONFIG_PATH, _start_assistant_action)
+	return _assistant_service
 
 
 def _json_response(data, status_code=200):
@@ -165,9 +181,9 @@ def _sanitize_config_for_write(data):
 	ai_cfg.pop("has_auth_token", None)
 
 	existing_ai = load_config(CONFIG_PATH).get("ai", {})
-	provider = ai_cfg.get("provider") or existing_ai.get("provider") or "anthropic"
+	provider = ai_cfg.get("provider") or existing_ai.get("provider") or "openai_compatible"
 	if provider not in {"anthropic", "openai_compatible"}:
-		provider = "anthropic"
+		provider = "openai_compatible"
 	ai_cfg["provider"] = provider
 
 	for field in ("api_key", "auth_token"):
@@ -175,9 +191,7 @@ def _sanitize_config_for_write(data):
 		existing_value = existing_ai.get(field)
 		existing_mask = _mask_api_key(str(existing_value)) if existing_value else ""
 		should_preserve = (
-			posted_value is None
-			or str(posted_value).strip() == ""
-			or (existing_mask and posted_value == existing_mask)
+			posted_value is None or str(posted_value).strip() == "" or (existing_mask and posted_value == existing_mask)
 		)
 
 		if should_preserve:
@@ -190,33 +204,33 @@ def _sanitize_config_for_write(data):
 
 
 def _preflight_messages(mode: str, config: dict) -> list[str]:
-    """Return user-actionable blockers before starting a dashboard task."""
-    messages: list[str] = []
-    if mode not in {"full", "collect", "score", "reenrich", "monitor", "import"}:
-        messages.append(f"不支持的任务模式：{mode}")
+	"""Return user-actionable blockers before starting a dashboard task."""
+	messages: list[str] = []
+	if mode not in {"full", "collect", "score", "reenrich", "monitor", "import"}:
+		messages.append(f"不支持的任务模式：{mode}")
 
-    profile = config.get("profile", {})
-    resume_path = profile.get("resume_path", "")
-    if not resume_path or not Path(str(resume_path)).exists():
-        messages.append("请先在配置页上传 Markdown 简历。")
+	profile = config.get("profile", {})
+	resume_path = profile.get("resume_path", "")
+	if not resume_path or not Path(str(resume_path)).exists():
+		messages.append("请先在配置页上传 Markdown 简历。")
 
-    if mode in {"full", "collect"} and not config.get("search", {}).get("keywords"):
-        messages.append("请先在配置页填写搜索关键词。")
+	if mode in {"full", "collect"} and not config.get("search", {}).get("keywords"):
+		messages.append("请先在配置页填写搜索关键词。")
 
-    # 定向采集（import）跳过搜索关键词检查：它是按 URL / 公司+职位手动触发的，
-    # 不依赖批量采集的 search.keywords 配置。但仍需要简历（招呼语生成）和 AI Key。
-    if mode in {"full", "collect", "score", "import"}:
-        ai_cfg = config.get("ai", {}) if isinstance(config.get("ai"), dict) else {}
-        has_ai_key = bool(
-            os.environ.get("ANTHROPIC_API_KEY")
-            or os.environ.get("ANTHROPIC_AUTH_TOKEN")
-            or ai_cfg.get("api_key")
-            or ai_cfg.get("auth_token")
-        )
-        if not has_ai_key:
-            messages.append("请先在配置页填写 AI API Key，或设置 ANTHROPIC_API_KEY 环境变量。")
+	# 定向采集（import）跳过搜索关键词检查：它是按 URL / 公司+职位手动触发的，
+	# 不依赖批量采集的 search.keywords 配置。但仍需要简历（招呼语生成）和 AI Key。
+	if mode in {"full", "collect", "score", "import"}:
+		ai_cfg = config.get("ai", {}) if isinstance(config.get("ai"), dict) else {}
+		has_ai_key = bool(
+			os.environ.get("ANTHROPIC_API_KEY")
+			or os.environ.get("ANTHROPIC_AUTH_TOKEN")
+			or ai_cfg.get("api_key")
+			or ai_cfg.get("auth_token")
+		)
+		if not has_ai_key:
+			messages.append("请先在配置页填写 AI API Key，或设置 ANTHROPIC_API_KEY 环境变量。")
 
-    return messages
+	return messages
 
 
 def _task_config(extra: dict | None = None) -> dict:
@@ -228,6 +242,7 @@ def _task_config(extra: dict | None = None) -> dict:
 
 def _log(task: WorkbenchTask, message: str) -> None:
 	task.logs.append(message)
+	task_runner._persist(task)
 
 
 def _execute_collect(task: WorkbenchTask, config: dict) -> None:
@@ -238,7 +253,7 @@ def _execute_collect(task: WorkbenchTask, config: dict) -> None:
 	config["_workbench_stop_event"] = task.stop_requested
 	keywords = config.get("search", {}).get("keywords", [])
 	_log(task, "开始采集岗位")
-	scrape_jobs(config, keywords)
+	scrape_jobs(config, keywords, config.get("_workbench_limit"))
 	if not task.stop_requested.is_set():
 		_log(task, "采集完成，岗位已进入待评分队列")
 
@@ -257,6 +272,93 @@ def _execute_score(task: WorkbenchTask, config: dict) -> None:
 	finally:
 		db.close()
 	_log(task, f"AI 评分结束：通过 {scored}，过滤 {filtered}，待重试 {remaining}")
+
+
+def _start_assistant_action(action: dict) -> dict:
+	"""将已确认的助手提案映射到既有安全后台执行器。"""
+	action_type = str(action.get("type", ""))
+	params = action.get("parameters") if isinstance(action.get("parameters"), dict) else {}
+	if action_type == "collect_jobs":
+		config = _task_config({"_workbench_limit": params.get("limit")})
+		config.setdefault("search", {})["keywords"] = list(params.get("keywords", []))
+		if params.get("cities"):
+			config["search"]["cities"] = list(params["cities"])
+		config["search"]["max_pages"] = params.get("max_pages", config["search"].get("max_pages", 3))
+		messages = _preflight_messages("collect", config)
+		if messages:
+			raise ValueError("；".join(messages))
+		return task_runner.start("collect", config)
+	if action_type == "score_jobs":
+		config = _task_config({"_workbench_job_ids": params.get("job_ids", [])})
+		messages = _preflight_messages("score", config)
+		if messages:
+			raise ValueError("；".join(messages))
+		return task_runner.start("score", config)
+	if action_type == "complete_job_details":
+		job_id = str(params.get("job_id", "")).strip()
+		title = str(params.get("title", "")).strip()
+		jd = str(params.get("jd", "")).strip()
+		if not job_id or not title or not jd:
+			raise ValueError("补充岗位信息至少需要记录、职位名称和 JD")
+		db = _get_web_db()
+		try:
+			row = db.execute(
+				"SELECT id FROM jobs WHERE id = ? AND "
+				"(id LIKE 'manual_%' OR title = 'HR主动沟通' OR jd IS NULL OR TRIM(jd) = '')",
+				(job_id,),
+			).fetchone()
+			if not row:
+				raise ValueError("待补充的主动沟通记录不存在或已经是正式岗位")
+			db.execute(
+				"UPDATE jobs SET title = ?, jd = ?, salary = COALESCE(NULLIF(?, ''), salary), "
+				"url = COALESCE(NULLIF(?, ''), url), status = 'pending', score = 0, score_reason = NULL, "
+				"updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+				(title, jd, str(params.get("salary", "")).strip(), str(params.get("url", "")).strip(), job_id),
+			)
+			db.commit()
+		finally:
+			db.close()
+		return task_runner.start("score", _task_config({"_workbench_job_ids": [job_id]}))
+	if action_type == "generate_greetings":
+		job_ids = [str(item) for item in params.get("job_ids", []) if str(item)]
+		if not job_ids:
+			raise ValueError("没有可生成招呼语的岗位")
+		return task_runner.start("greeting", _task_config({"_workbench_job_ids": job_ids}))
+	if action_type == "monitor_replies":
+		config = _task_config()
+		messages = _preflight_messages("monitor", config)
+		if messages:
+			raise ValueError("；".join(messages))
+		return task_runner.start("monitor", config)
+	if action_type == "run_pipeline":
+		config = _task_config()
+		messages = _preflight_messages("full", config)
+		if messages:
+			raise ValueError("；".join(messages))
+		return task_runner.start("full", config)
+	if action_type == "send_greetings":
+		job_ids = [
+			str(item) for item in action.get("selected_item_ids", []) if str(item) in set(params.get("job_ids", []))
+		]
+		if not job_ids:
+			raise ValueError("请选择有效的招呼语")
+		db = _get_web_db()
+		try:
+			for job_id in job_ids:
+				update_job_status(db, job_id, "approved")
+				add_history(db, job_id, "approved", "AI 助手确认投递")
+		finally:
+			db.close()
+		return task_runner.start(
+			"deliver", _task_config({"_workbench_job_ids": job_ids, "_workbench_skip_greeting": True})
+		)
+	if action_type == "send_hr_reply":
+		if str(action.get("selected_item_ids", [""])[0]) != str(params.get("history_id")):
+			raise ValueError("请选择有效的 HR 回复")
+		return task_runner.start(
+			"reply", _task_config({"_reply_history_id": params["history_id"], "_reply_message": params["message"]})
+		)
+	raise ValueError("不支持的助手任务")
 
 
 def _execute_reenrich(task: WorkbenchTask, config: dict) -> None:
@@ -284,9 +386,7 @@ def _execute_monitor(task: WorkbenchTask, config: dict) -> None:
 		# 这里把未跟踪会话的回复显式写入日志，避免用户在面板上看不到检测结果。
 		unmatched = summary.get("unmatched_convs") or []
 		if unmatched:
-			names = "、".join(
-				str(c.get("company") or c.get("hr_name") or "未知") for c in unmatched[:5]
-			)
+			names = "、".join(str(c.get("company") or c.get("hr_name") or "未知") for c in unmatched[:5])
 			suffix = f"等 {len(unmatched)} 个" if len(unmatched) > 5 else ""
 			_log(task, f"⚠ 检测到 {len(unmatched)} 个未跟踪会话的新回复（{names}{suffix}），请手动到 BOSS 查看")
 		if task.stop_requested.is_set():
@@ -304,8 +404,7 @@ def _execute_full(task: WorkbenchTask, config: dict) -> None:
 	try:
 		threshold = int(config.get("scoring", {}).get("threshold", 60) or 60)
 		pending_confirmation = [
-			job for job in get_jobs_pending_confirmation(db)
-			if int(job.get("score") or 0) >= threshold
+			job for job in get_jobs_pending_confirmation(db) if int(job.get("score") or 0) >= threshold
 		]
 	finally:
 		db.close()
@@ -504,9 +603,7 @@ def _execute_import(task: WorkbenchTask, config: dict) -> None:
 		if not job:
 			raise RuntimeError("采集失败，请检查 URL 是否正确、BOSS 登录状态及 CDP 运行时")
 		# 把解析得到的详情字段回填到 task.context，方便前端即时展示。
-		task.context["job"] = {
-			k: job.get(k) for k in ("id", "title", "company", "salary", "url")
-		}
+		task.context["job"] = {k: job.get(k) for k in ("id", "title", "company", "salary", "url")}
 		job_id = _upsert_imported_job(job)
 		hist_db = _get_web_db()
 		try:
@@ -538,9 +635,7 @@ def _execute_import(task: WorkbenchTask, config: dict) -> None:
 		job = import_job_by_url(url, import_config)
 		if not job:
 			raise RuntimeError("采集失败，请检查 BOSS 登录状态及 CDP 运行时")
-		task.context["job"] = {
-			k: job.get(k) for k in ("id", "title", "company", "salary", "url")
-		}
+		task.context["job"] = {k: job.get(k) for k in ("id", "title", "company", "salary", "url")}
 		job_id = _upsert_imported_job(job)
 		hist_db = _get_web_db()
 		try:
@@ -553,20 +648,23 @@ def _execute_import(task: WorkbenchTask, config: dict) -> None:
 		raise ValueError(f"未知的导入模式: {mode!r}")
 
 
-task_runner._executors.update({
-	"full": _execute_full,
-	"collect": _execute_collect,
-	"score": _execute_score,
-	"reenrich": _execute_reenrich,
-	"monitor": _execute_monitor,
-	"deliver": _execute_deliver,
-	"greeting": _execute_greeting,
-	"reply": _execute_reply,
-	"import": _execute_import,
-})
+task_runner._executors.update(
+	{
+		"full": _execute_full,
+		"collect": _execute_collect,
+		"score": _execute_score,
+		"reenrich": _execute_reenrich,
+		"monitor": _execute_monitor,
+		"deliver": _execute_deliver,
+		"greeting": _execute_greeting,
+		"reply": _execute_reply,
+		"import": _execute_import,
+	}
+)
 
 
 # ─── Health ───────────────────────────────────────────────
+
 
 @app.route("/api/health")
 def health():
@@ -574,6 +672,7 @@ def health():
 
 
 # ─── Dashboard APIs ──────────────────────────────────────
+
 
 @app.route("/api/funnel")
 def api_funnel():
@@ -636,9 +735,7 @@ def api_jobs():
 		# 全量按状态计数（不受 status 筛选影响），喂给筛选 pill
 		status_counts = get_stats(db)
 		# 批量评分/补全企业按钮的计数基于全量，而非当前页
-		pending_count = db.execute(
-			"SELECT COUNT(*) AS cnt FROM jobs WHERE status = 'pending'"
-		).fetchone()["cnt"]
+		pending_count = db.execute("SELECT COUNT(*) AS cnt FROM jobs WHERE status = 'pending'").fetchone()["cnt"]
 		missing_company_info_count = db.execute(
 			"SELECT COUNT(*) AS cnt FROM jobs "
 			"WHERE district IS NULL OR TRIM(district) = '' "
@@ -646,13 +743,15 @@ def api_jobs():
 			"OR registered_capital IS NULL OR TRIM(registered_capital) = ''"
 		).fetchone()["cnt"]
 
-		return _json_response({
-			"items": jobs,
-			"total": filtered_total,
-			"status_counts": status_counts,
-			"pending_count": pending_count,
-			"missing_company_info_count": missing_company_info_count,
-		})
+		return _json_response(
+			{
+				"items": jobs,
+				"total": filtered_total,
+				"status_counts": status_counts,
+				"pending_count": pending_count,
+				"missing_company_info_count": missing_company_info_count,
+			}
+		)
 	finally:
 		db.close()
 
@@ -677,11 +776,7 @@ def api_history():
 		data = get_recent_history(db, limit)
 		if include_unresolved:
 			seen_ids = {item["id"] for item in data}
-			data.extend(
-				item
-				for item in get_unresolved_resume_failures(db)
-				if item["id"] not in seen_ids
-			)
+			data.extend(item for item in get_unresolved_resume_failures(db) if item["id"] not in seen_ids)
 			data.sort(
 				key=lambda item: (str(item.get("created_at") or ""), int(item.get("id") or 0)),
 				reverse=True,
@@ -706,21 +801,22 @@ def api_workbench():
 	try:
 		threshold = load_config(CONFIG_PATH).get("scoring", {}).get("threshold", 60)
 		status = task_runner.status()
-		return _json_response({
-			"funnel": get_funnel_stats(db),
-			"pending_confirmation": _serialize_db_items([
-				job for job in get_jobs_pending_confirmation(db)
-				if int(job.get("score") or 0) >= threshold
-			]),
-			"pending_greetings": _serialize_db_items(get_jobs_approved_to_send(db)),
-			"needs_greeting": _serialize_db_items(get_jobs_needing_greeting(db)),
-			"send_errors": _serialize_db_items(get_jobs_with_send_errors(db)),
-			"needs_resume": _serialize_db_items(get_jobs_needing_resume(db)),
-			"task": status["active"],
-			"last_task": status["last_task"],
-			# 并发任务的完整列表（如 monitor 运行期间启动的 reply），供前端轮询结果。
-			"tasks": status["tasks"],
-		})
+		return _json_response(
+			{
+				"funnel": get_funnel_stats(db),
+				"pending_confirmation": _serialize_db_items(
+					[job for job in get_jobs_pending_confirmation(db) if int(job.get("score") or 0) >= threshold]
+				),
+				"pending_greetings": _serialize_db_items(get_jobs_approved_to_send(db)),
+				"needs_greeting": _serialize_db_items(get_jobs_needing_greeting(db)),
+				"send_errors": _serialize_db_items(get_jobs_with_send_errors(db)),
+				"needs_resume": _serialize_db_items(get_jobs_needing_resume(db)),
+				"task": status["active"],
+				"last_task": status["last_task"],
+				# 并发任务的完整列表（如 monitor 运行期间启动的 reply），供前端轮询结果。
+				"tasks": status["tasks"],
+			}
+		)
 	finally:
 		db.close()
 
@@ -760,6 +856,15 @@ def api_workbench_task_stop(task_id):
 		return _json_response({"error": "任务不存在"}, 404)
 	except Exception as e:
 		return _json_response({"error": str(e)}, 500)
+
+
+@app.route("/api/workbench/task/<task_id>")
+def api_workbench_task_get(task_id):
+	"""读取指定后台任务，供 AI 助手任务卡轮询。"""
+	task = task_runner._tasks.get(task_id)
+	if task is None:
+		return _json_response({"error": "任务不存在"}, 404)
+	return _json_response(task.snapshot())
 
 
 @app.route("/api/workbench/deliver", method="POST")
@@ -823,6 +928,17 @@ def api_workbench_regenerate_greetings():
 
 		db = _get_web_db()
 		try:
+			jobs = [get_job(db, job_id) for job_id in job_ids]
+			missing_ids = [job_id for job_id, job in zip(job_ids, jobs) if job is None]
+			if missing_ids:
+				return _json_response({"error": f"岗位不存在: {', '.join(missing_ids)}"}, 404)
+			blocked_statuses = {"rejected", "closed"}
+			ineligible = [job for job in jobs if job and job["status"] in blocked_statuses]
+			if ineligible:
+				return _json_response(
+					{"error": "已拒绝或已关闭的岗位不能再次生成招呼语"},
+					409,
+				)
 			reset_job_greeting(db, job_ids)
 		finally:
 			db.close()
@@ -1083,9 +1199,7 @@ def api_replies_generate():
 	if job_id:
 		db = _get_web_db()
 		try:
-			row = db.execute(
-				"SELECT id, title, company FROM jobs WHERE id = ?", (job_id,)
-			).fetchone()
+			row = db.execute("SELECT id, title, company FROM jobs WHERE id = ?", (job_id,)).fetchone()
 			if row:
 				job = {"title": row["title"], "company": row["company"]}
 		finally:
@@ -1093,9 +1207,7 @@ def api_replies_generate():
 
 	from bosshunter.executor.monitor import _generate_reply_from_text
 
-	reply = _generate_reply_from_text(
-		hr_message, job, load_config(CONFIG_PATH), conversation_history
-	)
+	reply = _generate_reply_from_text(hr_message, job, load_config(CONFIG_PATH), conversation_history)
 	if not reply:
 		return _json_response({"error": "AI 生成回复失败，请检查模型配置后重试"}, 502)
 	return _json_response({"message": reply})
@@ -1165,6 +1277,288 @@ def api_greetings_generate():
 	return _json_response({"message": greeting})
 
 
+# ─── LangGraph AI 助手 APIs ───────────────────────────────────────────────
+
+
+@app.route("/api/assistant/conversations")
+def api_assistant_conversations():
+	"""列出聊天会话。"""
+	from bosshunter.assistant.repository import list_conversations
+
+	db = _get_web_db()
+	try:
+		return _json_response({"items": _serialize_db_items(list_conversations(db))})
+	finally:
+		db.close()
+
+
+@app.route("/api/assistant/conversations", method="POST")
+def api_assistant_conversation_create():
+	"""创建聊天会话。"""
+	from bosshunter.assistant.repository import create_conversation
+
+	body = request.json or {}
+	title = str(body.get("title", "新的求职对话")).strip()
+	db = _get_web_db()
+	try:
+		return _json_response(create_conversation(db, title), 201)
+	finally:
+		db.close()
+
+
+@app.route("/api/assistant/conversations", method="DELETE")
+def api_assistant_conversations_delete():
+	"""批量删除对话及其消息。"""
+	from bosshunter.assistant.repository import delete_conversations
+
+	body = request.json or {}
+	conversation_ids = [str(item) for item in body.get("ids", []) if str(item)]
+	db = _get_web_db()
+	try:
+		return _json_response({"deleted": delete_conversations(db, conversation_ids)})
+	finally:
+		db.close()
+
+
+@app.route("/api/assistant/conversations/<conversation_id>", method="DELETE")
+def api_assistant_conversation_delete(conversation_id):
+	"""删除单个对话及其消息。"""
+	from bosshunter.assistant.repository import delete_conversations
+
+	db = _get_web_db()
+	try:
+		return _json_response({"deleted": delete_conversations(db, [conversation_id])})
+	finally:
+		db.close()
+
+
+@app.route("/api/assistant/conversations/<conversation_id>/messages")
+def api_assistant_messages(conversation_id):
+	"""读取一个会话的消息。"""
+	from bosshunter.assistant.repository import list_messages
+
+	db = _get_web_db()
+	try:
+		return _json_response({"items": _serialize_db_items(list_messages(db, conversation_id))})
+	finally:
+		db.close()
+
+
+@app.route("/api/assistant/conversations/<conversation_id>/messages", method="POST")
+def api_assistant_message_send(conversation_id):
+	"""向 LangGraph 会话发送一条消息。"""
+	body = request.json or {}
+	message = str(body.get("message", "")).strip()
+	job_id = str(body.get("job_id", "")).strip() or None
+	web_enabled = bool(body.get("web_enabled", False))
+	if not message:
+		return _json_response({"error": "请输入消息"}, 400)
+	if len(message) > 8000:
+		return _json_response({"error": "消息过长，请控制在 8000 字以内"}, 400)
+	try:
+		result = _get_assistant_service().send_message(
+			conversation_id,
+			message,
+			job_id=job_id,
+			web_enabled=web_enabled,
+		)
+		return _json_response(result)
+	except Exception as exc:
+		return _json_response({"error": f"AI 助手执行失败：{exc}"}, 502)
+
+
+@app.route("/api/assistant/conversations/<conversation_id>/messages/stream", method="POST")
+def api_assistant_message_stream(conversation_id):
+	"""以 SSE 分块返回助手消息，保持与普通消息接口相同的持久化流程。"""
+	body = request.json or {}
+	message = str(body.get("message", "")).strip()
+	job_id = str(body.get("job_id", "")).strip() or None
+	web_enabled = bool(body.get("web_enabled", False))
+	if not message:
+		return _json_response({"error": "请输入消息"}, 400)
+	if len(message) > 8000:
+		return _json_response({"error": "消息过长，请控制在 8000 字以内"}, 400)
+	response.content_type = "text/event-stream; charset=utf-8"
+	response.set_header("Cache-Control", "no-cache")
+	response.set_header("X-Accel-Buffering", "no")
+
+	def events():
+		"""在工作线程中执行 Agent，把模型 token 实时转发为 SSE。"""
+		event_queue: Queue[tuple[str, object]] = Queue()
+
+		def run_agent() -> None:
+			"""执行阻塞式 LangGraph，同时将模型增量写入队列。"""
+			print(
+				f"[AI助手] 请求开始：conversation={conversation_id}，"
+				f"web={'开启' if web_enabled else '关闭'}，job={job_id or '自动'}",
+				flush=True,
+			)
+			try:
+				result = _get_assistant_service().send_message(
+					conversation_id,
+					message,
+					job_id=job_id,
+					web_enabled=web_enabled,
+					on_token=lambda token: event_queue.put(("delta", token)),
+					on_event=lambda event: event_queue.put(("trace", event)),
+				)
+				content_length = len(str(result.get("message", {}).get("content", "")))
+				print(f"[AI助手] 请求完成：正文={content_length} 字，status={result.get('status')}", flush=True)
+				event_queue.put(("done", result))
+			except Exception as exc:
+				print(f"[AI助手] 请求异常：{type(exc).__name__}: {exc}", flush=True)
+				event_queue.put(("error", exc))
+
+		Thread(target=run_agent, name=f"assistant-stream-{conversation_id}", daemon=True).start()
+		while True:
+			try:
+				event_name, value = event_queue.get(timeout=15)
+			except Empty:
+				yield "event: ping\ndata: {}\n\n"
+				continue
+			if event_name == "delta":
+				yield f"event: delta\ndata: {json.dumps({'delta': value}, ensure_ascii=False)}\n\n"
+				continue
+			if event_name == "trace":
+				yield f"event: trace\ndata: {json.dumps(value, ensure_ascii=False)}\n\n"
+				continue
+			if event_name == "error":
+				error_payload = json.dumps({"error": f"AI 助手执行失败：{value}"}, ensure_ascii=False)
+				yield f"event: error\ndata: {error_payload}\n\n"
+				return
+			result = value
+			break
+
+		metadata = {
+			"citations": result.get("citations", []),
+			"approval": result.get("approval"),
+			"task": result.get("task"),
+			"tool_trace": result.get("tool_trace", []),
+			"execution_plan": result.get("execution_plan", []),
+			"execution_events": result.get("execution_events", []),
+			"status": result.get("status", "completed"),
+		}
+		yield f"event: done\ndata: {json.dumps(metadata, ensure_ascii=False)}\n\n"
+
+	return events()
+
+
+@app.route("/api/assistant/conversations/<conversation_id>/resume", method="POST")
+def api_assistant_resume(conversation_id):
+	"""恢复一个等待人工确认的 LangGraph 会话。"""
+	body = request.json or {}
+	action = str(body.get("action", "")).strip()
+	if action not in {"approve", "edit", "reject"}:
+		return _json_response({"error": "无效的确认操作"}, 400)
+	decision = {"action": action}
+	decision["action_id"] = str(body.get("action_id", "")).strip()
+	selected_item_ids = body.get("selected_item_ids", [])
+	if isinstance(selected_item_ids, list):
+		decision["selected_item_ids"] = [str(value) for value in selected_item_ids if str(value)]
+	if action == "edit":
+		edited_reply = str(body.get("edited_reply", "")).strip()
+		if not edited_reply:
+			return _json_response({"error": "请填写修改后的回复"}, 400)
+		decision["edited_reply"] = edited_reply
+	try:
+		return _json_response(_get_assistant_service().resume(conversation_id, decision))
+	except Exception as exc:
+		return _json_response({"error": f"恢复会话失败：{exc}"}, 502)
+
+
+@app.route("/api/assistant/memories")
+def api_assistant_memories():
+	"""列出可由用户管理的长期记忆。"""
+	from bosshunter.assistant.repository import list_memories
+
+	db = _get_web_db()
+	try:
+		return _json_response({"items": _serialize_db_items(list_memories(db))})
+	finally:
+		db.close()
+
+
+@app.route("/api/assistant/bad-cases", method="POST")
+def api_assistant_bad_case_create():
+	"""记录一条不理想回答，并自动附带意图和路由快照。"""
+	from bosshunter.assistant.repository import create_bad_case
+
+	body = request.json or {}
+	conversation_id = str(body.get("conversation_id", "")).strip()
+	message_id = str(body.get("message_id", "")).strip()
+	category = str(body.get("category", "")).strip()
+	if not conversation_id or not message_id or not category:
+		return _json_response({"error": "缺少会话、消息或问题分类"}, 400)
+	db = _get_web_db()
+	try:
+		item = create_bad_case(
+			db,
+			conversation_id,
+			message_id,
+			category,
+			str(body.get("expected_intent", "")),
+			str(body.get("feedback", "")),
+		)
+		return _json_response(item, 201)
+	except ValueError as exc:
+		return _json_response({"error": str(exc)}, 400)
+	finally:
+		db.close()
+
+
+@app.route("/api/assistant/bad-cases")
+def api_assistant_bad_cases():
+	"""导出 Bad Case 数据，供离线评估和回归测试使用。"""
+	from bosshunter.assistant.repository import list_bad_cases
+
+	status = str(request.query.get("status", "open"))
+	if status not in {"open", "resolved", "all"}:
+		return _json_response({"error": "无效的 Bad Case 状态"}, 400)
+	try:
+		limit = int(request.query.get("limit", "200"))
+	except ValueError:
+		return _json_response({"error": "limit 必须是整数"}, 400)
+	db = _get_web_db()
+	try:
+		return _json_response({"items": _serialize_db_items(list_bad_cases(db, status, limit))})
+	finally:
+		db.close()
+
+
+@app.route("/api/assistant/message-ratings", method="POST")
+def api_assistant_message_rating_create():
+	"""记录每条助手回答下方的好坏手势。"""
+	from bosshunter.assistant.repository import rate_assistant_message
+
+	body = request.json or {}
+	conversation_id = str(body.get("conversation_id", "")).strip()
+	message_id = str(body.get("message_id", "")).strip()
+	rating = str(body.get("rating", "")).strip()
+	if not conversation_id or not message_id or not rating:
+		return _json_response({"error": "缺少会话、消息或评价"}, 400)
+	db = _get_web_db()
+	try:
+		return _json_response(rate_assistant_message(db, conversation_id, message_id, rating), 201)
+	except ValueError as exc:
+		return _json_response({"error": str(exc)}, 400)
+	finally:
+		db.close()
+
+
+@app.route("/api/assistant/memories/<memory_id>", method="DELETE")
+def api_assistant_memory_delete(memory_id):
+	"""删除一条长期记忆。"""
+	from bosshunter.assistant.repository import forget_memory
+
+	db = _get_web_db()
+	try:
+		if not forget_memory(db, memory_id):
+			return _json_response({"error": "记忆不存在"}, 404)
+		return _json_response({"success": True})
+	finally:
+		db.close()
+
+
 @app.route("/api/history/<history_id>/dismiss", method="POST")
 def api_history_dismiss(history_id):
 	db = _get_web_db()
@@ -1198,6 +1592,7 @@ def api_history_dismiss(history_id):
 
 # ─── Config APIs ─────────────────────────────────────────
 
+
 @app.route("/api/config")
 def api_config_get():
 	try:
@@ -1211,6 +1606,7 @@ def api_config_get():
 def api_config_post():
 	try:
 		import yaml
+
 		data = request.json
 		if not data:
 			return _json_response({"error": "Empty body"}, 400)
@@ -1258,6 +1654,7 @@ def api_cities():
 
 # ─── Resume APIs ─────────────────────────────────────────
 
+
 @app.route("/api/resume")
 def api_resume_get():
 	try:
@@ -1266,12 +1663,14 @@ def api_resume_get():
 		if resume_path and Path(resume_path).exists():
 			p = Path(resume_path)
 			stat = p.stat()
-			return _json_response({
-				"filename": p.name,
-				"size": stat.st_size,
-				"uploaded_at": time.strftime("%Y-%m-%d %H:%M", time.localtime(stat.st_mtime)),
-				"path": str(p)
-			})
+			return _json_response(
+				{
+					"filename": p.name,
+					"size": stat.st_size,
+					"uploaded_at": time.strftime("%Y-%m-%d %H:%M", time.localtime(stat.st_mtime)),
+					"path": str(p),
+				}
+			)
 		return _json_response(None)
 	except Exception as e:
 		return _json_response({"error": str(e)}, 500)
@@ -1281,6 +1680,7 @@ def api_resume_get():
 def api_resume_upload():
 	try:
 		import yaml
+
 		upload = request.files.get("file")
 		if not upload:
 			return _json_response({"error": "No file uploaded"}, 400)
@@ -1307,12 +1707,7 @@ def api_resume_upload():
 		with open(CONFIG_PATH, "w", encoding="utf-8") as f:
 			yaml.dump(config, f, allow_unicode=True, default_flow_style=False, sort_keys=False)
 
-		return _json_response({
-			"success": True,
-			"filename": safe_name,
-			"size": len(content),
-			"path": str(dest)
-		})
+		return _json_response({"success": True, "filename": safe_name, "size": len(content), "path": str(dest)})
 	except Exception as e:
 		return _json_response({"error": str(e)}, 500)
 
@@ -1321,6 +1716,7 @@ def api_resume_upload():
 def api_resume_delete():
 	try:
 		import yaml
+
 		config = load_config(CONFIG_PATH)
 
 		# Never delete the master resume from disk; only detach it from config.
@@ -1342,12 +1738,14 @@ def api_avatar_get():
 		if avatar_path and Path(avatar_path).is_file():
 			path = Path(avatar_path)
 			stat = path.stat()
-			return _json_response({
-				"filename": path.name,
-				"size": stat.st_size,
-				"uploaded_at": time.strftime("%Y-%m-%d %H:%M", time.localtime(stat.st_mtime)),
-				"path": str(path),
-			})
+			return _json_response(
+				{
+					"filename": path.name,
+					"size": stat.st_size,
+					"uploaded_at": time.strftime("%Y-%m-%d %H:%M", time.localtime(stat.st_mtime)),
+					"path": str(path),
+				}
+			)
 		return _json_response(None)
 	except Exception as e:
 		return _json_response({"error": str(e)}, 500)
@@ -1382,12 +1780,14 @@ def api_avatar_upload():
 		with open(CONFIG_PATH, "w", encoding="utf-8") as f:
 			yaml.dump(config, f, allow_unicode=True, default_flow_style=False, sort_keys=False)
 
-		return _json_response({
-			"success": True,
-			"filename": destination.name,
-			"size": len(content),
-			"path": str(destination),
-		})
+		return _json_response(
+			{
+				"success": True,
+				"filename": destination.name,
+				"size": len(content),
+				"path": str(destination),
+			}
+		)
 	except Exception as e:
 		return _json_response({"error": str(e)}, 500)
 
@@ -1408,6 +1808,7 @@ def api_avatar_delete():
 
 
 # ─── Static Files + SPA Fallback ─────────────────────────
+
 
 @app.route("/assets/<filepath:path>")
 def serve_assets(filepath):
@@ -1430,6 +1831,7 @@ def serve_spa(filepath="index.html"):
 
 # ─── Error Handlers ──────────────────────────────────────
 
+
 @app.error(404)
 def error404(error):
 	if request.path.startswith("/api/"):
@@ -1447,14 +1849,17 @@ def error500(error):
 
 # ─── Run ─────────────────────────────────────────────────
 
-def run_server(host: str = "127.0.0.1", port: int = 8686, open_browser: bool = True):
+
+def run_server(host: str = "127.0.0.1", port: int = 8686, open_browser: bool = False):
 	"""Start the web server."""
 	if open_browser:
 		import webbrowser
 		import threading
+
 		def _open():
 			time.sleep(1)
 			webbrowser.open(f"http://{host}:{port}")
+
 		threading.Thread(target=_open, daemon=True).start()
 
 	app.run(host=host, port=port, quiet=False, reloader=False)

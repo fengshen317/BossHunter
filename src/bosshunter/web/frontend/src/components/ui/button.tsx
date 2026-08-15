@@ -3,14 +3,15 @@ import { cva, type VariantProps } from 'class-variance-authority'
 import { ButtonHTMLAttributes, forwardRef } from 'react'
 
 const buttonVariants = cva(
-	'inline-flex items-center justify-center whitespace-nowrap rounded-lg text-sm font-medium transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 disabled:pointer-events-none disabled:opacity-40',
+	'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg text-sm font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35 focus-visible:ring-offset-1 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-45',
 	{
 		variants: {
 			variant: {
-				default: 'bg-primary text-white hover:bg-primary-dim active:bg-primary-dim',
-				secondary: 'border border-card-border bg-surface text-foreground hover:border-primary/20 hover:bg-surface-raised',
-				destructive: 'bg-danger/15 text-danger border border-danger/20 hover:bg-danger/25',
-				ghost: 'text-muted hover:text-foreground hover:bg-surface-raised',
+				default: 'bg-primary text-white hover:bg-primary-dim active:bg-primary-dim shadow-sm',
+				secondary: 'border border-card-border-strong bg-surface text-foreground hover:bg-surface-raised hover:border-card-border-strong',
+				destructive: 'bg-danger text-white hover:bg-red-700 active:bg-red-700 shadow-sm',
+				outline: 'border border-danger/30 bg-danger/5 text-danger hover:bg-danger/10',
+				ghost: 'text-text-secondary hover:text-foreground hover:bg-surface-raised',
 			},
 			size: {
 				default: 'h-9 px-4 py-2',

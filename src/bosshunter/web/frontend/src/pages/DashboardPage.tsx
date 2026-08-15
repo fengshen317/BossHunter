@@ -51,31 +51,11 @@ interface DashboardPageProps {
 	view?: DashboardView
 }
 
-const modes: Array<{ mode: WorkbenchMode; title: string; description: string; accent: string }> = [
-	{
-		mode: 'full',
-		title: '运行全流程',
-		description: '采集 → AI评分 → 确认投递 → 打招呼 → 持续监测',
-		accent: 'from-primary/80 to-cyan-500/80',
-	},
-	{
-		mode: 'collect',
-		title: '单独采集',
-		description: '只采集岗位与企业信息并进入待评分队列。',
-		accent: 'from-blue-500/80 to-cyan-500/80',
-	},
-	{
-		mode: 'score',
-		title: '仅评分',
-		description: '只对数据库中尚未完成 AI 评分的岗位重试评分。',
-		accent: 'from-emerald-500/80 to-teal-500/80',
-	},
-	{
-		mode: 'monitor',
-		title: '单独监测',
-		description: '监测 HR 的未回复消息，并生成一条覆盖全部问题的回复建议。',
-		accent: 'from-purple-500/80 to-pink-500/80',
-	},
+const modes: Array<{ mode: WorkbenchMode; title: string; description: string }> = [
+	{ mode: 'full', title: '运行全流程', description: '采集 → AI评分 → 确认投递 → 打招呼 → 持续监测' },
+	{ mode: 'collect', title: '单独采集', description: '只采集岗位与企业信息并进入待评分队列。' },
+	{ mode: 'score', title: '仅评分', description: '只对数据库中尚未完成 AI 评分的岗位重试评分。' },
+	{ mode: 'monitor', title: '单独监测', description: '监测 HR 的未回复消息，并生成一条覆盖全部问题的回复建议。' },
 ]
 
 const statItems = [
@@ -389,7 +369,7 @@ export default function DashboardPage({ view = 'workbench' }: DashboardPageProps
 				<div className="flex items-start justify-between gap-4 mb-5">
 					<div>
 						<p className="text-xs text-text-tertiary mb-1">Today's Workbench</p>
-						<h2 className="text-xl font-bold tracking-tight text-gradient">今日求职行动</h2>
+						<h2 className="text-xl font-bold tracking-tight text-foreground">今日求职行动</h2>
 					</div>
 					<div className="flex items-center gap-2">
 						<Button variant="secondary" size="sm" onClick={refresh} disabled={refreshing}>
@@ -416,17 +396,14 @@ export default function DashboardPage({ view = 'workbench' }: DashboardPageProps
 								key={item.mode}
 								onClick={() => handleModeClick(item.mode)}
 								aria-disabled={disabled}
-								className={`min-h-[110px] rounded-lg p-5 text-left transition-all duration-200 relative overflow-hidden ${
+								className={`min-h-[110px] rounded-lg border p-5 text-left transition-colors duration-150 ${
 									isActive
-										? `border-primary/40 bg-gradient-to-br ${item.accent} text-white shadow-glow`
+										? 'border-primary bg-primary/[0.06] text-foreground'
 										: disabled
-											? 'cursor-not-allowed border border-card-border bg-surface text-text-tertiary opacity-40'
-											: 'border border-card-border bg-surface-raised text-foreground hover:border-primary/25 hover:shadow-card-hover'
+											? 'cursor-not-allowed border-card-border bg-surface text-text-tertiary opacity-50'
+											: 'border-card-border bg-surface text-foreground hover:border-card-border-strong hover:shadow-card-hover'
 								}`}
 							>
-								{isActive && (
-									<div className="absolute top-0 left-0 w-full h-0.5 bg-gradient-to-r from-transparent via-white/40 to-transparent animate-shimmer" style={{ backgroundSize: '200% 100%' }} />
-								)}
 								<div className="flex items-center justify-between gap-3 mb-2">
 									<div className="text-sm font-semibold">
 										{modePending === item.mode
@@ -434,10 +411,10 @@ export default function DashboardPage({ view = 'workbench' }: DashboardPageProps
 											: isActive ? activeTask?.status === 'stopping' ? `${item.title}停止中` : `${item.title}运行中` : item.title}
 									</div>
 									{isActive
-										? <Square className="h-4 w-4 fill-current opacity-80" />
-										: <Play className="h-4 w-4 opacity-60" />}
+										? <span className="flex items-center gap-1.5 text-xs font-medium text-primary"><span className="h-1.5 w-1.5 rounded-full bg-primary status-pulse" /><Square className="h-3.5 w-3.5" /></span>
+										: <Play className="h-4 w-4 text-text-tertiary" />}
 								</div>
-								<p className={`text-xs leading-5 ${isActive ? 'text-white/70' : 'text-text-tertiary'}`}>{item.description}</p>
+								<p className={`text-xs leading-5 ${isActive ? 'text-text-secondary' : 'text-text-tertiary'}`}>{item.description}</p>
 							</button>
 						)
 					})}
@@ -451,7 +428,12 @@ export default function DashboardPage({ view = 'workbench' }: DashboardPageProps
 					<div className="mt-4 rounded-lg border border-danger/30 bg-danger/5 px-4 py-3 text-xs text-danger">
 						<div className="font-semibold text-sm">启动前需要处理：</div>
 						<ul className="mt-2 list-none space-y-1">
-							{preflightMessages.map((message, index) => <li key={`${message}-${index}`} className="pl-2 border-l-2 border-danger/30">{message}</li>)}
+							{preflightMessages.map((message, index) => (
+								<li key={`${message}-${index}`} className="flex gap-2">
+									<span className="mt-[0.45rem] h-1 w-1 shrink-0 rounded-full bg-danger" />
+									<span>{message}</span>
+								</li>
+							))}
 						</ul>
 					</div>
 				)}
@@ -488,7 +470,7 @@ export default function DashboardPage({ view = 'workbench' }: DashboardPageProps
 			{/* FUNNEL STATS */}
 			<section className="grid grid-cols-2 gap-3 lg:grid-cols-5">
 				{statItems.map(item => (
-					<div key={item.label} className="rounded-lg border border-card-border bg-surface p-4 cyber-card">
+					<div key={item.label} className="rounded-lg border border-card-border bg-surface p-4">
 						<div className="text-xs text-text-tertiary">{item.label}</div>
 						<div className={`mt-1 text-2xl font-bold tabular-nums data-value ${item.highlight ? 'text-primary' : 'text-foreground'}`}>
 							{workbench.funnel[item.key] || 0}
@@ -513,7 +495,7 @@ export default function DashboardPage({ view = 'workbench' }: DashboardPageProps
 				{workbench.needs_resume.length ? (
 					<div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
 						{workbench.needs_resume.slice(0, 4).map(job => (
-							<div key={job.id} className="rounded-lg border border-warning/20 bg-warning/5 p-4 cyber-card">
+							<div key={job.id} className="rounded-lg border border-warning/20 bg-warning/5 p-4">
 								<div className="flex items-start justify-between gap-3">
 									<div className="font-semibold text-foreground text-sm">{job.company}｜{job.title}</div>
 									<span className="rounded-full border border-warning/30 bg-warning/10 px-2 py-0.5 text-[11px] font-medium text-warning">简历</span>
@@ -589,7 +571,7 @@ export default function DashboardPage({ view = 'workbench' }: DashboardPageProps
 					</div>
 					<div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
 						{pendingGreetingJobs.map(job => (
-							<div key={job.id} className="rounded-lg border border-primary/20 bg-surface p-4 cyber-card">
+							<div key={job.id} className="rounded-lg border border-primary/20 bg-surface p-4">
 								<div className="flex items-start justify-between gap-3">
 									<div>
 										<div className="font-semibold text-foreground text-sm">{job.company}｜{job.title}</div>
@@ -628,7 +610,7 @@ export default function DashboardPage({ view = 'workbench' }: DashboardPageProps
 					</div>
 					<div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
 						{needsGreetingJobs.map(job => (
-							<div key={job.id} className="rounded-lg border border-info/20 bg-surface p-4 cyber-card">
+							<div key={job.id} className="rounded-lg border border-info/20 bg-surface p-4">
 								<div className="font-semibold text-foreground text-sm">{job.company}｜{job.title}</div>
 								<p className="mt-2 text-xs text-text-tertiary">尚未生成招呼语</p>
 								<Button className="mt-3" size="sm" onClick={() => regenerateGreetings([job.id])}>重新生成</Button>
@@ -677,7 +659,7 @@ export default function DashboardPage({ view = 'workbench' }: DashboardPageProps
 function JobActionCard({ job, selected, onToggle, onDetail, onRegenerate }: { job: Job; selected: boolean; onToggle: () => void; onDetail: () => void; onRegenerate: (id: string) => void }) {
 	const greeting = (job.greeting || '').trim()
 	return (
-		<div className={`rounded-lg border p-4 transition-all ${selected ? 'border-primary/40 bg-primary/5 shadow-glow-sm' : 'border-card-border bg-surface-raised cyber-card'}`}>
+		<div className={`rounded-lg border p-4 transition-colors ${selected ? 'border-primary bg-primary/[0.06] shadow-card-hover' : 'border-card-border bg-surface-raised'}`}>
 			<div className="flex items-start justify-between gap-3">
 				<div>
 					<div className="font-semibold text-foreground text-sm">{job.company}｜{job.title}</div>
@@ -701,8 +683,8 @@ function JobActionCard({ job, selected, onToggle, onDetail, onRegenerate }: { jo
 
 function JobDetailModal({ job, onClose }: { job: Job; onClose: () => void }) {
 	return (
-		<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-6 animate-fade-in">
-			<div className="max-h-[86vh] w-full max-w-3xl overflow-y-auto rounded-lg border border-card-border bg-surface p-6 shadow-glow-lg">
+		<div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-6 animate-fade-in">
+			<div className="max-h-[86vh] w-full max-w-3xl overflow-y-auto rounded-lg border border-card-border bg-surface p-6 shadow-overlay">
 				<div className="mb-4 flex items-start justify-between gap-4">
 					<div>
 						<h3 className="text-xl font-bold text-foreground">{job.company}｜{job.title}</h3>
@@ -769,6 +751,8 @@ function JobsPoolView({
 }) {
 	const [notice, setNotice] = useState('')
 	const [starting, setStarting] = useState(false)
+	const [regeneratingJobId, setRegeneratingJobId] = useState<string | null>(null)
+	const [selectedGreetingIds, setSelectedGreetingIds] = useState<Set<string>>(new Set())
 	const scoring = activeTask?.mode === 'score'
 	const enriching = activeTask?.mode === 'reenrich'
 	// statusCounts 现在由后端返回（全量按状态计数），筛选 pill 直接派生。
@@ -812,11 +796,74 @@ function JobsPoolView({
 		}
 	}
 
+	const submitGreetingRegeneration = async (ids: string[]) => {
+		const res = await fetch('/api/workbench/greetings/regenerate', {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({ job_ids: ids }),
+		})
+		if (!res.ok) {
+			const data = await res.json().catch(() => ({}))
+			throw new Error(data.error || '重新生成失败')
+		}
+	}
+
+	const regeneratePoolGreeting = async (job: Job) => {
+		if (activeTask || regeneratingJobId) return
+		if (!window.confirm(`重新生成「${job.company} - ${job.title}」的招呼语吗？即使之前已联系过，本次仍会先进入待确认，不会自动发送。`)) return
+		setRegeneratingJobId(job.id)
+		setNotice('正在启动招呼语重新生成任务…')
+		try {
+			await submitGreetingRegeneration([job.id])
+			await refresh()
+			setNotice('招呼语正在重新生成，完成后岗位会回到待确认，由你确认后再发送。')
+		} catch (err) {
+			setNotice(err instanceof Error ? err.message : '重新生成失败')
+		} finally {
+			setRegeneratingJobId(null)
+		}
+	}
+
+	const regenerateSelectedGreetings = async () => {
+		const ids = [...selectedGreetingIds]
+		if (!ids.length || activeTask || regeneratingJobId) return
+		if (!window.confirm(`批量重新生成 ${ids.length} 个岗位的招呼语吗？完成后将统一进入工作台待确认。`)) return
+		setRegeneratingJobId('batch')
+		setNotice(`正在启动 ${ids.length} 条招呼语的批量生成任务…`)
+		try {
+			await submitGreetingRegeneration(ids)
+			setSelectedGreetingIds(new Set())
+			await refresh()
+			setNotice(`已提交 ${ids.length} 条招呼语，生成完成后会在工作台“待确认”中显示。`)
+		} catch (err) {
+			setNotice(err instanceof Error ? err.message : '批量重新生成失败')
+		} finally {
+			setRegeneratingJobId(null)
+		}
+	}
+
+	const toggleGreetingJob = (jobId: string) => {
+		setSelectedGreetingIds(current => {
+			const next = new Set(current)
+			next.has(jobId) ? next.delete(jobId) : next.add(jobId)
+			return next
+		})
+	}
+
+	const toggleAllGreetingJobs = (jobIds: string[]) => {
+		setSelectedGreetingIds(current => {
+			const next = new Set(current)
+			const allSelected = jobIds.every(id => next.has(id))
+			jobIds.forEach(id => allSelected ? next.delete(id) : next.add(id))
+			return next
+		})
+	}
+
 	return (
 		<div className="rounded-lg border border-card-border bg-surface p-6 animate-fade-in">
 			<div className="mb-4 flex flex-wrap items-center justify-between gap-3">
 				<div>
-					<h2 className="text-xl font-bold text-gradient">岗位池</h2>
+					<h2 className="text-xl font-bold text-foreground">岗位池</h2>
 					<p className="mt-1 text-xs text-text-tertiary">集中查看已采集岗位、AI 分数、状态和详情入口。</p>
 				</div>
 				<div className="flex items-center gap-2">
@@ -854,6 +901,18 @@ function JobsPoolView({
 				</div>
 			)}
 			<div className="mb-4 rounded-lg border border-card-border bg-surface-raised p-3">
+				<div className="mb-3 flex flex-wrap items-center justify-between gap-2 border-b border-card-border pb-3">
+					<p className="text-xs text-text-tertiary">已选择 {selectedGreetingIds.size} 个可重新联系的岗位</p>
+					<Button
+						variant="secondary"
+						size="sm"
+						disabled={selectedGreetingIds.size === 0 || Boolean(activeTask) || Boolean(regeneratingJobId)}
+						onClick={regenerateSelectedGreetings}
+					>
+						<RefreshCw className={`mr-1.5 h-3.5 w-3.5 ${regeneratingJobId === 'batch' ? 'animate-spin' : ''}`} />
+						批量重新生成 ({selectedGreetingIds.size})
+					</Button>
+				</div>
 				<div className="flex flex-wrap items-center gap-2">
 					<span className="mr-1 text-xs text-text-tertiary">筛选：</span>
 					<button
@@ -886,7 +945,15 @@ function JobsPoolView({
 					{jobs.length} / {jobsTotal} 条记录
 				</p>
 			</div>
-			<JobsTable jobs={jobs} />
+			<JobsTable
+				jobs={jobs}
+				onRegenerateGreeting={regeneratePoolGreeting}
+				regeneratingJobId={regeneratingJobId}
+				actionsDisabled={Boolean(activeTask)}
+				selectedJobIds={selectedGreetingIds}
+				onToggleJob={toggleGreetingJob}
+				onToggleAll={toggleAllGreetingJobs}
+			/>
 		</div>
 	)
 }
@@ -1069,7 +1136,7 @@ function MonitorExecutionView({ history, refresh }: { history: HistoryItem[]; re
 		<div className="rounded-lg border border-card-border bg-surface p-6 animate-fade-in">
 			<div className="mb-4 flex items-start justify-between gap-4">
 				<div>
-					<h2 className="text-xl font-bold text-gradient">监测执行</h2>
+					<h2 className="text-xl font-bold text-foreground">监测执行</h2>
 					<p className="mt-1 text-xs text-text-tertiary">处理监测发现的 HR 问题、回复建议和结果。</p>
 				</div>
 				<span className="rounded-lg border border-primary/30 bg-primary/10 px-3 py-1.5 text-xs text-primary">
@@ -1117,7 +1184,7 @@ function MonitorExecutionView({ history, refresh }: { history: HistoryItem[]; re
 					const aiReplyText = parsed.aiReply || item.detail || getActionLabel(item.action)
 					const systemFailureReason = parsed.systemReason || (isResumeFailure ? '未获得更具体的错误信息。' : '')
 					return (
-						<div key={`${item.created_at}-${index}`} className="grid gap-3 rounded-lg border border-card-border bg-surface-raised p-4 lg:grid-cols-[120px_1fr_140px] cyber-card">
+						<div key={`${item.created_at}-${index}`} className="grid gap-3 rounded-lg border border-card-border bg-surface-raised p-4 lg:grid-cols-[120px_1fr_140px]">
 							<div className="text-xs text-text-tertiary">
 								<div>{formatLocalDateTime(item.created_at)}</div>
 								<div className="mt-2 rounded-lg border border-primary/20 bg-primary/10 px-2 py-1 text-center font-medium text-primary text-[11px]">{getActionLabel(item.action)}</div>

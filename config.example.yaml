@@ -58,8 +58,8 @@ throttle:
   send_error_max_retries: 3
 
 ai:
-  provider: "anthropic"
-  model: "claude-sonnet-4-6"
+  provider: "openai_compatible"
+  model: "deepseek-chat"
   greeting_review_threshold: 7
   greeting_max_iterations: 2
   # 招呼语生成的并发线程数（默认 4）。调大可加速批量生成，但过高会触发 AI 接口的速率限制。

@@ -62,12 +62,12 @@ class FakeClaude:
     def __call__(self, prompt: str, config: dict, max_tokens: int = 300) -> str | None:
         if REVIEW_PROMPT_MARKER in prompt:
             self.review_calls.append(prompt)
-            return '{"naturalness": 9, "relevance": 9, "differentiation": 9, "truthfulness": 10, "avg": 9.0, "critique": "良好"}'
+            return '{"naturalness": 9, "relevance": 9, "differentiation": 9, "truthfulness": 10, "replyability": 9, "avg": 9.2, "critique": "良好"}'
         self.generate_calls.append(prompt)
         # 从 prompt 里提取被生成的 job_id（_make_job 的 title/company 组合唯一）。
         # 返回一条通过确定性质量校验的招呼语（长度≥45、无禁词、含标点、我≤5），
         # 这样 with_review=False 路径的确定性重试不会被触发，便于精确统计调用次数。
-        return "你们在推进智能体落地这件事很有意思。我之前用 LangGraph 把知识库接进订单问数场景并稳定上线。如果团队也在解决这类问题，我很愿意带着细节聊聊。"
+        return "您好，这个岗位同时提到工作流编排和服务稳定性，我之前用 LangGraph 把知识库接进订单问数场景并稳定上线。想了解一下，团队目前更侧重任务编排，还是生产稳定性？"
 
 
 class GreetingBatchConcurrencyTests(unittest.TestCase):
@@ -117,12 +117,12 @@ class GreetingBatchConcurrencyTests(unittest.TestCase):
         def alternating_fake(prompt, cfg, max_tokens=300):
             if REVIEW_PROMPT_MARKER in prompt:
                 # 不应被调用：确定性规则命中时直接跳过审查。
-                return '{"naturalness": 9, "relevance": 9, "differentiation": 9, "truthfulness": 10, "avg": 9.0, "critique": ""}'
+                return '{"naturalness": 9, "relevance": 9, "differentiation": 9, "truthfulness": 10, "replyability": 9, "avg": 9.2, "critique": ""}'
             # 首轮返回含套话的招呼语，第二轮返回干净招呼语。
             if not call_state["first_done"]:
                 call_state["first_done"] = True
                 return "您好，看到贵司在招聘，我对这个岗位很感兴趣，相信我能胜任。"
-            return "你们推进智能体落地这件事很有意思，我有 LangGraph 经验，很愿意聊聊实现细节。"
+            return "您好，这个岗位同时提到工作流编排和服务稳定性，我用 LangGraph 做过订单问数工作流。想了解一下，团队目前更侧重任务编排，还是生产稳定性？"
 
         jobs = [_make_job("mixing-job")]
         with mock.patch.object(greeter, "_call_claude", side_effect=alternating_fake) as mock_call:
@@ -132,10 +132,10 @@ class GreetingBatchConcurrencyTests(unittest.TestCase):
         job_id, greeting = results[0]
         self.assertEqual(job_id, "mixing-job")
         # 最终保留的是干净招呼语（含套话的版本应被重试替换）。
-        self.assertNotIn("您好", greeting)
-        # 审查类调用应为 0：首轮确定性规则命中直接进入第二轮生成，无需 AI 审查。
+        self.assertTrue(greeting.startswith("您好，"))
+        # 首轮确定性规则命中时跳过审查；第二轮合格后再审查相关性和真实性。
         review_calls = [c for c in mock_call.call_args_list if REVIEW_PROMPT_MARKER in (c.args[0] if c.args else "")]
-        self.assertEqual(review_calls, [], "确定性规则命中时应跳过 AI 审查调用")
+        self.assertEqual(len(review_calls), 1)
 
 
 class GenerateGreetingsDbIntegrationTests(unittest.TestCase):

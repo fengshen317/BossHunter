@@ -2,133 +2,342 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ============================================================
+   BossHunter 工作台 · 克制亮色主题
+   近白底 + 单一 teal 强调 + 高对比墨色文字。
+   设计取向：让工具隐入任务，装饰让位于状态与数据。
+   ============================================================ */
+
 :root {
-	--background: 222 47% 8%;
-	--foreground: 215 28% 90%;
-	--surface: 218 28% 13%;
-	--surface-raised: 215 32% 15%;
-	--primary: 160 84% 39%;
-	--primary-dim: 160 84% 32%;
-	--primary-foreground: 222 47% 8%;
-	--secondary: 218 28% 15%;
-	--muted: 215 20% 55%;
-	--accent: 218 28% 15%;
-	--destructive: 0 92% 68%;
-	--border: 216 33% 18%;
-	--ring: 160 84% 39%;
-	--radius: 6px;
+	--background: #F6F7F9;
+	--foreground: #0F172A;
+	--surface: #FFFFFF;
+	--primary: #0F766E;
+	--border: #E4E8EF;
+	--radius: 8px;
+	--color-background: 246 247 249;
+	--color-foreground: 15 23 42;
+	--color-surface: 255 255 255;
+	--color-surface-raised: 252 252 253;
+	--color-surface-overlay: 255 255 255;
+	--color-card-border: 228 232 239;
+	--color-card-border-strong: 203 210 220;
+	--color-primary: 15 118 110;
+	--color-primary-dim: 17 94 89;
+	--color-primary-bright: 13 148 136;
+	--color-success: 22 163 74;
+	--color-warning: 217 119 6;
+	--color-danger: 220 38 38;
+	--color-info: 37 99 235;
+	--color-muted: 100 116 139;
+	--color-text-secondary: 71 85 105;
+	--color-text-tertiary: 100 116 139;
+	color-scheme: light;
 }
 
+:root.dark {
+	--background: #0B1118;
+	--foreground: #E8EEF5;
+	--surface: #111922;
+	--primary: #2DD4BF;
+	--border: #263342;
+	--color-background: 11 17 24;
+	--color-foreground: 232 238 245;
+	--color-surface: 17 25 34;
+	--color-surface-raised: 22 31 42;
+	--color-surface-overlay: 27 37 49;
+	--color-card-border: 38 51 66;
+	--color-card-border-strong: 55 70 87;
+	--color-primary: 45 212 191;
+	--color-primary-dim: 20 184 166;
+	--color-primary-bright: 94 234 212;
+	--color-success: 74 222 128;
+	--color-warning: 251 191 36;
+	--color-danger: 248 113 113;
+	--color-info: 96 165 250;
+	--color-muted: 148 163 184;
+	--color-text-secondary: 190 201 214;
+	--color-text-tertiary: 148 163 184;
+	color-scheme: dark;
+}
+
+/* 默认描边色：未显式指定颜色的 border 走克制中性灰 */
 * {
-	border-color: hsl(var(--border));
+	border-color: var(--border);
+}
+
+html,
+body,
+#root {
+	height: 100%;
 }
 
 body {
-	background-color: #0d1526;
-	/* 渐变光晕背景：毛玻璃卡片透出这些色彩，滚动时光晕固定，增强层次感 */
-	background-image:
-		radial-gradient(1000px 600px at 8% -8%, rgba(16, 185, 129, 0.22), transparent 62%),
-		radial-gradient(900px 600px at 100% 0%, rgba(56, 189, 248, 0.18), transparent 58%),
-		radial-gradient(1100px 700px at 50% 125%, rgba(139, 92, 246, 0.16), transparent 62%),
-		radial-gradient(700px 500px at 85% 55%, rgba(16, 185, 129, 0.10), transparent 60%);
-	background-attachment: fixed;
-	color: #e8ecf4;
+	background-color: var(--background);
+	color: var(--foreground);
 	font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft YaHei', sans-serif;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+	text-rendering: optimizeLegibility;
 }
 
-/* Scrollbar styling — subtle dark */
+/* Scrollbar — 克制的中性灰，不抢视觉 */
 ::-webkit-scrollbar {
-	width: 6px;
-	height: 6px;
+	width: 10px;
+	height: 10px;
 }
 ::-webkit-scrollbar-track {
 	background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-	background: #1f2a3d;
-	border-radius: 3px;
+	background: #D1D6DF;
+	border: 3px solid transparent;
+	background-clip: content-box;
+	border-radius: 8px;
 }
 ::-webkit-scrollbar-thumb:hover {
-	background: #10b981;
+	background: #B6BDC9;
+	background-clip: content-box;
 }
 
-/* Card hover effect */
-.cyber-card {
-	position: relative;
-	transition: all 0.2s ease;
-	box-shadow: 0 1px 3px rgba(0,0,0,0.3), 0 1px 2px rgba(0,0,0,0.2);
-}
-
-.cyber-card:hover {
-	border-color: rgba(16, 185, 129, 0.25);
-	transform: translateY(-1px);
-	box-shadow: 0 4px 12px rgba(0,0,0,0.3), 0 0 15px rgba(16, 185, 129, 0.06);
-}
-
-/* Accent text — no glow, just color */
-.accent-text {
-	color: #10b981;
-}
-
-/* Status indicator pulse */
+/* 状态指示脉冲：仅用于「在线 / 有待处理回复」这类真实状态，不用作装饰 */
 .status-pulse {
-	animation: pulse-dot 2s ease-in-out infinite;
+	animation: bh-pulse-dot 2.4s ease-in-out infinite;
+}
+@keyframes bh-pulse-dot {
+	0%, 100% { opacity: 1; }
+	50% { opacity: 0.45; }
+}
+@media (prefers-reduced-motion: reduce) {
+	.status-pulse { animation: none; }
 }
 
-/* Monospace data display — reserved for numbers/data only */
+/* 单色强调文字（非渐变） */
+.accent-text {
+	color: var(--primary);
+}
+
+/* 等宽数据展示：仅用于数字/数据 */
 .data-value {
 	font-family: 'JetBrains Mono', monospace;
 	font-variant-numeric: tabular-nums;
-	letter-spacing: -0.02em;
+	letter-spacing: -0.01em;
 }
 
-/* Focus ring override */
-input:focus,
-textarea:focus,
-select:focus {
-	outline: none;
-	box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
-	border-color: rgba(16, 185, 129, 0.4);
+/* 原生 select：Windows 下 option 是独立系统表面，显式声明亮色配色保证一致 */
+select {
+	color-scheme: inherit;
 }
 
-/* Greeting preview — clean, readable block */
+.dark select option,
+.dark select optgroup {
+	background-color: rgb(var(--color-surface-overlay));
+	color: rgb(var(--color-foreground));
+}
+
+.dark ::-webkit-scrollbar-thumb {
+	background: #405064;
+	background-clip: content-box;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+	background: #53657A;
+	background-clip: content-box;
+}
+
+.dark .assistant-markdown,
+.dark .assistant-markdown strong {
+	color: rgb(var(--color-foreground));
+}
+
+.dark .assistant-markdown code,
+.dark .assistant-markdown pre,
+.dark .assistant-markdown table,
+.dark .assistant-markdown th,
+.dark .assistant-markdown td {
+	border-color: rgb(var(--color-card-border));
+}
+
+.dark .assistant-markdown code,
+.dark .assistant-markdown pre,
+.dark .assistant-markdown th {
+	background: rgb(var(--color-surface-raised));
+}
+
+.dark .assistant-markdown pre code {
+	color: rgb(var(--color-text-secondary));
+}
+select option,
+select optgroup {
+	background-color: #FFFFFF;
+	color: #0F172A;
+}
+select option:checked {
+	background-color: rgba(15, 118, 110, 0.12);
+	color: #0F172A;
+}
+
+/* ============================================================
+   AI 助手 Markdown 渲染
+   ============================================================ */
+.assistant-markdown {
+	max-width: 100%;
+	color: #1E293B;
+}
+
+.assistant-markdown a {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-width: 1.2rem;
+	height: 1.2rem;
+	margin: 0 0.12rem;
+	border: 1px solid rgba(37, 99, 235, 0.4);
+	border-radius: 999px;
+	background: rgba(37, 99, 235, 0.08);
+	color: #1D4ED8;
+	font-size: 0.68rem;
+	font-weight: 700;
+	line-height: 1;
+	text-decoration: none;
+}
+.assistant-markdown a:hover {
+	background: rgba(37, 99, 235, 0.16);
+}
+
+.assistant-citation {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.4rem;
+	max-width: min(100%, 18rem);
+	min-height: 2rem;
+	padding: 0.35rem 0.55rem 0.35rem 0.4rem;
+	border: 1px solid rgba(37, 99, 235, 0.32);
+	border-radius: 0.5rem;
+	background: rgba(37, 99, 235, 0.06);
+	color: #1D4ED8;
+	font-size: 0.6875rem;
+	font-weight: 500;
+	text-decoration: none;
+	transition: border-color 180ms ease, background-color 180ms ease;
+}
+a.assistant-citation:hover {
+	border-color: rgba(37, 99, 235, 0.5);
+	background: rgba(37, 99, 235, 0.1);
+}
+a.assistant-citation:focus-visible {
+	outline: 2px solid rgba(37, 99, 235, 0.55);
+	outline-offset: 2px;
+}
+
+.assistant-citation-index {
+	display: grid;
+	width: 1.1rem;
+	height: 1.1rem;
+	flex: 0 0 auto;
+	place-items: center;
+	border-radius: 0.3rem;
+	background: rgba(37, 99, 235, 0.14);
+	font-size: 0.625rem;
+	font-weight: 700;
+	line-height: 1;
+}
+
+.assistant-tool-trace {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.35rem;
+	border: 1px solid;
+	border-radius: 999px;
+	padding: 0.3rem 0.55rem;
+	font-size: 0.5625rem;
+	line-height: 1rem;
+}
+
+.assistant-markdown p + p,
+.assistant-markdown p + ul,
+.assistant-markdown p + ol,
+.assistant-markdown ul + p,
+.assistant-markdown ol + p {
+	margin-top: 0.85rem;
+}
+
+.assistant-markdown ul,
+.assistant-markdown ol {
+	padding-left: 1.35rem;
+}
+.assistant-markdown ul { list-style: disc; }
+.assistant-markdown ol { list-style: decimal; }
+.assistant-markdown li + li { margin-top: 0.3rem; }
+
+.assistant-markdown strong {
+	color: #0F172A;
+	font-weight: 650;
+}
+
+.assistant-markdown code {
+	border: 1px solid #E4E8EF;
+	border-radius: 4px;
+	background: #F1F3F7;
+	padding: 0.1rem 0.35rem;
+	font-family: 'JetBrains Mono', Consolas, monospace;
+	font-size: 0.86em;
+	color: #0F766E;
+}
+
+.assistant-markdown pre {
+	overflow-x: auto;
+	margin: 0.85rem 0;
+	border: 1px solid #E4E8EF;
+	border-radius: 8px;
+	background: #F8F9FB;
+	padding: 0.8rem 0.95rem;
+	font-size: 0.82rem;
+	line-height: 1.65;
+}
+.assistant-markdown pre code {
+	border: 0;
+	padding: 0;
+	background: transparent;
+	color: #334155;
+}
+
+.assistant-markdown table {
+	display: block;
+	overflow-x: auto;
+	width: 100%;
+	margin: 0.9rem 0;
+	border-collapse: collapse;
+	font-size: 0.82rem;
+	border: 1px solid #E4E8EF;
+	border-radius: 8px;
+}
+.assistant-markdown th,
+.assistant-markdown td {
+	min-width: 7rem;
+	border: 1px solid #E4E8EF;
+	padding: 0.55rem 0.7rem;
+	text-align: left;
+	vertical-align: top;
+}
+.assistant-markdown th {
+	background: #F6F7F9;
+	color: #0F172A;
+	font-weight: 600;
+}
+.assistant-markdown td {
+	background: #FFFFFF;
+	color: #334155;
+}
+
+/* 打招呼语预览：克制的引用块 */
 .greeting-block {
 	font-family: Inter, -apple-system, sans-serif;
 	font-size: 0.8125rem;
 	line-height: 1.75rem;
-	background: rgba(16, 185, 129, 0.04);
-	border: 1px solid rgba(16, 185, 129, 0.1);
+	background: rgba(15, 118, 110, 0.04);
+	border: 1px solid rgba(15, 118, 110, 0.16);
 	border-radius: 8px;
 	padding: 12px;
-}
-
-/* ===== 毛玻璃面板 =====
-   所有卡片统一为半透明 + 背景模糊，透出 body 的渐变光晕。
-   backdrop-blur 需在元素自身开启，故全局覆盖 surface 系背景类。
-   注意：不要用 ".xxx .bg-surface" 这类后代选择器做颜色覆盖——
-   CSS 压缩器会把它误简化为裸 ".bg-surface"，把毛玻璃背景全部盖回不透明色。 */
-.bg-surface {
-	background-color: rgba(15, 23, 42, 0.42) !important;
-	backdrop-filter: blur(24px) saturate(170%);
-	-webkit-backdrop-filter: blur(24px) saturate(170%);
-}
-
-.bg-surface-raised {
-	background-color: rgba(30, 41, 59, 0.48) !important;
-	backdrop-filter: blur(24px) saturate(170%);
-	-webkit-backdrop-filter: blur(24px) saturate(170%);
-}
-
-.bg-surface\/50 {
-	background-color: rgba(15, 23, 42, 0.35) !important;
-	backdrop-filter: blur(24px) saturate(170%);
-	-webkit-backdrop-filter: blur(24px) saturate(170%);
-}
-
-/* 渐变文字：用于主标题等强调元素 */
-.text-gradient {
-	background: linear-gradient(135deg, #34d399 0%, #38bdf8 55%, #a78bfa 100%);
-	-webkit-background-clip: text;
-	background-clip: text;
-	color: transparent;
+	color: #1E293B;
 }

@@ -2,12 +2,14 @@
 setlocal
 cd /d "%~dp0"
 
-echo Starting BossHunter dashboard and browser...
-if exist ".venv\Scripts\bosshunter.exe" (
-    ".venv\Scripts\bosshunter.exe" start %*
+echo Starting BossHunter backend...
+set "BOSSHUNTER_BASE_DIR=%CD%"
+set "BOSSHUNTER_OPEN_BROWSER=false"
+if exist ".venv\Scripts\python.exe" (
+    ".venv\Scripts\python.exe" -m bosshunter
 ) else (
     set "PYTHONPATH=%CD%\src;%PYTHONPATH%"
-    python -m bosshunter start %*
+    python -m bosshunter
 )
 set "BOSSHUNTER_EXIT_CODE=%ERRORLEVEL%"
 

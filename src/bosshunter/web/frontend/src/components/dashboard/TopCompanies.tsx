@@ -33,7 +33,7 @@ export function TopCompanies({ data }: TopCompaniesProps) {
 							</div>
 							<div className="h-1 bg-card-border rounded-full overflow-hidden">
 								<div
-									className="h-full bg-gradient-to-r from-primary-dim to-primary rounded-full transition-all"
+									className="h-full bg-primary rounded-full transition-all"
 									style={{ width: `${(company.avg_score / maxScore) * 100}%` }}
 								/>
 							</div>

@@ -174,7 +174,7 @@ export function ImportJobPanel({ activeTask, refresh }: ImportJobPanelProps) {
 	})()
 
 	return (
-		<section className="mb-4 rounded-lg border border-card-border bg-surface-raised cyber-card">
+		<section className="mb-4 rounded-lg border border-card-border bg-surface-raised">
 			<button
 				type="button"
 				onClick={() => setExpanded(!expanded)}
@@ -301,7 +301,7 @@ export function ImportJobPanel({ activeTask, refresh }: ImportJobPanelProps) {
 											disabled={busy || Boolean(selectingId)}
 											className={`rounded-lg border p-4 text-left transition-all disabled:opacity-60 ${
 												selectingId === c.id
-													? 'border-primary/40 bg-primary/5 shadow-glow-sm'
+													? 'border-primary bg-primary/[0.06]'
 													: 'border-card-border bg-surface hover:border-primary/30'
 											}`}
 										>

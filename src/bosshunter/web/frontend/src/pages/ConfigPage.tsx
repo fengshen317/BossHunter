@@ -184,7 +184,7 @@ export default function ConfigPage() {
 										key={item.key}
 										type="button"
 										onClick={() => updateConfig('resume.template', item.key)}
-										className={`rounded-lg border p-3 text-left transition-all ${selected ? 'border-primary/40 bg-primary/10 shadow-glow-sm' : 'border-card-border bg-surface-raised hover:border-primary/20'}`}
+										className={`rounded-lg border p-3 text-left transition-colors ${selected ? 'border-primary bg-primary/[0.06]' : 'border-card-border bg-surface hover:border-card-border-strong'}`}
 									>
 										<div className="mb-3 h-16 overflow-hidden rounded-lg border border-card-border bg-surface p-2">
 											<div className={`mb-1 h-2 w-1/2 rounded ${item.key === 'ats' ? 'bg-text-tertiary' : 'bg-primary'}`} />
@@ -324,12 +324,12 @@ export default function ConfigPage() {
 				<div className="space-y-4">
 					<Field label="提供商">
 						<select
-							value={config.ai?.provider || 'anthropic'}
+							value={config.ai?.provider || 'openai_compatible'}
 							onChange={e => updateConfig('ai.provider', e.target.value)}
 							className="h-10 w-full rounded-lg border border-card-border bg-surface-raised px-3 text-sm text-foreground outline-none focus:border-primary/40 focus:ring-2 focus:ring-primary/15 transition-colors"
 						>
-							<option value="anthropic">Anthropic Messages</option>
 							<option value="openai_compatible">OpenAI 兼容接口（DeepSeek 等）</option>
+							<option value="anthropic">Anthropic Messages</option>
 						</select>
 						<p className="mt-1 text-xs text-text-tertiary">
 							{config.ai?.provider === 'openai_compatible'

@@ -7,7 +7,7 @@ interface FunnelCardsProps {
 const funnelSteps = [
 	{ key: '采集总数', color: 'text-info' },
 	{ key: '初筛通过', color: 'text-primary' },
-	{ key: 'AI评分', color: 'text-emerald-400' },
+	{ key: 'AI评分', color: 'text-success' },
 	{ key: '人工确认', color: 'text-warning' },
 ]
 
@@ -20,7 +20,7 @@ export function FunnelCards({ data }: FunnelCardsProps) {
 				const rate = prevCount > 0 && i > 0 ? ((count / prevCount) * 100).toFixed(1) + '%' : ''
 
 				return (
-					<div key={step.key} className="rounded-lg border border-card-border bg-surface p-4 cyber-card">
+					<div key={step.key} className="rounded-lg border border-card-border bg-surface p-4">
 							<div className="text-xs text-text-tertiary">{step.key}</div>
 							<div className={`mt-2 text-2xl font-bold tabular-nums data-value ${step.color}`}>{count}</div>
 							{rate && <p className="text-xs text-text-tertiary mt-1">{rate}</p>}

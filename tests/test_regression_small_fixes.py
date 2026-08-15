@@ -407,10 +407,10 @@ class SidebarTests(unittest.TestCase):
         self.assertIn("text-xl", self.source)
         self.assertIn("text-yellow-400", self.source)
 
-    def test_sidebar_fetches_unresolved_reply_count(self):
-        # Act / Assert
-        self.assertIn("/api/history/unresolved-replies/count", self.source)
-        self.assertNotIn("item.action === 'reply_pending'", self.source)
+    def test_sidebar_does_not_show_ambiguous_monitor_alert_dot(self):
+        # 监测页内部已有准确待处理数量，侧栏不应再显示混合多类历史事项的误导红点。
+        self.assertNotIn("/api/history/unresolved-replies/count", self.source)
+        self.assertNotIn('aria-label="有待处理事项"', self.source)
 
 
 class HeaderTests(unittest.TestCase):

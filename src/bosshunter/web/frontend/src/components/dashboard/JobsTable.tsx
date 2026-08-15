@@ -1,12 +1,19 @@
 import { Fragment, useEffect, useRef, useState } from 'react'
 import { Badge } from '@/components/ui/badge'
-import { ChevronDown, ChevronUp } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { ChevronDown, ChevronUp, RefreshCw } from 'lucide-react'
 import { getStatusLabel } from '@/lib/status'
 import { formatTimeAgo } from '@/lib/utils'
 import type { Job } from '@/hooks/useDashboard'
 
 interface JobsTableProps {
 	jobs: Job[]
+	onRegenerateGreeting?: (job: Job) => void
+	regeneratingJobId?: string | null
+	actionsDisabled?: boolean
+	selectedJobIds?: Set<string>
+	onToggleJob?: (jobId: string) => void
+	onToggleAll?: (jobIds: string[]) => void
 }
 
 function statusVariant(status: string) {
@@ -24,6 +31,7 @@ function statusVariant(status: string) {
 		'follow_up_sent',
 		'rejected',
 		'error',
+		'closed',
 	])
 	return variants.has(status) ? status : 'default'
 }
@@ -46,7 +54,15 @@ function capitalClass(text?: string): string {
 	return 'text-foreground'
 }
 
-export function JobsTable({ jobs }: JobsTableProps) {
+export function JobsTable({
+	jobs,
+	onRegenerateGreeting,
+	regeneratingJobId,
+	actionsDisabled = false,
+	selectedJobIds = new Set<string>(),
+	onToggleJob,
+	onToggleAll,
+}: JobsTableProps) {
 	const [expanded, setExpanded] = useState<string | null>(null)
 	// 直接渲染服务端返回的当前页岗位（分页/筛选已由后端处理）。
 
@@ -66,13 +82,26 @@ export function JobsTable({ jobs }: JobsTableProps) {
 		if (score >= 60) return 'text-info'
 		return 'text-text-tertiary'
 	}
+	const selectableJobIds = jobs
+		.filter(job => !['rejected', 'closed'].includes(job.status) && !job.id.startsWith('manual_'))
+		.map(job => job.id)
+	const allSelectableChecked = selectableJobIds.length > 0 && selectableJobIds.every(id => selectedJobIds.has(id))
 
 	return (
-		<div className="rounded-lg border border-card-border bg-[#111827] overflow-hidden">
+		<div className="rounded-lg border border-card-border bg-surface overflow-hidden">
 			<div className="overflow-x-auto">
 				<table className="w-full text-sm">
 					<thead>
-						<tr className="border-b border-card-border bg-[#1a2332] text-xs text-text-tertiary">
+						<tr className="border-b border-card-border bg-background text-xs text-text-tertiary">
+							<th className="w-10 px-3 py-3 text-center font-medium">
+								<input
+									type="checkbox"
+									aria-label="选择当前页可重新生成的岗位"
+									checked={allSelectableChecked}
+									disabled={selectableJobIds.length === 0 || actionsDisabled}
+									onChange={() => onToggleAll?.(selectableJobIds)}
+								/>
+							</th>
 							<th className="px-4 py-3 text-left font-medium">公司</th>
 							<th className="px-4 py-3 text-left font-medium">职位</th>
 							<th className="px-4 py-3 text-left font-medium">区域</th>
@@ -87,7 +116,7 @@ export function JobsTable({ jobs }: JobsTableProps) {
 						<tbody>
 							{jobs.length === 0 && (
 								<tr>
-									<td colSpan={9} className="px-4 py-12 text-center text-xs text-text-tertiary">
+									<td colSpan={10} className="px-4 py-12 text-center text-xs text-text-tertiary">
 										暂无记录
 									</td>
 								</tr>
@@ -95,17 +124,27 @@ export function JobsTable({ jobs }: JobsTableProps) {
 							{jobs.map(job => {
 							const isExpanded = expanded === job.id
 							const isManualChat = job.id.startsWith('manual_')
+							const canRegenerateGreeting = !['rejected', 'closed'].includes(job.status) && !isManualChat
 							return (
 								<Fragment key={job.id}>
 									<tr
-										className="cursor-pointer border-b border-card-border bg-[#111827] transition-all hover:bg-[#1a2332]"
+										className="cursor-pointer border-b border-card-border bg-surface transition-all hover:bg-background"
 										onClick={() => setExpanded(isExpanded ? null : job.id)}
 									>
+										<td className="px-3 py-3 text-center" onClick={event => event.stopPropagation()}>
+											<input
+												type="checkbox"
+												aria-label={`选择 ${job.company} - ${job.title}`}
+												checked={selectedJobIds.has(job.id)}
+												disabled={!canRegenerateGreeting || actionsDisabled}
+												onChange={() => onToggleJob?.(job.id)}
+											/>
+										</td>
 										<td className="px-4 py-3">
 											<div className="flex items-center gap-2">
 												<span className="max-w-[160px] truncate font-medium text-foreground">{job.company}</span>
 												{job.company_size && (
-													<span className="rounded-md bg-[#1a2332] border border-card-border px-1.5 py-0.5 text-[10px] text-text-tertiary">{job.company_size}</span>
+													<span className="rounded-md bg-background border border-card-border px-1.5 py-0.5 text-[10px] text-text-tertiary">{job.company_size}</span>
 												)}
 											</div>
 										</td>
@@ -144,22 +183,39 @@ export function JobsTable({ jobs }: JobsTableProps) {
 										</td>
 									</tr>
 									{isExpanded && (
-										<tr className="border-b border-card-border bg-[#1a2332]">
-											<td colSpan={9} className="px-6 py-4">
+										<tr className="border-b border-card-border bg-background">
+											<td colSpan={10} className="px-6 py-4">
 												<div className="grid grid-cols-1 gap-3 text-sm lg:grid-cols-3">
-													<div className="rounded-lg border border-card-border bg-[#111827] p-4">
+													<div className="rounded-lg border border-card-border bg-surface p-4">
 														<p className="mb-2 text-xs text-text-tertiary">职位描述</p>
 														<p className="line-clamp-6 leading-6 text-text-secondary text-xs">{job.jd || '无'}</p>
 													</div>
-													<div className="rounded-lg border border-card-border bg-[#111827] p-4">
-														<p className="mb-2 text-xs text-text-tertiary">招呼语</p>
-														<div className="line-clamp-6 whitespace-pre-wrap leading-6 text-text-secondary text-xs greeting-block">{job.greeting || '未生成'}</div>
-													</div>
-													<div className="rounded-lg border border-card-border bg-[#111827] p-4">
+												<div className="rounded-lg border border-card-border bg-surface p-4">
+													<p className="mb-2 text-xs text-text-tertiary">招呼语</p>
+													<div className="line-clamp-6 whitespace-pre-wrap leading-6 text-text-secondary text-xs greeting-block">{job.greeting || '未生成'}</div>
+													{canRegenerateGreeting && onRegenerateGreeting && (
+														<div className="mt-3 border-t border-card-border pt-3">
+															<Button
+																variant="secondary"
+																size="sm"
+																disabled={actionsDisabled || regeneratingJobId === job.id}
+																onClick={event => {
+																	event.stopPropagation()
+																	onRegenerateGreeting(job)
+																}}
+															>
+																<RefreshCw className={`mr-1.5 h-3.5 w-3.5 ${regeneratingJobId === job.id ? 'animate-spin' : ''}`} />
+																重新生成并进入待确认
+															</Button>
+															<p className="mt-2 text-[11px] text-text-tertiary">生成后不会自动发送，需要你再次确认。</p>
+														</div>
+													)}
+												</div>
+													<div className="rounded-lg border border-card-border bg-surface p-4">
 														<p className="mb-2 text-xs text-text-tertiary">评分原因</p>
 														<p className="line-clamp-6 whitespace-pre-wrap leading-6 text-text-secondary text-xs">{job.score_reason || '无'}</p>
 													</div>
-													<div className="rounded-lg border border-card-border bg-[#111827] p-4">
+													<div className="rounded-lg border border-card-border bg-surface p-4">
 														<p className="mb-2 text-xs text-text-tertiary">公司信息</p>
 														<p className="leading-6 text-text-secondary text-xs">区域：{job.city || '—'} {job.district || ''}</p>
 														<p className="leading-6 text-text-secondary text-xs">背景：{job.company_background || job.company_industry || '—'}</p>

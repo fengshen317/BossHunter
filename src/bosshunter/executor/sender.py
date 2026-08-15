@@ -159,6 +159,7 @@ _RETRYABLE_ERRORS = frozenset({
 # Permanent failures: do not retry inside the job and skip progressive backoff
 # (they reflect a real page/business state, not a flaky environment).
 _PERMANENT_ERRORS = frozenset({
+    "job_closed",
     "job_page_unavailable",
     "send_button_disabled",
     "captcha",
@@ -415,6 +416,19 @@ def _send_greeting_once(job: dict, greeting: str, throttle_config: dict) -> tupl
     (() => {
         const text = document.body ? document.body.innerText : '';
         const title = document.title || '';
+        const closedSignals = [
+            '该职位已关闭', '职位已关闭', '岗位已关闭',
+            '该职位已下线', '职位已下线', '招聘已结束'
+        ];
+        const closedSignal = closedSignals.find((signal) => text.includes(signal));
+        if (closedSignal) {
+            return JSON.stringify({
+                success: false,
+                error: 'job_closed',
+                history_detail: `发送前检测到岗位已关闭（${closedSignal}）`,
+                skip_backoff: true
+            });
+        }
         if (
             title.includes('访问的页面不存在') ||
             text.includes('您访问的页面不存在') ||
@@ -806,6 +820,13 @@ def send_greetings(config: dict, force: bool = False) -> int:
                 backoff.record_success()
             else:
                 error = result_data.get("error", "unknown")
+                if error in ("job_closed", "job_page_unavailable"):
+                    detail = result_data.get("history_detail", "发送前检测到岗位已关闭或下架")
+                    update_job_status_with_retry(db, job["id"], "closed")
+                    add_history(db, job["id"], "closed", detail)
+                    console.print(f"[yellow]    ! 岗位已关闭，已停止发送和后续跟踪: {job['company']} - {job['title']}[/yellow]")
+                    progress.update(task, advance=1)
+                    continue
                 if result_data.get("preserve_status"):
                     hr_active = str(result_data.get("hr_active") or "").strip()
                     if hr_active:

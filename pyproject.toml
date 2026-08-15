@@ -17,6 +17,8 @@ dependencies = [
     "anthropic>=0.40",
     "markdown2>=2.4",
     "bottle>=0.13",
+    "langgraph>=1.0,<2",
+    "langgraph-checkpoint-sqlite>=3.0,<4",
 ]
 
 [project.optional-dependencies]
@@ -26,6 +28,7 @@ pdf = [
 
 [project.scripts]
 bosshunter = "bosshunter.main:cli"
+bosshunter-server = "bosshunter.backend:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/bosshunter"]

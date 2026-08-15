@@ -65,10 +65,24 @@ def _init_tables(conn: sqlite3.Connection) -> None:
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
 
+        CREATE TABLE IF NOT EXISTS workbench_tasks (
+            id TEXT PRIMARY KEY,
+            mode TEXT NOT NULL,
+            label TEXT NOT NULL,
+            status TEXT NOT NULL,
+            logs TEXT NOT NULL DEFAULT '[]',
+            error TEXT,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL,
+            deadline_at TEXT,
+            stop_reason TEXT
+        );
+
         CREATE INDEX IF NOT EXISTS idx_jobs_status ON jobs(status);
         CREATE INDEX IF NOT EXISTS idx_jobs_score ON jobs(score);
         CREATE INDEX IF NOT EXISTS idx_history_job_id ON history(job_id);
         CREATE INDEX IF NOT EXISTS idx_risk_events_type ON risk_events(event_type);
+        CREATE INDEX IF NOT EXISTS idx_workbench_tasks_updated_at ON workbench_tasks(updated_at);
     """)
     conn.commit()
     _migrate_v1_1(conn)

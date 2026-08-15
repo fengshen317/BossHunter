@@ -12,6 +12,7 @@ export const STATUS_LABELS: Record<string, string> = {
   follow_up_sent: '已跟进',
   rejected: '已拒绝',
   error: '发送失败',
+  closed: '已关闭',
 }
 
 export const ACTION_LABELS: Record<string, string> = {
@@ -32,6 +33,7 @@ export const ACTION_LABELS: Record<string, string> = {
   follow_up_sent: '已跟进',
   rejected: '拒绝',
   error: '错误',
+  closed: '岗位关闭',
 }
 
 export function getStatusLabel(status: string | null | undefined): string {

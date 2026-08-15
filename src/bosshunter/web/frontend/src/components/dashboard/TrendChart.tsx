@@ -33,16 +33,16 @@ export function TrendChart({ data }: TrendChartProps) {
 			<div className="h-[200px]">
 				<ResponsiveContainer width="100%" height="100%">
 					<LineChart data={chartData}>
-						<CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
-						<XAxis dataKey="day" stroke="#64748b" fontSize={10} tick={{ fontFamily: 'JetBrains Mono' }} />
-						<YAxis stroke="#64748b" fontSize={10} tick={{ fontFamily: 'JetBrains Mono' }} />
+						<CartesianGrid strokeDasharray="3 3" stroke="rgb(var(--color-card-border))" />
+						<XAxis dataKey="day" stroke="rgb(var(--color-text-tertiary))" fontSize={10} tick={{ fontFamily: 'JetBrains Mono' }} />
+						<YAxis stroke="rgb(var(--color-text-tertiary))" fontSize={10} tick={{ fontFamily: 'JetBrains Mono' }} />
 						<Tooltip
-							contentStyle={{ background: '#111827', border: '1px solid #1e293b', borderRadius: '6px', fontFamily: 'JetBrains Mono', fontSize: '12px' }}
-							labelStyle={{ color: '#94a3b8' }}
+							contentStyle={{ background: 'rgb(var(--color-surface-overlay))', border: '1px solid rgb(var(--color-card-border))', borderRadius: '8px', color: 'rgb(var(--color-foreground))', fontFamily: 'JetBrains Mono', fontSize: '12px' }}
+							labelStyle={{ color: 'rgb(var(--color-text-secondary))' }}
 						/>
 						<Legend wrapperStyle={{ fontSize: '11px', fontFamily: 'JetBrains Mono' }} />
-						<Line type="monotone" dataKey="send" name="发送" stroke="#34d399" strokeWidth={2} dot={false} />
-						<Line type="monotone" dataKey="reply" name="回复" stroke="#38bdf8" strokeWidth={2} dot={false} />
+						<Line type="monotone" dataKey="send" name="发送" stroke="rgb(var(--color-primary))" strokeWidth={2} dot={false} />
+						<Line type="monotone" dataKey="reply" name="回复" stroke="rgb(var(--color-info))" strokeWidth={2} dot={false} />
 					</LineChart>
 				</ResponsiveContainer>
 			</div>

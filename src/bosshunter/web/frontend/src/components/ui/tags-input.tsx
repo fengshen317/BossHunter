@@ -30,19 +30,19 @@ export function TagsInput({ value, onChange, placeholder = '输入后按回车�
 
 	return (
 		<div className={cn(
-			'flex flex-wrap gap-1.5 min-h-[36px] p-2 rounded-lg border border-card-border bg-surface focus-within:border-primary/40 focus-within:ring-2 focus-within:ring-primary/15 transition-colors',
+			'flex flex-wrap gap-1.5 min-h-[36px] p-2 rounded-lg border border-card-border-strong bg-surface focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/15 transition-colors',
 			className
 		)}>
 			{value.map((tag, i) => (
 				<span
 					key={i}
-					className="inline-flex items-center gap-1 rounded-lg bg-primary/10 border border-primary/20 px-2 py-0.5 text-xs text-primary"
+					className="inline-flex items-center gap-1 rounded-md bg-primary/10 border border-primary/20 px-2 py-0.5 text-xs text-primary-dim font-medium"
 				>
 					{tag}
 					<button
 						type="button"
 						onClick={() => removeTag(i)}
-						className="text-primary/60 hover:text-primary transition-colors"
+						className="text-primary/55 hover:text-primary-dim transition-colors"
 					>
 						<X className="w-3 h-3" />
 					</button>

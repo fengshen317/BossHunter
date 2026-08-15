@@ -25,7 +25,7 @@ def _greeting_concurrency(config: dict) -> int:
     except (TypeError, ValueError):
         return DEFAULT_GREETING_CONCURRENCY
 
-GREETING_PROMPT = """你是一位求职者，需要在BOSS直聘上给HR发送打招呼消息。请根据以下信息生成一条个性化、自然的招呼语。
+GREETING_PROMPT = """你是一位正在主动了解机会的求职者，需要在BOSS直聘上给招聘方发送第一条消息。请根据以下信息生成一条自然、具体、容易回复的招呼语。
 
 ## 我的背景
 {resume_summary}
@@ -43,24 +43,24 @@ GREETING_PROMPT = """你是一位求职者，需要在BOSS直聘上给HR发送�
 {extra_highlights}
 
 ## 写作方法
-请写成 2-3 句连续的 IM 消息，控制在 70-140 字：
-1. 第一句从岗位真实需求、公司业务或具体场景切入，说明你为什么关注它；不要复述职位名称。
-2. 第二句**根据本岗位 JD 强调的方向**，从简历中选取与该方向最相关的 1 个经历或成果（不必是最强项目），说明它如何对应这份工作；不同岗位应突出不同项目侧重点，避免每条招呼语都引用同一个项目；优先使用工具、项目、指标或职责细节。
-3. 最后一句用轻量的行动意图收尾，例如“如果团队正推进 X，我很愿意补充相关案例聊聊”，不要机械索要机会。
+请写成 3 句连续的 IM 消息，控制在 55-110 字：
+1. 固定用“您好，”自然开场，紧接岗位中最值得讨论的一个具体信号，例如业务场景、技术难点或当前建设重点；不要复述职位名称。
+2. 只从简历中选择与该信号最相关的 1 条可核验经历，说明做过什么以及对应关系。不要堆技术名词或同时罗列多个项目；不同岗位应选择不同证据，不要总用同一个项目或同一组指标。
+3. 最后必须提出一个招聘方容易直接回答的具体问题，优先使用“更侧重 A，还是 B？”“目前主要在解决 A 吗？”这类低门槛问法，引出岗位现状；不要用“我很愿意聊聊/补充案例”代替问题。
 
 ## 参考示例
-✅ 正例（具体切入+可核验数据+轻行动意图）：
-“你们在把 LangGraph 落到订单问数场景这件事很有意思。我在制造业 AI 报告系统里负责过类似工作流编排，把通义千问和知识库接进生产报告生成，日均稳定产出 20+ 份。如果团队也在解决工作流稳定性这类问题，我很愿意带着踩坑细节聊聊。”
+✅ 正例（岗位信号+一条证据+容易回答的问题）：
+“您好，这个岗位同时提到多轮交互和评测体系，我之前用 LangGraph 做过订单问数工作流，处理过状态流转和结果可追溯。想了解一下，团队现阶段更急的是 Agent 效果评测，还是生产稳定性？”
 ❌ 反例（套话开场，无具体证据）：
 “您好，看到贵司在招聘这个岗位，我对这个岗位很感兴趣，相信我能胜任，希望有机会进一步沟通。”
 
 ## 硬性限制
-1. 禁止以“您好”“你好”“你们好”“看到贵司”“看到你们”“看到团队”“我对这个岗位很感兴趣”“我对该岗位”“相信我能胜任”“希望能有机会”“期待您的回复”开头或作为核心表达。
+1. 必须以“您好，”开头；禁止“看到贵司”“看到你们”“看到团队”“我对这个岗位很感兴趣”“我对该岗位”“相信我能胜任”“希望能有机会”“期待您的回复”等模板表达。
 2. 禁止空泛形容词堆砌，例如“热爱学习、抗压、责任心强、综合能力强”。
 3. 不要写分数、不要复述“缺失技能”，不要出现“JD”“HR”“贵司”等招聘话术。
 4. 【严禁】不得捏造简历中没有的经历、头衔、数字或项目；不得把岗位 JD 的描述写成我的经历。
 5. 作品集链接仅在简历明确包含、且与岗位直接相关时出现一次。
-6. 只输出最终招呼语文本，不加标题、引号、编号或解释。
+6. 必须以问号结束，只输出最终招呼语文本，不加标题、引号、编号或解释。
 {critique_section}
 """
 
@@ -77,14 +77,13 @@ REVIEW_PROMPT = """请评估以下BOSS直聘招呼语的质量。
 2. 相关性：是否有岗位切入点和一条具体、可核验的简历证据
 3. 差异化：是否避开“看到贵司”“很感兴趣”等套话
 4. 真实性：是否没有捏造候选人经历或误把岗位要求当经历
+5. 可回复性：结尾是否为与岗位现状有关、招聘方容易直接回答的具体问题
 
 请严格按JSON格式输出，不要输出其他内容：
-{{"naturalness": 8, "relevance": 7, "differentiation": 6, "truthfulness": 10, "avg": 7.0, "critique": "改进建议（20字内）"}}
+{{"naturalness": 8, "relevance": 7, "differentiation": 6, "truthfulness": 10, "replyability": 8, "avg": 7.6, "critique": "改进建议（20字内）"}}
 """
 
 _BANNED_GREETING_PATTERNS = (
-    "您好",
-    "你好",
     "你们好",
     "看到贵司",
     "看到你们",
@@ -140,14 +139,20 @@ def _quality_issues(greeting: str) -> list[str]:
     """Return deterministic quality issues that an AI self-review can miss."""
     normalized = re.sub(r"\s+", "", greeting)
     issues: list[str] = []
-    if len(normalized) < 45 or len(normalized) > 160:
-        issues.append("长度不在 45-160 字范围内")
+    if len(normalized) < 45 or len(normalized) > 120:
+        issues.append("长度不在 45-120 字范围内")
+    if not normalized.startswith("您好，"):
+        issues.append("没有以“您好，”自然开场")
     if any(pattern in normalized for pattern in _BANNED_GREETING_PATTERNS):
         issues.append("包含模板化开场或承诺")
     if normalized.count("我") > 5:
         issues.append("第一人称过多，语气不够自然")
     if not any(mark in normalized for mark in ("，", "。", "；", "！")):
         issues.append("缺少自然的短句结构")
+    if not normalized.endswith(("？", "?")):
+        issues.append("没有以完整、具体的问题收尾")
+    if normalized.endswith(("，", "；", "、", "：")):
+        issues.append("结尾是残句")
     return issues
 
 
@@ -183,28 +188,9 @@ def _generate_greeting_once(job: dict, resume_summary: str, config: dict, critiq
     if not greeting:
         return None
 
-    # Clean up
-    greeting = greeting.strip('"\'')
-    # Enforce max length. Prefer cutting at a sentence-ending mark; if none,
-    # fall back to the last comma/semicolon so the message ends with punctuation
-    # rather than a truncated fragment (实测旧的硬切会让 22% 招呼语结尾悬空)。
-    if len(greeting) > 160:
-        cut = greeting[:160]
-        for sep in ("。", "！", "～", "！", "\n"):
-            idx = cut.rfind(sep)
-            if idx > 50:
-                greeting = cut[:idx + 1]
-                break
-        else:
-            # 回退到最后一个任意标点（含 ，；、），保证结尾不悬空。
-            # 注意空格不算标点——回退到空格会留下英文词中间的断点。
-            last_punct = max(
-                (cut.rfind(sep) for sep in ("，", "；", "、")),
-                default=-1,
-            )
-            greeting = cut[: last_punct + 1] if last_punct > 50 else cut
-
-    return greeting
+    # 不再硬截断模型输出。硬切可能留下“如果团队正在……”等残句，
+    # 超长文本交给统一质量门禁触发重写，仍不合格则不落库。
+    return re.sub(r"\s+", " ", greeting.strip('"\'')).strip()
 
 
 def _generate_with_deterministic_retry(
@@ -230,7 +216,9 @@ def _generate_with_deterministic_retry(
 	regenerated = _generate_greeting_once(
 		job, resume_summary, config, critique="；".join(issues)
 	)
-	return regenerated or greeting
+	if regenerated and not _quality_issues(regenerated):
+		return regenerated
+	return None
 
 
 def _generate_for_job_with_review(job: dict, resume_summary: str, config: dict) -> tuple[str, str] | None:
@@ -264,6 +252,7 @@ def _generate_for_job_with_review(job: dict, resume_summary: str, config: dict) 
                     review
                     and review.get("avg", 0) >= review_threshold
                     and review.get("truthfulness", 0) >= 8
+                    and review.get("replyability", 0) >= 7
                 )
                 if review_passed:
                     break  # 质量已达标
@@ -282,7 +271,7 @@ def _generate_for_job_with_review(job: dict, resume_summary: str, config: dict) 
             # 新生成的招呼语已融入上轮 critique，保留新结果。
             best_greeting = greeting
 
-    if not best_greeting:
+    if not best_greeting or _quality_issues(best_greeting):
         return None
     return (str(job["id"]), best_greeting)
 
@@ -417,7 +406,7 @@ def regenerate_greeting(job_id: str, config: dict) -> str | None:
         return None
 
     job_dict = dict(job)
-    greeting = _generate_greeting_once(job_dict, resume_summary, config)
+    greeting = _generate_with_deterministic_retry(job_dict, resume_summary, config)
 
     if greeting:
         update_job_greeting(db, job_id, greeting)

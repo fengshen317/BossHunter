@@ -47,12 +47,12 @@ interface JobsPage {
   items: Job[]
   /** 当前筛选条件下的岗位总数（分页器用）。 */
   total: number
-  /** 全量按状态计数，喂给筛选 pill。 */
-  statusCounts: Record<string, number>
-  /** 待评分岗位数（status=pending），喂给"批量评分"按钮。 */
-  pendingCount: number
-  /** 企业信息缺失岗位数，喂给"补全企业"按钮。 */
-  missingCompanyInfoCount: number
+	/** 全量按状态计数，喂给筛选 pill。后端返回 snake_case `status_counts`。 */
+	status_counts: Record<string, number>
+	/** 待评分岗位数（status=pending），喂给"批量评分"按钮。后端返回 snake_case `pending_count`。 */
+	pending_count: number
+	/** 企业信息缺失岗位数，喂给"补全企业"按钮。后端返回 snake_case `missing_company_info_count`。 */
+	missing_company_info_count: number
 }
 
 interface WorkbenchTask {
@@ -158,13 +158,13 @@ export function useDashboard(scope: DashboardDataScope = 'all', jobsStatus = 'al
 
       if (workbenchData !== undefined) setWorkbench(workbenchData)
       if (jobsData !== undefined) {
-        // /api/jobs 现在返回 {items,total,status_counts,pending_count,...} 分页信封
-        const page = jobsData as JobsPage
-        setJobs(page.items ?? [])
-        setJobsTotal(page.total ?? 0)
-        setStatusCounts(page.statusCounts ?? {})
-        setPendingCount(page.pendingCount ?? 0)
-        setMissingCompanyInfoCount(page.missingCompanyInfoCount ?? 0)
+		// /api/jobs 返回 {items,total,status_counts,pending_count,missing_company_info_count} 分页信封
+		const page = jobsData as JobsPage
+		setJobs(page.items ?? [])
+		setJobsTotal(page.total ?? 0)
+		setStatusCounts(page.status_counts ?? {})
+		setPendingCount(page.pending_count ?? 0)
+		setMissingCompanyInfoCount(page.missing_company_info_count ?? 0)
       }
       if (historyData !== undefined) setHistory(historyData)
       setError('')

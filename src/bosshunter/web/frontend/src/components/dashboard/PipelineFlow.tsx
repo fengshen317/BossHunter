@@ -17,14 +17,14 @@ export function PipelineFlow() {
 				{steps.map((step, i) => (
 					<div key={step.label} className="flex items-center">
 						<div className="flex flex-col items-center">
-							<div className="w-12 h-12 rounded-lg bg-surface-raised border border-card-border flex items-center justify-center mb-2 transition-colors hover:border-primary/30 hover:shadow-glow-sm">
+							<div className="w-12 h-12 rounded-lg bg-surface-raised border border-card-border flex items-center justify-center mb-2 transition-colors hover:border-primary/30">
 								<step.icon className="w-5 h-5 text-primary" />
 							</div>
 							<span className="text-xs font-medium text-foreground">{step.label}</span>
 							<span className="text-xs text-text-tertiary mt-0.5">{step.desc}</span>
 						</div>
 						{i < steps.length - 1 && (
-							<div className="w-8 h-px bg-gradient-to-r from-primary/20 to-card-border mx-2 mb-6" />
+							<div className="w-8 h-px bg-card-border mx-2 mb-6" />
 						)}
 					</div>
 				))}

@@ -68,8 +68,8 @@ DEFAULTS: dict[str, Any] = {
         "day_off_probability": 0.05,
     },
     "ai": {
-        "provider": "anthropic",
-        "model": "claude-sonnet-4-6",
+        "provider": "openai_compatible",
+        "model": "deepseek-chat",
         "greeting_review_threshold": 7.0,
         "greeting_max_iterations": 2,
     },
@@ -124,7 +124,7 @@ def load_config(config_path: Path | None = None) -> dict[str, Any]:
 
 def _validate_ai_provider(config: dict[str, Any]) -> None:
     """Fail fast when the configured AI provider is not supported."""
-    provider = config.get("ai", {}).get("provider", "anthropic")
+    provider = config.get("ai", {}).get("provider", "openai_compatible")
     if provider not in SUPPORTED_AI_PROVIDERS:
         raise ValueError("当前版本支持 Anthropic 或 OpenAI 兼容接口。")
 

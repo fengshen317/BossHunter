@@ -1,11 +1,14 @@
 """Credential helpers for AI providers."""
 
 import hashlib
+import json
 import os
 import random
 import re
 import threading
 import time
+from collections.abc import Iterator
+from typing import Any
 
 import httpx
 
@@ -163,6 +166,149 @@ def call_anthropic_text(prompt: str, config: dict, max_tokens: int) -> str | Non
     return None
 
 
+def call_ai_with_tools(
+    prompt: str,
+    config: dict[str, Any],
+    tools: list[dict[str, Any]],
+    max_tokens: int = 800,
+) -> dict[str, Any]:
+    """调用模型并归一化返回文本与原生工具调用。
+
+    OpenAI 兼容接口使用 ``tools`` / ``tool_calls`` 标准字段。Anthropic
+    路径保留文本回答兼容性；其调用方可安全降级为不执行工具。
+    """
+    ai_cfg = config.get("ai", {}) if isinstance(config, dict) else {}
+    if ai_cfg.get("provider") != "openai_compatible":
+        return {"content": call_anthropic_text(prompt, config, max_tokens) or "", "tool_calls": []}
+
+    api_key = os.environ.get("OPENAI_API_KEY") or os.environ.get("ANTHROPIC_API_KEY") or ai_cfg.get("api_key")
+    base_url = os.environ.get("OPENAI_BASE_URL") or os.environ.get("ANTHROPIC_BASE_URL") or ai_cfg.get("base_url")
+    if not api_key or not base_url:
+        return {"content": "", "tool_calls": []}
+    response = httpx.post(
+        f"{base_url.rstrip('/')}/chat/completions",
+        headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
+        json={
+            "model": ai_cfg.get("model", "deepseek-chat"),
+            "messages": [{"role": "user", "content": prompt}],
+            "tools": tools,
+            "tool_choice": "auto",
+            "temperature": 0.1,
+        },
+        timeout=_request_timeout(ai_cfg),
+    )
+    response.raise_for_status()
+    choices = response.json().get("choices", [])
+    if not choices:
+        return {"content": "", "tool_calls": []}
+    message = choices[0].get("message", {})
+    calls: list[dict[str, Any]] = []
+    for call in message.get("tool_calls", []) or []:
+        function = call.get("function", {})
+        try:
+            arguments = json.loads(function.get("arguments", "{}"))
+        except (TypeError, ValueError):
+            continue
+        if isinstance(arguments, dict) and isinstance(function.get("name"), str):
+            calls.append({"id": str(call.get("id", "")), "name": function["name"], "arguments": arguments})
+    return {"content": str(message.get("content") or ""), "tool_calls": calls}
+
+
+def stream_ai_text(prompt: str, config: dict, max_tokens: int) -> Iterator[str]:
+    """调用已配置模型并逐块返回正文。
+
+    Args:
+        prompt: 完整提示词。
+        config: BossHunter 配置。
+        max_tokens: 最大输出 token 数。
+
+    Yields:
+        模型实时返回的文本增量。
+    """
+    ai_cfg = config.get("ai", {}) if isinstance(config, dict) else {}
+    if ai_cfg.get("provider") == "openai_compatible":
+        yield from _stream_openai_compatible_text(prompt, config, max_tokens)
+        return
+
+    try:
+        import anthropic
+    except ImportError:
+        return
+    if not get_anthropic_api_key(config):
+        return
+
+    model = resolve_anthropic_model(ai_cfg.get("model", "claude-sonnet-4-6"), config)
+    client = anthropic.Anthropic(**build_anthropic_client_kwargs(config))
+    with client.messages.stream(
+        model=model,
+        max_tokens=max_tokens,
+        messages=[{"role": "user", "content": prompt}],
+    ) as stream:
+        yield from stream.text_stream
+
+
+def _stream_openai_compatible_text(prompt: str, config: dict, max_tokens: int) -> Iterator[str]:
+    """解析 OpenAI 兼容接口的 SSE 文本增量。"""
+    ai_cfg = config.get("ai", {}) if isinstance(config, dict) else {}
+    api_key = os.environ.get("OPENAI_API_KEY") or os.environ.get("ANTHROPIC_API_KEY") or ai_cfg.get("api_key")
+    base_url = os.environ.get("OPENAI_BASE_URL") or os.environ.get("ANTHROPIC_BASE_URL") or ai_cfg.get("base_url")
+    if not api_key or not base_url:
+        return
+
+    url = f"{base_url.rstrip('/')}/chat/completions"
+    headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
+    model = ai_cfg.get("model", "deepseek-chat")
+    for attempt in range(1, 2):
+        emitted_chars = 0
+        reasoning_chars = 0
+        finish_reason = None
+        print(f"[AI助手] 模型流请求开始：model={model}，attempt={attempt}", flush=True)
+        with httpx.stream(
+            "POST",
+            url,
+            headers=headers,
+            json={
+                "model": model,
+                "messages": [{"role": "user", "content": prompt}],
+                "temperature": 0.2,
+                "stream": True,
+            },
+            timeout=_request_timeout(ai_cfg),
+        ) as response:
+            response.raise_for_status()
+            for line in response.iter_lines():
+                if not line.startswith("data: "):
+                    continue
+                payload = line[6:].strip()
+                if payload == "[DONE]":
+                    break
+                try:
+                    event = json.loads(payload)
+                except (ValueError, TypeError):
+                    continue
+                choices = event.get("choices", [])
+                if not choices:
+                    continue
+                choice = choices[0]
+                finish_reason = choice.get("finish_reason") or finish_reason
+                delta_payload = choice.get("delta", {})
+                reasoning = delta_payload.get("reasoning_content")
+                if isinstance(reasoning, str):
+                    reasoning_chars += len(reasoning)
+                delta = delta_payload.get("content")
+                if isinstance(delta, str) and delta:
+                    emitted_chars += len(delta)
+                    yield delta
+        print(
+            f"[AI助手] 模型流请求结束：正文={emitted_chars} 字，推理={reasoning_chars} 字，"
+            f"finish_reason={finish_reason or 'unknown'}",
+            flush=True,
+        )
+        if emitted_chars:
+            return
+        print("[AI助手] 本次流请求没有正文。", flush=True)
+
+
 def call_openai_compatible_text(prompt: str, config: dict, max_tokens: int) -> str | None:
     """Call an OpenAI-compatible chat completions endpoint.
 
@@ -193,7 +339,6 @@ def call_openai_compatible_text(prompt: str, config: dict, max_tokens: int) -> s
             json={
                 "model": model,
                 "messages": [{"role": "user", "content": prompt}],
-                "max_tokens": budget,
                 "temperature": 0.2,
             },
             timeout=timeout,
@@ -237,14 +382,10 @@ def call_openai_compatible_text(prompt: str, config: dict, max_tokens: int) -> s
         assert last_exc is not None
         raise last_exc
 
-    content, finish_reason = _request_with_retry(max_tokens)
+    content, _ = _request_with_retry(max_tokens)
 
     # content 为空但响应成功：常见于推理模型思维链挤占预算（finish_reason 为 "length"），
     # 也可能是兼容接口偶发返回空 content。给予 4 倍 max_tokens 重试一次，仍为空才放弃。
-    if not content:
-        budget = max_tokens * 4 if finish_reason == "length" else max_tokens * 2
-        content, _ = _request_with_retry(budget)
-
     return content
 
 
