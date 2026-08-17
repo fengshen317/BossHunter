@@ -19,11 +19,47 @@ IntentType = Literal[
 ]
 """理解层允许输出的有限意图集合。"""
 
+IntentAction = Literal[
+	"job_search",
+	"job_score",
+	"job_query",
+	"company_research",
+	"greeting_generate",
+	"greeting_send",
+	"reply_draft",
+	"reply_send",
+	"reply_monitor",
+	"pipeline_run",
+]
+"""可映射到注册能力的任务动作。"""
+
+InteractionMode = Literal["answer", "execute", "draft", "confirm", "cancel"]
+"""用户本轮是在咨询、执行、起草、确认还是取消。"""
+
 RiskLevel = Literal["low", "medium", "high"]
 """意图对应的操作风险等级。"""
 
 RouteName = Literal["clarification", "direct", "capability", "planner"]
 """决策路由器允许选择的固定分支。"""
+
+
+class IntentStep(TypedDict):
+	"""任务理解器输出的单个标准步骤。"""
+
+	id: str
+	action: IntentAction
+	arguments: dict[str, Any]
+	depends_on: list[str]
+	enabled: bool
+	reason: str
+
+
+class IntentConstraints(TypedDict, total=False):
+	"""由策略层消费、不得直接传给工具的控制约束。"""
+
+	forbidden_actions: list[IntentAction]
+	requires_confirmation: bool
+	do_not_send: bool
 
 
 class IntentResult(TypedDict):
@@ -32,12 +68,13 @@ class IntentResult(TypedDict):
 	goal: str
 	intent_type: IntentType
 	entities: dict[str, Any]
-	constraints: dict[str, Any]
+	constraints: IntentConstraints
 	missing_fields: list[str]
 	confidence: float
 	risk_level: RiskLevel
 	reason: str
-	steps: NotRequired[list[dict[str, Any]]]
+	mode: NotRequired[InteractionMode]
+	steps: NotRequired[list[IntentStep]]
 
 
 class ContextSnapshot(TypedDict):
@@ -47,6 +84,7 @@ class ContextSnapshot(TypedDict):
 	recent_messages: list[dict[str, Any]]
 	current_job_id: str | None
 	web_enabled: bool
+	pending_intent: IntentResult | None
 
 
 class CapabilitySpec(TypedDict):
@@ -113,7 +151,11 @@ __all__ = [
 	"CapabilityMatch",
 	"CapabilitySpec",
 	"ContextSnapshot",
+	"InteractionMode",
+	"IntentAction",
+	"IntentConstraints",
 	"IntentResult",
+	"IntentStep",
 	"IntentType",
 	"PlanEvaluation",
 	"PlanStep",

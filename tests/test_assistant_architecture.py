@@ -51,6 +51,58 @@ def test_context_resolver_keeps_only_recent_trusted_inputs() -> None:
 	assert context["web_enabled"] is True
 
 
+def test_short_reply_fills_company_requested_by_previous_clarification() -> None:
+	"""用户直接回复公司名时，应延续上一轮公司背调目标而不是重复追问。"""
+	pending = _intent(
+		goal="帮我查下这家公司的情况",
+		intent_type="company_research",
+		entities={},
+		missing_fields=["company"],
+		confidence=0.86,
+		steps=[
+			{
+				"id": "research",
+				"action": "company_research",
+				"arguments": {},
+				"depends_on": [],
+				"enabled": True,
+				"reason": "调查目标公司",
+			}
+		],
+	)
+	context = resolve_context(
+		{
+			"messages": [
+				{"role": "user", "content": "帮我查下这家公司的情况"},
+				{
+					"role": "assistant",
+					"content": "为了准确完成这个目标，请补充：公司名称。",
+					"message_type": "clarification",
+				},
+				{"role": "user", "content": "运筹帷幄物流集团"},
+			],
+			"intent": pending,
+		}
+	)
+
+	def model_call(prompt: str, config: dict[str, Any], max_tokens: int) -> str:
+		"""模拟模型仍然遗漏公司名称的结果。"""
+		assert "上一轮待补全意图" in prompt
+		return """{
+"goal":"调查公司","mode":"execute","intent_type":"company_research","entities":{},"constraints":{},
+"steps":[],"missing_fields":["company"],"confidence":0.82,"risk_level":"low","reason":"缺少公司"
+}"""
+
+	intent = extract_goal(context, {}, model_call)
+	checked = complete_missing_fields(intent)
+	matches = match_capabilities(checked)
+
+	assert intent["goal"] == "帮我查下这家公司的情况"
+	assert intent["entities"]["company"] == "运筹帷幄物流集团"
+	assert checked["missing_fields"] == []
+	assert matches[0]["arguments"]["company"] == "运筹帷幄物流集团"
+
+
 def test_goal_extractor_validates_json_and_rejects_understated_risk() -> None:
 	"""模型 JSON 应先归一化，再由能力元数据提升最低风险。"""
 	context = resolve_context({"messages": [{"role": "user", "content": "发送招呼语"}]})
@@ -193,6 +245,66 @@ def test_complex_goal_prefers_model_steps_and_honors_disabled_actions() -> None:
 	matches = match_capabilities(intent)
 
 	assert [item["capability"] for item in matches] == ["job_collect", "greeting_generate"]
+
+
+def test_explicit_negative_constraint_overrides_model_send_step() -> None:
+	"""用户原话明确禁止发送时，模型即使启用发送步骤也必须被策略层覆盖。"""
+	context = resolve_context(
+		{"messages": [{"role": "user", "content": "搜索 Python 岗位并生成招呼语，但不要发送"}]}
+	)
+
+	def model_call(prompt: str, config: dict[str, Any], max_tokens: int) -> str:
+		"""模拟遗漏否定约束的模型结果。"""
+		return """{
+"goal":"搜索 Python 岗位并生成招呼语，但不要发送","mode":"execute","intent_type":"complex_task",
+"entities":{"keywords":["Python"]},"constraints":{},"missing_fields":[],"confidence":0.96,
+"risk_level":"high","reason":"多步骤任务","steps":[
+{"id":"search","action":"job_search","arguments":{},"depends_on":[],"enabled":true,"reason":"搜索"},
+{"id":"draft","action":"greeting_generate","arguments":{},"depends_on":["search"],"enabled":true,"reason":"生成"},
+{"id":"send","action":"greeting_send","arguments":{},"depends_on":["draft"],"enabled":true,"reason":"发送"}
+]}"""
+
+	intent = extract_goal(context, {}, model_call)
+	matches = match_capabilities(intent)
+	plan = build_plan(intent, matches)
+
+	assert intent["constraints"]["forbidden_actions"] == ["greeting_send", "reply_send"]
+	assert [step["id"] for step in intent["steps"] if step["enabled"]] == ["search", "draft"]
+	assert [item["capability"] for item in matches] == ["job_collect", "greeting_generate"]
+	assert [step["id"] for step in plan] == ["search", "draft"]
+	assert plan[1]["depends_on"] == ["search"]
+
+
+def test_step_arguments_are_isolated_from_policy_constraints() -> None:
+	"""每个步骤使用自己的参数，禁止动作等策略字段不得泄漏给工具。"""
+	intent = _intent(
+		goal="搜索深圳 Python 岗位",
+		intent_type="complex_task",
+		constraints={"forbidden_actions": ["greeting_send"], "do_not_send": True},
+		steps=[
+			{
+				"id": "search",
+				"action": "job_search",
+				"arguments": {"cities": ["深圳"]},
+				"depends_on": [],
+				"enabled": True,
+				"reason": "搜索目标岗位",
+			}
+		],
+		entities={"keywords": ["Python"]},
+	)
+
+	matches = match_capabilities(intent)
+
+	assert matches[0]["arguments"] == {"keywords": ["Python"], "cities": ["深圳"]}
+	assert "forbidden_actions" not in matches[0]["arguments"]
+
+
+def test_answer_mode_routes_directly_even_when_model_uses_action_intent() -> None:
+	"""咨询模式优先于动作标签，避免“怎么搜索岗位”被误当成执行请求。"""
+	intent = _intent(intent_type="job_search", mode="answer")
+
+	assert decide_route(intent, complex_goal=False) == "direct"
 
 
 def test_react_only_selects_registered_readonly_tools() -> None:

@@ -1,7 +1,7 @@
 import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { marked } from 'marked'
 import DOMPurify from 'dompurify'
-import { Bot, Brain, Check, ChevronRight, Clipboard, Database, ExternalLink, Globe2, Loader2, Plus, Send, ShieldCheck, Sparkles, ThumbsDown, ThumbsUp, Trash2, UserRound, X } from 'lucide-react'
+import { Bot, Brain, Check, ChevronDown, ChevronRight, Clipboard, Database, ExternalLink, Globe2, Loader2, Plus, Send, ShieldCheck, Sparkles, ThumbsDown, ThumbsUp, Trash2, UserRound, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Select } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
@@ -59,7 +59,10 @@ async function readJson<T>(response: Response): Promise<T> {
 function renderMarkdown(content: string, citations: Citation[] = []): string {
   const withLinks = content.replace(/\[来源\s*(\d+)\]/g, (full, number: string) => {
     const citation = citations[Number(number) - 1]
-    return citation?.url ? `[${number}](${citation.url})` : full
+	if (!citation) return full
+	return citation.url
+	  ? `<a class="assistant-inline-citation" href="${citation.url}" target="_blank" rel="noopener noreferrer" aria-label="查看来源 ${number}">${number}</a>`
+	  : `<span class="assistant-inline-citation" aria-label="来源 ${number}">${number}</span>`
   })
   return DOMPurify.sanitize(marked.parse(withLinks, { breaks: true, gfm: true }) as string)
 }
@@ -396,6 +399,11 @@ function MessageBubble({ message, conversationId, approvalActive, editingDraft, 
   const isUser = message.role === 'user'
   const approval = message.metadata?.approval
   const task = message.metadata?.task
+	const hasProcessDetails = !isUser && (
+	  Boolean(message.metadata?.execution_events?.length)
+	  || Boolean(message.metadata?.tool_trace?.length)
+	  || Boolean(message.metadata?.execution_plan?.length)
+	)
   const [copied, setCopied] = useState(false)
   const copy = async () => {
     await navigator.clipboard.writeText(message.content)
@@ -403,16 +411,18 @@ function MessageBubble({ message, conversationId, approvalActive, editingDraft, 
     window.setTimeout(() => setCopied(false), 1500)
   }
   return (
-    <div className={`flex gap-3 ${isUser ? 'justify-end' : 'justify-start'}`}>
-      {!isUser && <div className="mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-lg border border-primary/20 bg-primary/5"><Bot className="h-3.5 w-3.5 text-primary" /></div>}
-      <div className={`min-w-0 ${isUser ? 'max-w-[82%]' : 'max-w-[88%]'}`}>
-        <div className={`text-sm leading-6 ${isUser ? 'rounded-2xl rounded-tr-sm bg-primary px-4 py-2.5 text-white' : 'text-foreground'}`}>
+    <div className={`flex gap-3.5 ${isUser ? 'justify-end' : 'justify-start'}`}>
+	  {!isUser && <div className="mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-full bg-primary/10"><Bot className="h-3.5 w-3.5 text-primary" /></div>}
+	  <div className={`min-w-0 ${isUser ? 'max-w-[82%]' : 'w-full max-w-[46rem]'}`}>
+		{hasProcessDetails && <div className="mb-4 [&>*:first-child]:mt-0">
+		  {message.metadata?.execution_events && message.metadata.execution_events.length > 0 && <ExecutionTraceCard events={message.metadata.execution_events} />}
+		  {message.metadata?.tool_trace && message.metadata.tool_trace.length > 0 && <ToolTraceCard traces={message.metadata.tool_trace} />}
+		  {message.metadata?.execution_plan && message.metadata.execution_plan.length > 0 && <ExecutionPlanCard steps={message.metadata.execution_plan} task={task} />}
+		</div>}
+		<div className={isUser ? 'rounded-2xl rounded-tr-md bg-primary px-4 py-2.5 text-sm leading-6 text-white' : 'text-foreground'}>
           {isUser ? message.content : <div className="assistant-markdown" dangerouslySetInnerHTML={{ __html: renderMarkdown(message.content, message.metadata?.citations) }} />}
         </div>
 		{!isUser && message.message_type === 'text' && !task && !approval && message.metadata?.citations && message.metadata.citations.length > 0 && <CitationList citations={message.metadata.citations} />}
-        {!isUser && message.metadata?.execution_events && message.metadata.execution_events.length > 0 && <ExecutionTraceCard events={message.metadata.execution_events} />}
-        {!isUser && message.metadata?.tool_trace && message.metadata.tool_trace.length > 0 && <ToolTraceCard traces={message.metadata.tool_trace} />}
-        {!isUser && message.metadata?.execution_plan && message.metadata.execution_plan.length > 0 && <ExecutionPlanCard steps={message.metadata.execution_plan} task={task} />}
         {approval && (
           <div className={`mt-4 overflow-hidden rounded-2xl border ${approvalActive ? 'border-warning/30 bg-warning/5' : 'border-card-border bg-surface opacity-70'}`}>
             <div className={`flex items-center gap-2 border-b px-4 py-3 text-xs font-medium ${approvalActive ? 'border-warning/20 text-warning' : 'border-card-border text-text-tertiary'}`}><ShieldCheck className="h-4 w-4" />{approval.title}<span className="ml-auto text-[10px] font-normal">{approvalActive ? '等待审批' : '已处理'}</span></div>
@@ -495,9 +505,9 @@ function MessageFeedback({ conversationId, message, onCopy, copied }: {
   }
 
   const disabled = message.id.startsWith('stream-') || message.id.startsWith('local-')
-  return <div className="mt-2">
+  return <div className="mt-2.5">
     <div className="flex items-center gap-1" aria-label="评价这条回答">
-      {onCopy && <button onClick={onCopy} className="mr-1 inline-flex items-center gap-1 rounded-md px-1.5 py-1 text-[10px] text-text-tertiary hover:bg-surface-raised hover:text-primary">{copied ? <Check className="h-3 w-3" /> : <Clipboard className="h-3 w-3" />}{copied ? '已复制' : '复制'}</button>}
+	  {onCopy && <button onClick={onCopy} aria-label={copied ? '已复制回答' : '复制回答'} title={copied ? '已复制' : '复制'} className="rounded-md p-1.5 text-text-tertiary transition hover:bg-surface-raised hover:text-foreground">{copied ? <Check className="h-3.5 w-3.5" /> : <Clipboard className="h-3.5 w-3.5" />}</button>}
       <button type="button" onClick={() => rate('helpful')} disabled={disabled} aria-label="这条回答有帮助" aria-pressed={rating === 'helpful'} title="有帮助" className={`rounded-md p-1.5 transition ${rating === 'helpful' ? 'bg-success/10 text-success' : 'text-text-tertiary hover:bg-surface-raised hover:text-foreground'} disabled:cursor-wait disabled:opacity-40`}><ThumbsUp className="h-3.5 w-3.5" /></button>
       <button type="button" onClick={() => rate('unhelpful')} disabled={disabled} aria-label="这条回答有问题" aria-pressed={rating === 'unhelpful'} title="有问题" className={`rounded-md p-1.5 transition ${rating === 'unhelpful' ? 'bg-danger/10 text-danger' : 'text-text-tertiary hover:bg-surface-raised hover:text-foreground'} disabled:cursor-wait disabled:opacity-40`}><ThumbsDown className="h-3.5 w-3.5" /></button>
       {rating === 'helpful' && <span className="ml-1 text-[10px] text-success">感谢反馈</span>}
@@ -582,34 +592,40 @@ function ToolTraceCard({ traces }: { traces: ToolTrace[] }) {
 }
 
 function CitationList({ citations }: { citations: Citation[] }) {
-  return <section className="mt-4" aria-label="参考资料">
-    <div className="mb-2 flex items-center gap-2 text-xs font-semibold text-foreground">
-      <span>参考资料</span><span className="font-normal tracking-normal">{citations.length} 条</span>
-    </div>
-    <div className="flex flex-wrap gap-2">
+  return <details className="assistant-sources mt-4" aria-label="参考资料">
+	<summary className="inline-flex cursor-pointer list-none items-center gap-1.5 rounded-md px-1.5 py-1 text-[11px] font-medium text-text-secondary transition hover:bg-surface-raised hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40">
+	  <Globe2 className="h-3.5 w-3.5" aria-hidden="true" />
+	  <span>来源</span>
+	  <span className="font-normal text-text-tertiary">{citations.length}</span>
+	  <ChevronDown className="assistant-sources-chevron h-3.5 w-3.5 text-text-tertiary" aria-hidden="true" />
+	</summary>
+	<div className="mt-2 divide-y divide-card-border border-y border-card-border">
       {citations.map((citation, index) => {
         const Icon = citationIcon[citation.source]
         const content = <>
           <span className="assistant-citation-index">{index + 1}</span>
-          <Icon className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-          <span className="truncate">{citationLabel(citation)}</span>
-          {citation.url && <ExternalLink className="h-3 w-3 shrink-0 text-text-tertiary" aria-hidden="true" />}
+		  <Icon className="mt-0.5 h-3.5 w-3.5 shrink-0 text-text-tertiary" aria-hidden="true" />
+		  <span className="min-w-0 flex-1">
+			<span className="block truncate text-xs font-medium text-foreground">{citationLabel(citation)}</span>
+			{citation.excerpt && <span className="mt-0.5 block line-clamp-2 text-[10px] leading-4 text-text-tertiary">{citation.excerpt}</span>}
+		  </span>
+		  {citation.url && <ExternalLink className="mt-0.5 h-3.5 w-3.5 shrink-0 text-text-tertiary" aria-hidden="true" />}
         </>
         return citation.url ? <a
           key={`${citation.label}-${index}`}
           href={citation.url}
           target="_blank"
           rel="noopener noreferrer"
-          title={citation.excerpt || citation.label}
-          className="assistant-citation"
+		  title={citation.excerpt || citation.label}
+		  className="assistant-citation"
         >{content}</a> : <span
           key={`${citation.label}-${index}`}
           title={citation.excerpt || citation.label}
-          className="assistant-citation"
+		  className="assistant-citation"
         >{content}</span>
       })}
     </div>
-  </section>
+  </details>
 }
 
 function ExecutionTraceCard({ events }: { events: ExecutionEvent[] }) {
@@ -620,14 +636,14 @@ function ExecutionTraceCard({ events }: { events: ExecutionEvent[] }) {
   const statusLabel: Record<ExecutionEvent['status'], string> = {
     running: '执行中', completed: '已完成', failed: '需调整', waiting: '等待输入',
   }
-  return <section className="mt-4 rounded-xl border border-card-border bg-surface p-4" aria-label="Agent 执行过程" aria-live="polite">
-    <div className="mb-3 flex items-center justify-between gap-3">
-      <h4 className="flex items-center gap-2 text-xs font-semibold text-foreground">
-        <Sparkles className="h-3.5 w-3.5 text-primary" />执行过程
-      </h4>
-      <span className="text-[10px] text-text-tertiary">{active ? '处理中' : `${completed}/${visibleEvents.length} 已完成`}</span>
-    </div>
-    <ol className="space-y-2.5">
+  return <details className="assistant-execution mt-4 rounded-xl border border-card-border bg-surface" open={active} aria-label="Agent 执行过程" aria-live="polite">
+    <summary className="flex cursor-pointer list-none items-center gap-2 rounded-xl px-4 py-3 text-xs transition hover:bg-surface-raised focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40">
+      <Sparkles className="h-3.5 w-3.5 shrink-0 text-primary" />
+	  <span className="font-semibold text-foreground">思考与执行</span>
+      <span className="ml-auto text-[10px] font-normal text-text-tertiary">{active ? '处理中' : `${completed}/${visibleEvents.length} 已完成`}</span>
+      <ChevronDown className="assistant-execution-chevron h-3.5 w-3.5 shrink-0 text-text-tertiary" aria-hidden="true" />
+    </summary>
+    <ol className="space-y-2.5 border-t border-card-border px-4 py-3.5">
       {visibleEvents.map(event => <li key={event.id} className="flex items-start gap-3 text-[11px]">
         <span className={`mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full border ${event.status === 'completed' ? 'border-success/40 bg-success/10 text-success' : event.status === 'running' ? 'border-primary/50 bg-primary/10 text-primary' : event.status === 'failed' ? 'border-danger/40 bg-danger/10 text-danger' : 'border-warning/30 bg-warning/10 text-warning'}`}>
           {event.status === 'completed' ? <Check className="h-3 w-3" /> : event.status === 'running' ? <Loader2 className="h-3 w-3 animate-spin" /> : event.status === 'failed' ? <X className="h-3 w-3" /> : <ShieldCheck className="h-3 w-3" />}
@@ -639,7 +655,7 @@ function ExecutionTraceCard({ events }: { events: ExecutionEvent[] }) {
         <span className="shrink-0 text-[10px] text-text-tertiary">{statusLabel[event.status]}</span>
       </li>)}
     </ol>
-  </section>
+  </details>
 }
 
 function ExecutionPlanCard({ steps, task }: { steps: PlanStep[]; task?: TaskCard | null }) {

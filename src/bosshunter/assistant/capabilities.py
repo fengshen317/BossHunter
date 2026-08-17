@@ -3,6 +3,7 @@
 from typing import Any
 
 from bosshunter.assistant.models import CapabilityMatch, CapabilitySpec, IntentResult, RiskLevel
+from bosshunter.assistant.policy import ACTION_TO_CAPABILITY, apply_intent_policy, enabled_steps, tool_constraints
 
 
 CAPABILITY_REGISTRY: dict[str, CapabilitySpec] = {
@@ -118,29 +119,18 @@ def capabilities_for_intent(intent: IntentResult) -> list[CapabilitySpec]:
 	Returns:
 		注册表中匹配的能力元数据。
 	"""
+	intent = apply_intent_policy(intent, intent["goal"])
+	structured_steps = enabled_steps(intent)
+	if intent.get("steps"):
+		selected = list(
+			dict.fromkeys(ACTION_TO_CAPABILITY[step["action"]] for step in structured_steps)
+		)
+		return [CAPABILITY_REGISTRY[name] for name in selected if name in CAPABILITY_REGISTRY]
 	if intent["intent_type"] != "complex_task":
 		return [spec for spec in CAPABILITY_REGISTRY.values() if intent["intent_type"] in spec["intents"]]
 	goal = intent["goal"].replace(" ", "")
 	selected: list[str] = []
-	# 优先使用模型拆出的步骤，避免仅靠整句关键词猜测复杂任务。
-	action_to_capability = {
-		"job_search": "job_collect",
-		"job_collect": "job_collect",
-		"job_score": "job_score",
-		"greeting_generate": "greeting_generate",
-		"greeting_send": "greeting_send",
-		"reply_draft": "reply_draft",
-		"reply_send": "reply_send",
-		"reply_monitor": "reply_monitor",
-		"company_research": "company_analysis",
-	}
-	for step in intent.get("steps", []):
-		if step.get("enabled", True) and step.get("action") in action_to_capability:
-			capability = action_to_capability[step["action"]]
-			if capability not in selected:
-				selected.append(capability)
-	if selected:
-		return [CAPABILITY_REGISTRY[name] for name in selected]
+	# 旧会话可能没有结构化步骤，保留关键词规则仅用于兼容，不作为新请求的主路径。
 	for terms, capability in (
 		(("采集", "搜索", "查找"), "job_collect"),
 		(("评分", "打分"), "job_score"),
@@ -164,7 +154,7 @@ def complete_missing_fields(intent: IntentResult) -> IntentResult:
 	"""
 	# 模型可能臆造 candidate_name、job_id 等并非能力契约要求的槽位。
 	# 缺失字段必须由能力注册表统一裁决，否则普通咨询会永久停在澄清节点。
-	result: IntentResult = {**intent, "missing_fields": []}
+	result: IntentResult = {**apply_intent_policy(intent, intent["goal"]), "missing_fields": []}
 	entities = result["entities"]
 	for spec in capabilities_for_intent(result):
 		for field in spec["required_fields"]:
@@ -185,18 +175,26 @@ def match_capabilities(intent: IntentResult) -> list[CapabilityMatch]:
 	Returns:
 		供执行层消费的能力匹配结果。
 	"""
-	arguments: dict[str, Any] = {**intent["entities"], **intent["constraints"]}
-	return [
-		{
+	intent = apply_intent_policy(intent, intent["goal"])
+	base_arguments: dict[str, Any] = {**intent["entities"], **tool_constraints(intent)}
+	steps = enabled_steps(intent)
+	results: list[CapabilityMatch] = []
+	for spec in capabilities_for_intent(intent):
+		arguments = dict(base_arguments)
+		step = next((item for item in steps if ACTION_TO_CAPABILITY[item["action"]] == spec["name"]), None)
+		if step:
+			arguments.update(step["arguments"])
+		results.append(
+			{
 			"capability": spec["name"],
 			"tool_name": spec["tool_name"],
-			"arguments": dict(arguments),
+			"arguments": arguments,
 			"risk_level": spec["risk_level"],
 			"read_only": spec["read_only"],
 			"requires_approval": spec["requires_approval"],
-		}
-		for spec in capabilities_for_intent(intent)
-	]
+			}
+		)
+	return results
 
 
 __all__ = ["CAPABILITY_REGISTRY", "capabilities_for_intent", "complete_missing_fields", "match_capabilities"]

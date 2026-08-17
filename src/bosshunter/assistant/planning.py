@@ -1,6 +1,7 @@
 """复杂任务规划和 DAG 构造。"""
 
 from bosshunter.assistant.models import CapabilityMatch, IntentResult, PlanEvaluation, PlanStep
+from bosshunter.assistant.policy import ACTION_TO_CAPABILITY, enabled_steps
 
 
 _PIPELINE_STEPS: list[PlanStep] = [
@@ -59,6 +60,43 @@ def build_plan(intent: IntentResult, matches: list[CapabilityMatch]) -> list[Pla
 	"""
 	if intent["intent_type"] == "pipeline_run":
 		return [dict(step) for step in _PIPELINE_STEPS]  # type: ignore[misc]
+	intent_steps = enabled_steps(intent)
+	if intent_steps:
+		matches_by_capability = {match["capability"]: match for match in matches}
+		all_steps = {step["id"]: step for step in intent.get("steps", [])}
+		enabled_ids = {step["id"] for step in intent_steps}
+
+		def resolve_dependencies(dependencies: list[str], visited: set[str] | None = None) -> list[str]:
+			"""把对禁用步骤的依赖向前折叠，避免产生悬空引用。"""
+			seen = set(visited or set())
+			resolved: list[str] = []
+			for dependency in dependencies:
+				if dependency in seen:
+					continue
+				seen.add(dependency)
+				if dependency in enabled_ids:
+					resolved.append(dependency)
+				elif dependency in all_steps:
+					resolved.extend(resolve_dependencies(all_steps[dependency]["depends_on"], seen))
+			return list(dict.fromkeys(resolved))
+
+		plan: list[PlanStep] = []
+		for step in intent_steps:
+			capability = ACTION_TO_CAPABILITY[step["action"]]
+			match = matches_by_capability.get(capability)
+			if not match:
+				continue
+			plan.append(
+				{
+					"id": step["id"],
+					"label": step["reason"] or capability,
+					"capability": capability,
+					"depends_on": resolve_dependencies(step["depends_on"]),
+					"status": "approval_required" if match["requires_approval"] else "pending",
+					"requires_approval": match["requires_approval"],
+				}
+			)
+		return plan
 	steps: list[PlanStep] = []
 	previous_id: str | None = None
 	for index, match in enumerate(matches, start=1):

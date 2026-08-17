@@ -27,6 +27,8 @@ def decide_route(intent: IntentResult, complex_goal: bool) -> RouteName:
 	"""
 	if intent["missing_fields"] or intent["confidence"] < 0.6:
 		return "clarification"
+	if intent.get("mode") in {"answer", "cancel"}:
+		return "direct"
 	# 只有会启动任务或产生副作用的动作需要二次确认意图。
 	# 只读查询、公司研究和回复草稿可在中等置信度下继续，避免咨询问题被反复拦截。
 	if intent["confidence"] < 0.85 and intent["intent_type"] in _HIGH_CONFIDENCE_ACTIONS:
