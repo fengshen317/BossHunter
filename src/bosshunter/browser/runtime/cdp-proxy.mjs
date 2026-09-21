@@ -30,10 +30,10 @@ let chromeWsPath = null;
 let chromeWsUrl = null;
 let connectingPromise = null;
 
-let WS;
-if (typeof globalThis.WebSocket !== 'undefined') {
-  WS = globalThis.WebSocket;
-} else {
+let WS = globalThis.WebSocket;
+
+async function ensureWebSocket() {
+  if (WS) return;
   try {
     WS = (await import('ws')).default;
   } catch {
@@ -515,6 +515,7 @@ async function existingRuntimeHealthy(port) {
 }
 
 async function main() {
+  await ensureWebSocket();
   if (!LOOPBACK_HOSTS.has(HOST) && !AUTH_TOKEN) {
     console.error('[BossHunter Browser Runtime] Non-loopback listener requires BOSSHUNTER_BROWSER_PROXY_TOKEN');
     process.exit(1);

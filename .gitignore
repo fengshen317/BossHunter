@@ -23,6 +23,7 @@ env/
 config.yaml
 .env
 .env.local
+.env.docker
 !.env.example
 
 # Data (contains personal info, resumes, DB)
@@ -38,6 +39,8 @@ node_modules/
 # Local generated artifacts
 output/
 tmp/
+.test-tmp/
+dist/connector/
 
 # OS
 .DS_Store

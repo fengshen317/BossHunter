@@ -1,0 +1,12 @@
+{
+  "name": "bosshunter-browser-connector-build",
+  "private": true,
+  "version": "2.0.0",
+  "scripts": {
+    "build": "node ../../scripts/build_browser_connector.mjs"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.10",
+    "postject": "^1.0.0-alpha.6"
+  }
+}
