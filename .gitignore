@@ -28,6 +28,7 @@ config.yaml
 
 # Data (contains personal info, resumes, DB)
 data/
+docker-data/
 *.db
 *.db-shm
 *.db-wal
