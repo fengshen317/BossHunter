@@ -10,12 +10,15 @@ import os from 'node:os';
 import net from 'node:net';
 
 const PORT = parseInt(process.env.BOSSHUNTER_BROWSER_PROXY_PORT || process.env.CDP_PROXY_PORT || '3456', 10);
+const HOST = String(process.env.BOSSHUNTER_BROWSER_PROXY_HOST || '127.0.0.1').trim();
+const AUTH_TOKEN = String(process.env.BOSSHUNTER_BROWSER_PROXY_TOKEN || '').trim();
 const ENABLE_PORT_GUARD = !['0', 'false', 'no'].includes(String(process.env.BOSSHUNTER_ENABLE_PORT_GUARD || 'true').toLowerCase());
 const COMMON_PORTS = String(process.env.BOSSHUNTER_CHROME_PORTS || '9222,9229,9333')
   .split(',')
   .map((value) => parseInt(value.trim(), 10))
   .filter((value) => value > 0 && value < 65536);
 const RUNTIME_NAME = 'bosshunter';
+const LOOPBACK_HOSTS = new Set(['127.0.0.1', 'localhost', '::1']);
 
 let ws = null;
 let cmdId = 0;
@@ -280,6 +283,13 @@ function sendJson(res, data, statusCode = 200) {
   res.end(JSON.stringify(data));
 }
 
+function requestAuthorized(req) {
+  if (!AUTH_TOKEN) return true;
+  const authorization = String(req.headers.authorization || '');
+  const [scheme, token] = authorization.split(' ', 2);
+  return scheme?.toLowerCase() === 'bearer' && token === AUTH_TOKEN;
+}
+
 const server = http.createServer(async (req, res) => {
   const parsed = new URL(req.url, `http://127.0.0.1:${PORT}`);
   const pathname = parsed.pathname;
@@ -288,7 +298,12 @@ const server = http.createServer(async (req, res) => {
   try {
     if (pathname === '/health') {
       const connected = Boolean(ws && (ws.readyState === WS.OPEN || ws.readyState === 1));
-      sendJson(res, { status: 'ok', runtime: RUNTIME_NAME, connected, sessions: sessions.size, chromePort, portGuard: ENABLE_PORT_GUARD });
+      sendJson(res, { status: 'ok', runtime: RUNTIME_NAME, connected });
+      return;
+    }
+
+    if (!requestAuthorized(req)) {
+      sendJson(res, { error: 'unauthorized' }, 401);
       return;
     }
 
@@ -474,7 +489,7 @@ function checkPortAvailable(port) {
     const s = net.createServer();
     s.once('error', () => resolve(false));
     s.once('listening', () => { s.close(); resolve(true); });
-    s.listen(port, '127.0.0.1');
+    s.listen(port, HOST);
   });
 }
 
@@ -500,6 +515,10 @@ async function existingRuntimeHealthy(port) {
 }
 
 async function main() {
+  if (!LOOPBACK_HOSTS.has(HOST) && !AUTH_TOKEN) {
+    console.error('[BossHunter Browser Runtime] Non-loopback listener requires BOSSHUNTER_BROWSER_PROXY_TOKEN');
+    process.exit(1);
+  }
   const available = await checkPortAvailable(PORT);
   if (!available) {
     if (await existingRuntimeHealthy(PORT)) {
@@ -510,8 +529,8 @@ async function main() {
     process.exit(1);
   }
 
-  server.listen(PORT, '127.0.0.1', () => {
-    console.log(`[BossHunter Browser Runtime] Listening on http://127.0.0.1:${PORT}`);
+  server.listen(PORT, HOST, () => {
+    console.log(`[BossHunter Browser Runtime] Listening on http://${HOST}:${PORT}`);
     connect().catch((error) => console.error('[BossHunter Browser Runtime] Initial Chrome connection failed:', error.message));
   });
 }
