@@ -1,5 +1,6 @@
-"""Database module - SQLite storage for jobs, history and state tracking."""
+"""BossHunter 业务数据库连接与岗位、历史状态仓储。"""
 
+import re
 import sqlite3
 from pathlib import Path
 from typing import Any
@@ -8,8 +9,113 @@ from typing import Any
 DB_PATH = Path("./data/bosshunter.db")
 
 
-def get_db(db_path: Path | None = None) -> sqlite3.Connection:
-    """Get a database connection, creating tables if needed."""
+class PostgresConnection:
+    """提供现有仓储所需接口的 psycopg 连接适配器。
+
+    适配层只负责参数占位符和行对象兼容，避免业务模块各自维护连接逻辑。
+    """
+
+    def __init__(self, url: str) -> None:
+        """连接 PostgreSQL 并返回同时支持键和下标访问的行。"""
+        import psycopg
+
+        def row_factory(cursor: Any) -> Any:
+            if cursor.description is None:
+                return lambda values: DatabaseRow()
+            columns = [column.name for column in cursor.description]
+
+            def make_row(values: tuple[Any, ...]) -> "DatabaseRow":
+                return DatabaseRow(zip(columns, values))
+
+            return make_row
+
+        self._connection = psycopg.connect(
+            url.replace("postgresql+psycopg://", "postgresql://"),
+            row_factory=row_factory,
+            # 连接建立超时（秒）：数据库不可达时快速失败，避免每个调用方
+            # 无上限地挂在建连上（尤其 assistant 持有全局锁的路径）。
+            connect_timeout=10,
+        )
+
+    def execute(self, sql: str, params: Any = None) -> Any:
+        """执行兼容参数化 SQL，并将 SQLite 占位符转换为 psycopg 格式。"""
+        translated = sql.replace("?", "%s")
+        translated = re.sub(r"(?<!:):(\w+)", r"%(\1)s", translated)
+        translated = translated.replace("INSERT OR IGNORE INTO", "INSERT INTO")
+        if "INSERT OR IGNORE INTO" in sql and "ON CONFLICT" not in translated.upper():
+            translated = translated.rstrip().rstrip(";") + " ON CONFLICT DO NOTHING"
+        translated = translated.replace(
+            "(strftime('%s', 'now') - strftime('%s', updated_at))",
+            "EXTRACT(EPOCH FROM (CURRENT_TIMESTAMP - updated_at))",
+        )
+        translated = translated.replace("date('now', %s)", "CURRENT_DATE + (%s)::interval")
+        # 语义层时间过滤使用数据库端时钟表达式，此处转换为 PostgreSQL 方言。
+        translated = re.sub(
+            r"datetime\('now', '-(\d+) days'\)",
+            r"CURRENT_TIMESTAMP - INTERVAL '\1 days'",
+            translated,
+        )
+        translated = translated.replace("date('now')", "CURRENT_DATE")
+        # psycopg 使用百分号占位符；SQL 字符串字面量中的 LIKE 通配符也必须
+        # 转义为 %% 才会按普通百分号传给 PostgreSQL。
+        translated = re.sub(
+            r"'(?:''|[^'])*'",
+            lambda match: match.group(0).replace("%", "%%"),
+            translated,
+        )
+        return self._connection.execute(translated, params)
+
+    def executescript(self, sql: str) -> None:
+        """PostgreSQL 表结构由版本化迁移管理，运行期禁止隐式 DDL。"""
+        return None
+
+    def commit(self) -> None:
+        """提交当前事务。"""
+        self._connection.commit()
+
+    def rollback(self) -> None:
+        """回滚当前事务。"""
+        self._connection.rollback()
+
+    def close(self) -> None:
+        """关闭底层连接。"""
+        self._connection.close()
+
+    def __enter__(self) -> "PostgresConnection":
+        """进入连接上下文。"""
+        return self
+
+    def __exit__(self, exc_type: Any, exc: Any, traceback: Any) -> None:
+        """按执行结果提交或回滚并关闭连接。"""
+        if exc_type is None:
+            self.commit()
+        else:
+            self.rollback()
+        self.close()
+
+
+class DatabaseRow(dict[str, Any]):
+    """兼容 sqlite3.Row 的 PostgreSQL 字典行。"""
+
+    def __getitem__(self, key: str | int) -> Any:
+        """支持按字段名或字段位置读取。"""
+        if isinstance(key, int):
+            return list(self.values())[key]
+        return super().__getitem__(key)
+
+
+def get_db(db_path: Path | None = None) -> Any:
+    """获取业务数据库连接；生产运行强制使用 PostgreSQL。
+
+    显式传入路径仅供现有隔离单元测试使用，不参与应用运行。
+    """
+    if db_path is None:
+        from bosshunter.config import load_config
+
+        database_url = str(load_config().get("database", {}).get("url") or "").strip()
+        if not database_url.startswith(("postgresql://", "postgresql+psycopg://")):
+            raise RuntimeError("database.url 必须配置为 PostgreSQL，已禁用 SQLite 运行降级")
+        return PostgresConnection(database_url)
     path = db_path or DB_PATH
     path.parent.mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(str(path))
@@ -17,6 +123,23 @@ def get_db(db_path: Path | None = None) -> sqlite3.Connection:
     conn.execute("PRAGMA journal_mode=WAL")
     _init_tables(conn)
     return conn
+
+
+def get_business_db(config_path: Path) -> Any:
+    """按运行配置打开唯一的 PostgreSQL 业务数据库。
+
+    Args:
+        config_path: 当前运行目录的配置文件。
+
+    Returns:
+        PostgreSQL 业务数据库连接。
+    """
+    from bosshunter.config import load_config
+
+    database_url = str(load_config(config_path).get("database", {}).get("url") or "").strip()
+    if not database_url.startswith(("postgresql://", "postgresql+psycopg://")):
+        raise RuntimeError("database.url 必须配置为 PostgreSQL")
+    return PostgresConnection(database_url)
 
 
 def _init_tables(conn: sqlite3.Connection) -> None:
@@ -58,6 +181,18 @@ def _init_tables(conn: sqlite3.Connection) -> None:
             FOREIGN KEY (job_id) REFERENCES jobs(id)
         );
 
+		CREATE TABLE IF NOT EXISTS job_events (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			job_id TEXT NOT NULL,
+			event_type TEXT NOT NULL,
+			event_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+			source TEXT NOT NULL DEFAULT 'application',
+			from_status TEXT,
+			to_status TEXT,
+			attributes_json TEXT NOT NULL DEFAULT '{}',
+			FOREIGN KEY (job_id) REFERENCES jobs(id)
+		);
+
         CREATE TABLE IF NOT EXISTS risk_events (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             event_type TEXT NOT NULL,
@@ -81,8 +216,65 @@ def _init_tables(conn: sqlite3.Connection) -> None:
         CREATE INDEX IF NOT EXISTS idx_jobs_status ON jobs(status);
         CREATE INDEX IF NOT EXISTS idx_jobs_score ON jobs(score);
         CREATE INDEX IF NOT EXISTS idx_history_job_id ON history(job_id);
+		CREATE INDEX IF NOT EXISTS idx_job_events_job_time ON job_events(job_id, event_time);
+		CREATE INDEX IF NOT EXISTS idx_job_events_type_time ON job_events(event_type, event_time);
         CREATE INDEX IF NOT EXISTS idx_risk_events_type ON risk_events(event_type);
         CREATE INDEX IF NOT EXISTS idx_workbench_tasks_updated_at ON workbench_tasks(updated_at);
+    """)
+    conn.executescript("""
+		CREATE TRIGGER IF NOT EXISTS trg_jobs_collected_event
+		AFTER INSERT ON jobs
+		BEGIN
+			INSERT INTO job_events (job_id, event_type, event_time, source, to_status)
+			VALUES (NEW.id, 'job_collected', NEW.created_at, 'database_trigger', NEW.status);
+		END;
+
+		CREATE TRIGGER IF NOT EXISTS trg_jobs_status_event
+		AFTER UPDATE OF status ON jobs
+		WHEN OLD.status IS NOT NEW.status
+		BEGIN
+			INSERT INTO job_events (job_id, event_type, source, from_status, to_status)
+			VALUES (
+				NEW.id,
+				CASE NEW.status
+					WHEN 'filtered' THEN 'prefilter_rejected'
+					WHEN 'scored' THEN 'ai_scored'
+					WHEN 'ready' THEN 'greeting_generated'
+					WHEN 'approved' THEN 'user_approved'
+					WHEN 'rejected' THEN 'user_rejected'
+					WHEN 'sent' THEN 'greeting_sent'
+					WHEN 'replied' THEN 'hr_replied'
+					WHEN 'needs_resume' THEN 'resume_requested'
+					WHEN 'resume_sent' THEN 'resume_sent'
+					WHEN 'follow_up_sent' THEN 'follow_up_sent'
+					WHEN 'error' THEN 'send_failed'
+					ELSE 'status_changed'
+				END,
+				'database_trigger',
+				OLD.status,
+				NEW.status
+			);
+		END;
+
+		CREATE VIEW IF NOT EXISTS semantic_job_current AS
+		SELECT id AS job_id, title, company, city, district, experience, company_size,
+			company_industry, score AS ai_score, quick_score, status AS current_status,
+			CASE WHEN title <> 'HR主动沟通' AND TRIM(COALESCE(title, '')) <> ''
+				AND TRIM(COALESCE(jd, '')) <> '' THEN 1 ELSE 0 END AS is_formal_job,
+			created_at AS collected_at, updated_at
+		FROM jobs;
+
+		CREATE VIEW IF NOT EXISTS semantic_job_funnel AS
+		SELECT j.id AS job_id, j.created_at AS collected_at,
+			MIN(CASE WHEN e.event_type = 'ai_scored' THEN e.event_time END) AS scored_at,
+			MIN(CASE WHEN e.event_type = 'user_approved' THEN e.event_time END) AS approved_at,
+			MIN(CASE WHEN e.event_type = 'greeting_sent' THEN e.event_time END) AS sent_at,
+			MIN(CASE WHEN e.event_type = 'hr_replied' THEN e.event_time END) AS first_replied_at,
+			MIN(CASE WHEN e.event_type = 'resume_requested' THEN e.event_time END) AS resume_requested_at,
+			MIN(CASE WHEN e.event_type = 'resume_sent' THEN e.event_time END) AS resume_sent_at,
+			MIN(CASE WHEN e.event_type = 'follow_up_sent' THEN e.event_time END) AS follow_up_at
+		FROM jobs j LEFT JOIN job_events e ON e.job_id = j.id
+		GROUP BY j.id, j.created_at;
     """)
     conn.commit()
     _migrate_v1_1(conn)
@@ -222,9 +414,14 @@ def recover_send_errors(
     """Re-queue jobs stuck in ``error`` after the backoff window elapses.
 
     Moves jobs whose ``status='error'`` and ``error_retry_count < max_retries``
-    back to ``ready`` once ``recover_after_seconds`` have passed since their last
+    back to ``approved`` once ``recover_after_seconds`` have passed since their last
     update, so transient send failures (network hiccup, slow page load, selector
     drift) get a fresh chance without manual workbench intervention.
+
+    Recovered jobs go straight back to ``approved`` (not ``ready``): they were
+    already human-confirmed before the send attempt, and the send queue only
+    accepts confirmed jobs — reverting to ``ready`` would require re-confirmation
+    and would make them invisible to the sender.
 
     Returns the number of jobs recovered. Jobs that exhausted ``max_retries``
     stay ``error`` until explicitly retried via the workbench.
@@ -241,7 +438,7 @@ def recover_send_errors(
     recovered_ids = [row["id"] for row in rows]
     placeholders = ", ".join("?" for _ in recovered_ids)
     conn.execute(
-        f"UPDATE jobs SET status = 'ready', updated_at = CURRENT_TIMESTAMP "
+        f"UPDATE jobs SET status = 'approved', updated_at = CURRENT_TIMESTAMP "
         f"WHERE id IN ({placeholders})",
         recovered_ids,
     )
@@ -310,13 +507,18 @@ def get_jobs_pending_confirmation(conn: sqlite3.Connection) -> list[dict]:
 def get_jobs_ready_to_send(conn: sqlite3.Connection, include_send_errors: bool = False) -> list[dict]:
     """Get jobs with generated greetings that are eligible to send.
 
+    Only ``approved`` (human-confirmed) jobs are eligible. This is the
+    enforcement point for the "human confirmation is mandatory before any
+    send" rule: ``ready`` jobs have a generated greeting but have not been
+    reviewed by the user, so the sender must never pick them up.
+
     Args:
         conn: Open database connection.
         include_send_errors: Include prior send failures for an explicit manual retry.
             Normal batch sends leave this disabled so failed jobs are not retried
             automatically.
     """
-    statuses = ("ready", "approved", "error") if include_send_errors else ("ready", "approved")
+    statuses = ("approved", "error") if include_send_errors else ("approved",)
     placeholders = ", ".join("?" for _ in statuses)
     rows = conn.execute(f"""
         SELECT * FROM jobs

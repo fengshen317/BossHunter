@@ -1,0 +1,210 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:f425c9274fb46d5f500bf2f05058cebb5e6c07122c62e9542a9e11dbdea3cf8c",
+  "claims": [
+    {
+      "id": "claim_7903221b713c4a7ca32e46f08773942d",
+      "statement": "BossHunter browser automation is split between a thin Python facade (browser/__init__.py) and RuntimeClient (browser/client.py) that speak HTTP to a bundled local Node.js CDP proxy (browser/runtime/cdp-proxy.mjs); the proxy attaches to the user's already-logged-in Chrome over CDP, so BossHunter never stores platform credentials.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/browser/__init__.py#L1-L117",
+          "version": "repo-lines-v1:sha256:9253445eaf58b54ece065108ac43d4c8b953a627f54c14159c612fccd5cc004e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTE3LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJmMjIxYWRmMzUzMmY3ZjM1OGViMjc1NTZiZTEzMDI1NDcwMWM1NWYwN2NkODgyODZmNTYyMzU0YjdhZWVkMmEzIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0YzFiNjg0NDZlYjg4NGNiNDAyMjVhMWQ0MmQyYjQ0ZjM3MzMwZTFmZTEwYjVmZmM2MWU0ODdjY2ZjZWYwZGNjIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MCwicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI1N2YxNTM0ZmY0YzIwYTFmMWM0YWQ3N2Y0N2NhMTJjYTVkNTk2MGE1ODk4ZDQ2MzlmMjExMTdjZWY0NjA2MzEzIn0"
+        },
+        {
+          "resource": "repo://src/bosshunter/browser/client.py#L13-L127",
+          "version": "repo-lines-v1:sha256:b7f581cd64ef21863f96a94c09a25abcb43891a8b0221f07007cadaeb8094239:eyJzZWxlY3RlZExpbmVDb3VudCI6MTE1LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI1MjczODQ3MjIyYmViMGQwM2U2NWM4MjE0NzFiNDY0NDVkMmZlMjNjNWQ0OTkyOGJiNGQ5YmIzOTM2MWJiYmRiIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI5ZjExZWExMWVmMDFlMmU5NjllNWY0YzYyNzJmM2RiNjZkZTVmOGU1NGQxY2FhYTRhZmVmMmQyMGJiYTJlZjI2IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJhZGQwYjBkOTgwNDBmNDA0ZjU1NDM5OTUyMDVmYWE4MDFkNTFiNWJiMTJjM2FhNWJmMzI2ZTMxZmYxYTZkNTRlIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MCwiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1In0"
+        },
+        {
+          "resource": "repo://src/bosshunter/browser/runtime/cdp-proxy.mjs#L1-L18",
+          "version": "repo-lines-v1:sha256:43b34ca66085b639d9b70a26ee968e25b1fd0214cf3cc7ac6e04d3fe220a5b88:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE1OWM0Nzg3MmI3MWYxMjU4OTk0Mjg5MjQ2NGU3NjRjMGRiMzUwYzIwYjcyMjI4NjQ1NjE1Y2MzNmUwYTA3MjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRjMDhmODVhNjUxYmExYTQ1YzlmODZhNTE3MjdlYjNkMmVhNzNlNjVhYWQ4YmM1YWQxNDc5ODM3YmEyY2IwZjkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhhZTlkZWE1MDRhZGU2OTRmZGVjZWFkYzA1YzVmMTNhMjA5M2YyOGZlNmU3MjgyZmIzMTk5ZTllNGQ3OWI4NmQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_950b7c676e4b4ebc9059b239914bb762",
+      "statement": "Every facade operation gates on ensure_runtime() and returns a falsy default when the runtime is unavailable; evaluate() specifically returns the falsy RUNTIME_NOT_READY sentinel, which the sender maps to the retryable 'runtime_not_ready' error so infrastructure hiccups are retried separately from the progressive-backoff circuit breaker.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/browser/__init__.py#L18-L40",
+          "version": "repo-lines-v1:sha256:c701713877b7e59cdb429c85423985743d763586f9fedf0b61332bbaa226331e:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRlNjUyNzgyZTdjZTY0ZDcxY2M1NmUyOTFlMWQzZDdmY2M2YTFlMGJlY2I1OGNkMjg4ZjVkNjU4NWE5NGI4YTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEzMTZkYjIzNDY1MGQ5OWQ1NDRlNGRiZWM1NTRiMWQ5OWNjZGY2ZWVhN2ZjMGRhOTY4MTM1ZmVjYWMxYTRkYzYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc3MmFhYjgzYTdlN2FiMTI3MGI2YmNkMzBiOWRjMjdiZGMwZmQwM2I2OWE0ZGZkODBiYjc1N2JjY2I5ZTc1M2UiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNlOWViMDY4YmE5YjlkOWEzYWY1ZTEyYmM5YjVhNzQ1ZTJjOTMxNmE1MzBjY2I3MjU5YjQ5OGYyZDEyMzZlZGQifQ"
+        },
+        {
+          "resource": "repo://src/bosshunter/browser/__init__.py#L52-L117",
+          "version": "repo-lines-v1:sha256:f1f327d5994f664c0ca072a5f71c3b86f2da96959d29ba24ae6095d1cb258216:eyJzZWxlY3RlZExpbmVDb3VudCI6NjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY5MTczYjM5MDY2ZjI2YTE5M2QyM2ZmZWFkNTJiNGZmM2ZhMWViZDQ5MGQwZjk3MDkzMTBkYTgxZjgxYjE4NWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRjMWI2ODQ0NmViODg0Y2I0MDIyNWExZDQyZDJiNDRmMzczMzBlMWZlMTBiNWZmYzYxZTQ4N2NjZmNlZjBkY2MiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQxZGQxODkxNzFiMTk1MWIzMGQyNGFlZDI4YjY0MjZkNDViZjQyZmY2MmE5ZTFmOTE4OTYxOWVkYTZlZTI2OWYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU3ZjE1MzRmZjRjMjBhMWYxYzRhZDc3ZjQ3Y2ExMmNhNWQ1OTYwYTU4OThkNDYzOWYyMTExN2NlZjQ2MDYzMTMifQ"
+        },
+        {
+          "resource": "repo://src/bosshunter/executor/sender.py#L127-L157",
+          "version": "repo-lines-v1:sha256:dfceffd846ba2e0ab16287973296667a8c08bfd142c7436c03d65095233b1509:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY0NjEwNWZmNTUxYjZhZjg5NTk0NDE5MTM2MGJmYzMxMjUxZTEwNTBiNjc4NTRiZDlhYmRhMzljYjlhNmQ3MTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg1ODBiNzY1MThkYWU5NzlmYWViZDAyMzY3YTI5MjkyYTUwZDk3NjA5MjI1MWEzOGE2Y2UzMDg4MGJhNDI4MjUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM4YWU2MGEwOWE3ODRiNDdlYTA4NTMxNmJmZjkyYzY4MDExZGQ2NzBkODlmMjhkYWY1ZGE5YmI2YWU0MWJjNDIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI4ZGU2Y2E1ZTE2NTNkYTMzZjkyNjE1ZWI0MWQzMjhiOGRhYTU5Yzc4YjQ5MmZlOWM5MDdjYWU5Zjc3Nzc4YzEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_2f2da6678f5d4741b33d3f595cff1449",
+      "statement": "ensure_runtime() auto-starts the bundled Node proxy only when browser.runtime is 'builtin', auto_start_proxy is enabled, and Node.js is available; the spawn-and-poll window is serialized under _runtime_lock to prevent concurrent callers from spawning orphan proxies, and readiness is proven by runtime_targets() returning a list before the wait deadline.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/browser/runtime/__init__.py#L179-L208",
+          "version": "repo-lines-v1:sha256:6c3b5bd2a2423013393811d5d215e7f561b05b14fae20b858cea0b3898ec5815:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI1ZmZiZDJjZjdmZTdhMWY1Y2Y5ZjQyNTNmMzA4ZGY5YzZiODZjODU0NTAxYzc2YjVmYjJkMTFlNGJlMDVlMzMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI5N2M3MTI0N2FmM2NkMWVkZjU1NWE3ZDEwNzU5MzE1N2Y2ZGMyYTIyYWYwZGU4MmU3Nzc0YWJmMTBmOGFkZTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNkZDViODhkOWVkZWM5OTdmODI4ZWU1MDk4ZTg5NjRkNWRjNzAxMGE2ZDBjYzdhM2EyNmE4MmYzYzYwN2U3ZDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNiMjM2N2JkMGRmMGE2MmRmYzNkMTIxOTkxYjI5OGZlNGU5YzNkMzI2NzUyZTY5ODU1OTQzYjZjZjRiMjQ4M2QifQ"
+        },
+        {
+          "resource": "repo://src/bosshunter/browser/runtime/__init__.py#L19-L24",
+          "version": "repo-lines-v1:sha256:ed49a5da0346a53643bed38116001e52d2e341db9c19e98b677a35ba461a5e5e:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjM5MGNiMDQyMjkxY2QyZGRjY2VhNWUwNGMxMGIxYjY0ZDVlY2MzOWI3NDgxMTY0NmNiZjRiNTQ4Y2Y3MDViMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTZlMzQyZjM5NTJlZmRmZGMxOTVlNjljY2I4MTQ4YmNmYWFhZGNhYzNmM2FjMWJmMTU1MWY1NDcyODI2ZTc4MyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYmY0YmFkMjA2YWM0YmQwMmRhMzM4NzVjZDYzNjkxYWFhNzY2Mzk5MzA0MjU1NjIyMzQ5YmM0ZTJhZTg2NjZhZSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_f7b844d352e348a989b234a3f7d9ccfb",
+      "statement": "When /health answers but does not identify as 'bosshunter', ensure_runtime() switches to the next available proxy port within proxy_port+1 .. +100, updates both the passed config and the process-wide _browser_config, and get_runtime_url() derives the base URL from the updated proxy_host and proxy_port.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/browser/runtime/__init__.py#L122-L149",
+          "version": "repo-lines-v1:sha256:da0973dd2b9c12e03345ea579ddd51792dfa3ed1b0af3cc6ec84ffe8e071e6b8:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFhY2M2ZGZkZjFiMjdlNDE0Nzg2NjcwMjhiNjE0MDc0MWIyYjNjYzgwMzlmODllZjgyMjBlZWVlNmE4ZjUyZmMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAyMmI1MTE4NmQ1MGMzMzAwMzU1Y2IxYTk1MDJmOTAwNmQxNmY4YjRlNDAxNGRmYmUzNTZhM2EzNjk4YjlhMTYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ3MDE0OWUwNjlhZDY3ZWNjZjQ3MzY0NmZmMWM3NTAwNTBkMzI5ZDExMDAxOGRjNTc2Njg3OGVhZmExZDYwN2QiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjljY2ZjNzU0YTc0Y2MyZDc5ZjBlYTRmMGI1ZWNlMWU5MzAwNzM4MjNlZjdiODg2ZTE5NjJkYmRkMjQ2YjUyOTMifQ"
+        },
+        {
+          "resource": "repo://src/bosshunter/browser/runtime/__init__.py#L192-L197",
+          "version": "repo-lines-v1:sha256:cb4bcedf81a668c9dab8583aa01c7d36f2fa1f97f53ef80ed62388729c0272f3:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTIwMTEzMzI4ZGIzOWE5YTQzZjgxNzViYzNjYzI3YWJjYmUzOTZjODQ5ZTEwYjM0OWQzOWU3ZmEwNGE3ZmVhMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYmY1OWE1MDQ5ZWI0MGRlZWIwMTZhNGQ3ODc0ZjBkOTBiMGY3YzM0ZmZlNzk0NTA5NGNiMzg3YjFhNmNhYTMwOCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMTNmYzI2MjRiNTY0NTFlODBjMWQyMWJkZGM5YzBmNDI1ZmYwNTNhZmYyNDEwODdmNWViYWUyYzFjMWM4MGZkYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZjRhNmQ4YmQ5NDMyYzdjYmZmZjFkYjExNzUwYTU3MzRkOGRiNWI0YWMxNDE1OTRlNjFjY2QxZTdhZmVjNWFlNSJ9"
+        },
+        {
+          "resource": "repo://src/bosshunter/browser/runtime/__init__.py#L50-L55",
+          "version": "repo-lines-v1:sha256:7b3efebc4824f3cb9dea3c235bf58cf895734e7289de29182c460ac176de0964:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiN2MyY2NiNGE2MjdmZmYyNzA3YzRlOTM0ZmJjZjkwZjVmMjZhZDAzZDYzOWFiM2EwNmEyYTg1MGE5OTI3OTcyNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZWRiODU1N2I2MDZmMWY3YWJiZjdlYWY1OTIyM2ZkY2JjZWM4ZWE4YmFhOTdhY2E5N2JkZGNhNmMyMTVkOTc5MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjRhM2JhY2MxYTIzMjU4MWUwYjhhMTY3MmFmMjc0MDRkZjY2MTcyZWRiOWYzNGI2ZTU3MmIwZjJlMGNmZmRmMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDI2MWI4OTk1YTFkZWYxZGJiNDM3NGUyMDZiMzljNDI2MDllNTgyYzYxMTgyN2ZlNGM5NjdiNGJkNzRhZDI5NSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_dc0bd573cd754b6a8a753e19255d2445",
+      "statement": "start_runtime() launches the proxy detached and passes BOSSHUNTER_BROWSER_PROXY_PORT, BOSSHUNTER_CHROME_PORTS, and BOSSHUNTER_ENABLE_PORT_GUARD as environment variables that configure the proxy's HTTP port, candidate Chrome debug ports, and port-guard switch.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/browser/runtime/__init__.py#L152-L176",
+          "version": "repo-lines-v1:sha256:d139e8ccfa7d7198eb1adcfd49357174f5f72be91c238ef62c1ecec921d024bf:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNjZDA1Y2M3YzU0YWViY2FkN2RhN2M4NTg3ZDcwZDMyZDcyYTFhODZhOTVkNDEwZWRmMmU5MGFhOWIzYjU0ODEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg5MDkyMGI2ZjFiZmVhMDBhYTA5ZjUzYWVlMTZhOTY0NTAwMmU2MjY3OTkzZTRiYTBmNTljNGYxNmRmYzFmNzYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNiYzA5ZDY1YmYzZGNiZGRmNmUzMDMyNDlhZDBmYzIxODAzMmUyMDY2MDgxYzdlYTY2MWUzZTVjNzg5MDMzMzYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg3ZGViMWZiM2NkNDk1OWYxOGViMDE1NWI5ZDE4M2E5MjU4N2I2ODgwNmEwMDNjNGQyNDRmY2I0YzdhMmYyMWMifQ"
+        },
+        {
+          "resource": "repo://src/bosshunter/browser/runtime/cdp-proxy.mjs#L12-L17",
+          "version": "repo-lines-v1:sha256:0b3c1300813bcdc4a48b5547f4967523604d9837b31112e100dfbca523373e15:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOTFkYjUyNGI5NDk2ODNlNzc1ZDE4Y2ViMmJmZjRkNDVlNjUyZDY5OTExY2FhOTZiNzZmNWNjZDljM2E1ODMzMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYmZjMzVhMTllMGMxYmRjNTgwOTVhNTgxOGQ5NDgyN2EyZGExMGFjZWRmNDZjMTczMmY0OTM4YjUwZDIwMmU1YSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjUzYThmNmQxZTk1MDA3MWM2ODQwODRhMmEzZTZiNjg0MWY1NzFlZmNmOTQ2M2Q2ZmI4YWI5NGE3YmEyY2Y3OCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzljOTMxZmNjOGE5OTQwYTIxMDQwZDAxMzVkNTE5YTdiNmU4MGFiMDgzNDJhMDc5YmYyZjgxMTYyNDMzMGQ3YyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_8f498a2bbaf542c9af5d3ebd8d30416c",
+      "statement": "cdp-proxy.mjs exposes a local HTTP API (/health, /targets, /new, /close, /navigate, /back, /eval, /click, /clickAt, /type, /setFiles, /scroll, /screenshot, /pdf, /info) and implements each non-health endpoint by attaching a CDP session to the target and translating the HTTP request into CDP commands, returning JSON or 4xx/5xx error bodies.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/browser/client.py#L19-L97",
+          "version": "repo-lines-v1:sha256:3d135d54fc623948e986b677e7e58ccd762989128fb1c28721c69759e7765c3c:eyJzZWxlY3RlZExpbmVDb3VudCI6NzksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRhMmY2YmNhNTk4NzcyYmQ3ZjhmMGVlNDk2OGQ2ZTYxMDBiODhlYjNhMDU2NmRlMjIwNzJkMmU0NWEzZWUwZGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNmODFiMWE0ZTc5MzllMzBmYmYwYTJiZDI2MWZhZWIzNjBmNTg0ZGJhMWJjNDU1ZGEyZTg4Yzg5OTg0NTMwY2EiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE4MzRiZTkxN2ZiMDJhMTg1OTk2OTAwM2E0NTE3OGY3ODdiNWM4ZDFlNWY3NjRiZWE2MjMwMzVmZDU3NGQxODciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ1NTVjY2JlN2Y1MzFhNDE4MDA4ZmFhZDNmODE0MjI0NGI1MTRkZTA3YjNiMTJmNTZiODZkOWI2YTE5NzgyNjIifQ"
+        },
+        {
+          "resource": "repo://src/bosshunter/browser/runtime/cdp-proxy.mjs#L283-L465",
+          "version": "repo-lines-v1:sha256:55eed23f21b204fc7a9eb8010332aad346806cecca20274ff5765341958289e7:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgzLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIyZTBhNTY5NDQ5NWMwOTkzNTA1NTM3OWJiNjhjYmNjMWI3MTc3OGE4MjUwODUyNGUwZTAyMTY3ZDEyNDQyMmY1IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJmNGNlODIxMGUxMzRmYTkyMmI0OGE1MmVlNjgyNTU3ZmFkYjdmYzU4MDA0NDkzZjVhYjJjZDFjM2YzNDMyNGFhIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJhMGRlNDAzYmVjMjgzNGEzNjAxZmFiNWNhNjA4NzQxYzQzMmJmMmZiMjdlM2RjYjIwODBjNTkxMWRlOTM3YTJlIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlZDIxNWU0Y2E2MDJmOWEwYjUwMDhjMDg4YWM1ZTcxZDdlZmY1MzlhMzUyOTMxZmZmMDVlMzcxOTdmNDNmMjljIn0"
+        }
+      ]
+    },
+    {
+      "id": "claim_93b0820614f341caaf84762886fa2f58",
+      "statement": "The proxy discovers Chrome by reading platform-specific DevToolsActivePort files and then probing BOSSHUNTER_CHROME_PORTS, validating candidates through GET /json/version and its webSocketDebuggerUrl; discovery results are cached and cleared on connection error or close so a closed Chrome triggers re-discovery.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/browser/runtime/cdp-proxy.mjs#L119-L163",
+          "version": "repo-lines-v1:sha256:b523fce4b9611eee501c98feea9c62978e849435fc8084626498b2fc8e9f92ac:eyJzZWxlY3RlZExpbmVDb3VudCI6NDUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM1ODZmYzQ2YTAxODg2ODM0YWI3ZDZjYjBhZGNjYjY4YjQxYWRmZjMyNDcwNWZkZTllYzMxMjZiOTMyYjdlYjgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFkOWUxMjU0NjQyNTU3NmQzZGVhZThjOWI5ZGJmMTI4ZDVkNmRkYWY1ZDdmZTg1NzkzNDkyN2RlZmZhM2I5ZGQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU5ZjFiZmNiZGUyMzdhMTIxNDEyMDUyNDRhOWNhNDAzM2I4OGVkYzAwNTlmNmQ1YzAzM2U0MTcxMmRhYTEyMWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQwM2UzNmIwYTFjZjMyNGY2ZDdhYzgwM2Q0NGQ0NmQ4ZmZmZmUyNzBmY2QxMWE1MzY0MmU1MzIzMzAyOTRjYWIifQ"
+        },
+        {
+          "resource": "repo://src/bosshunter/browser/runtime/cdp-proxy.mjs#L42-L111",
+          "version": "repo-lines-v1:sha256:d198117f39af40389025ba3653f0b5c175faf66dd5ad4d8ca04ce3804f2a5e10:eyJzZWxlY3RlZExpbmVDb3VudCI6NzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRhNzIzMzkyZTNlNzQ4ZWYwY2U4YTI1NDBlMWUzY2Y1OGFjN2IzZmZlOWZjZDdkNGRjOTg1YTA3ODQ5Y2U0MDQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZiNTgwZTk2NGY4M2E0NzNmNDNkNDQzODQ2Mjk0OWQ2OGI1NjAwZmRhNzg3ZjE2Mzc0NWQwMGRlODljYmYzNmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJmMWMyNGM4YmQ1MzQxZDgyYWM1ZGUxZWM0MDFhNTNmNWJmMjM1ODgwMGRiY2MwNDFlZTUwZGNjMGI3NjcxOGUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_8edbda8f662a424a9a1dabc8a21e926d",
+      "statement": "When the port guard is enabled, the proxy runs Fetch.enable on each newly attached session with request-stage patterns for http://127.0.0.1:{chromePort}/* and http://localhost:{chromePort}/*, and answers Fetch.requestPaused with Fetch.failRequest using errorReason ConnectionRefused to block pages from probing Chrome's debug port.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/browser/runtime/cdp-proxy.mjs#L169-L176",
+          "version": "repo-lines-v1:sha256:57a6c72f5fac6749982f0ca39123e68b7cc15ff6afbf68b5cd6f27301d167868:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDBlMjNjNTI2MGFlYTAwOGU4ZjY3MWIzY2FiYTI4ZGEwYTQyODY2ODMyNmI4NzE1ODMwMjc5YWJhZTJhMjk0ZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOWI2MmY2MGQ4NTkwYTU3OWNmNDZmOGQ2NzM3OGM0YzU3MmI5NjJjZWNjZGI5MGM3YTVmN2I0MmI5NjA3ODJhNCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMTkxZWY5NWNkMjA1YTkyOTBiZGQ1NGU2OWJkODEyYzc0MzI4ZjhhZjUzZDNmMDcwMjc1NWYwZWZjMTRjM2U1ZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzMyNzUzOWY4NmNkZTkwZjZhNzhlMjZmNjg2ZTA4N2VhNmFiNjQ1NGFlYjQwOTVmZjFlYzEzMjBmNTkwNjYzNyJ9"
+        },
+        {
+          "resource": "repo://src/bosshunter/browser/runtime/cdp-proxy.mjs#L224-L245",
+          "version": "repo-lines-v1:sha256:12ccf60746d868f5e2e8caa10b006106b21dc53eac80b4a55f8f02495af20ced:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRhNzA0MGY4OTA5NWYyZWU1ZWJjNmE0NWRjYTE2NWJjMWEzZTM4ZDFhZDBjY2JiNmMwNjFhMWZjNzcxODhhM2YiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJkMGYyZDNhM2FhZGEyNzU4NjQ1NzhkMGE0MzkxNTYzOGQ1NDNmZWNhMmM5NDg1OGRiOTQxMjExZTg2Y2VmMmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRmZmRhNGQ0NWMxOWQwOGNmYWJmMDgwYjdlMWMwZTVkNGY5OTliZDI0NjUyMTc4NDZhYzkzMWQ3NWM1MDQ3ZDYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_1fb3105f06ff43e79c11ca9934aea424",
+      "statement": "launcher.py discovers Chrome or Edge by checking browser.executable_path first, then PATH command names, then platform install paths, and builds a command with --remote-debugging-port, an isolated --user-data-dir (default ./data/browser-profile), --no-first-run, --no-default-browser-check, and the local dashboard URL so login state is isolated and no zhipin.com URL is opened directly.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/browser/launcher.py#L15-L91",
+          "version": "repo-lines-v1:sha256:51c3b6b8d870034fccb4c665c0c062e5a41870d73b7451a3bb99bc641a04e213:eyJzZWxlY3RlZExpbmVDb3VudCI6NzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI3MWNiNjdiMTgxMzczOGJmMzBjODM4NmFjMDQ4YWE3NWQxZmFlZjliZGEzMTMzMjRmZTUzNjk5OWM5YzZmMjEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMwYzFmMTg4ZjE0MmVkN2E4MjQ2ODBiMjA3MTcyYzU1MTliYzYxNGE0OGZkYTdjZjE2N2VkYjhkZGY3OTk1NmMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI3YjgxM2Q1ODMxZWEzMzFjMjUxYzA1ZTNiM2Q4YjM4NmMwNjBhMTMwNjJjMTQwNTMzODQzNmIxMDBiMTVhNGMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVjNWM2YTIwY2JmN2RhY2E5OGE4NjNlMzUxODNmZDM0MGQzZDZhMTJlZjA2MTlhYzE2NzBiNTg4ODBmZDExOTYifQ"
+        },
+        {
+          "resource": "repo://src/bosshunter/config.py#L117-L127",
+          "version": "repo-lines-v1:sha256:47baf6fbd9ca0944b4c42d40e8d91d434aef7521a1a00c7fc67371be1aba8b7e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRlNjk5NWM4YzE1YjZiNTFmY2ExNGRkZGFhMWFkNjU4Y2U5NDRjOTVhZDVmMWE1Y2U3YzQ0ODJjMGZlNDE2OGEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI4OTBjODUwMjUxMGVmYzJmOTQ0MTZlOWE4YzVjMjg0Y2EwNGQ5YTBhZGUyZjI5MTg1NWIwMmMzZWFjOTRmYmYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI3MTAwMzNmM2M0ZGZlNjI2MWU5MDkwM2I1MDUzMmM4MDQ2Y2RmNDcxZDM1OGQ2NzYwYTg2OWI2MjVmNjQzODQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE4ZjQ4ZGQ4MWEzNzk3YmViMWExM2NiNWFlZGY4ODI0MGVkNmQwZTYzNzU1ZDQyNmE3M2RjNzM2NGU4NWIwMzUifQ"
+        },
+        {
+          "resource": "repo://src/bosshunter/main.py#L334-L377",
+          "version": "repo-lines-v1:sha256:8a10bfc544a4030578a598dc4b1b43a1dd919ae246202c76ece503ab1c25bdbf:eyJzZWxlY3RlZExpbmVDb3VudCI6NDQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ1ODUxOTE5MjI3MThiYjMyNzc4YzAwNzc5NjZlNDM0Y2ZlMDYyZTk2NWM2OGNhMDc1NmQzODY3YzUzZjRlYjciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc2NThkNTczZjkwOWY2OGY1NWJlZGE1ODE0ODQ2YmU2ZGQzMGM0Y2U3M2RhYjU2M2Y4ZTJhM2VlZjc0ZTk4NzgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNiZGQ0N2NjNzRhOWZlYTBlN2I3ZWJiMjA4NGM0ZTY4YTRkOWJkMDliMDVlYmM3YTYyZmE1YTI1YWQ2NTU2YWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI0MzA4NDgzODVmNDY0OTJmODQ2Nzk3ZDJhMDZkNjFkOGM4MjRjMjE0ZmY5MGQ5OGZkNWFjZjBlMjk0NzBiYjgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_ecd2c229ad6a46b8a465aa1f8ff0d946",
+      "statement": "browser/runtime/site-patterns/zhipin.com.md is the documented, versioned boundary for the platform's fragile selectors and known traps; selector fixes belong in scraper/executor code plus these site-pattern documents with deterministic regression tests, and the .mjs scripts and site-patterns/*.md are declared hatch wheel artifacts that must ship with the wheel and must not be relocated.",
+      "evidence": [
+        {
+          "resource": "repo://pyproject.toml#L39-L44",
+          "version": "repo-lines-v1:sha256:8e1af00abbecb0a604b5a8cd5490ed93d0750eed085dc17098b7284c05d1e76f:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDNjMGU3MjM4ZjBiMThjYmU2YTQ2NjY0MWZkY2Q1OTQ4NTI0NDhkZGY3ZmY4OGQwYTlmNDk1MGVhZGVjMzkzZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjk0MTZlMDlmNzhiYTMxNmMwMzI1NjgyMTNiODU1ZWU3NTZlNDE1NjVkOTE4ZjA5NTE5YzgxZmQ2MjBmNDA2MCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjgyZDk3YWJlYmMxMDFmZDY3NzRkYjIxZDRmZjhjNTUwNGVjMjBiOGViMGE3NzM0YzA2NDcyZDEyYTlhNzM3OCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTcwMjE1YTM3ODk4YTYzYTI1OWZhZTA1NDY5NjIzMDk4MDU1YmE2NjM5MTkzNDg2YzNmNzY4NzRhMTIyZDIxYyJ9"
+        },
+        {
+          "resource": "repo://src/bosshunter/browser/runtime/site-patterns/zhipin.com.md#L1-L26",
+          "version": "repo-lines-v1:sha256:f71455766f6adbbf9a4a4a305d27e4bcc9c7ba616a8cd0775e88bdbb7a27bfb5:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY1MmQ3MTExMDNkNTBhNDM3ODMwYzZmYmNkMDRmYjRiYWI0OWEwZjgyZjZkMjZkMWM3OTFjNmU4NDg4ZGQwOTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU5MjYzMWI4M2E5NmE2OTIzNDIwZjczNzdkOTcxYmNlNzhhMWI3OGU5MmU0YjU5ZWY2NGEyNmQ1MzBmYjk2ZjUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://src/bosshunter/executor/sender.py#L17-L18",
+          "version": "repo-lines-v1:sha256:d1d000ddaaa29ffd909388e7193f80990f275549e5f8a50d1d3d6978ac5a13ed:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYmEzYTE0NDczYmJjZjIwN2RmNmNkNjcxN2JkNmExNzVlNmNmOTlkYjBhMDE3ZjRkZTQxY2I4M2M2NTk5ZGZlMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNjUwNWU1YTljNmU4ODA3YzgzOTRhZjg2MDA5ZTFjZDQyODliN2FlODRhMDIyOTcxYzM2NzcxN2EzMzljOTM1OSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTgwMWVhNGMxOWU2ZWVhOGJiOGQxMWJiMjc0Y2ViNDdiMTYxMzRlMTQxODA5ZjQ1NDg5OWFkZTEwMjBhOTVkMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzAyOWI5MjZjYzI3MTJmNWJiYzU3ZGNmY2IyZDczODRkNzQ4MjM2MmFiZWYyNmUxODA4OTJhNGZmZWM4ZTJkMiJ9"
+        },
+        {
+          "resource": "repo://src/bosshunter/scraper/jobs.py#L41-L79",
+          "version": "repo-lines-v1:sha256:07851b2ff88a9ad42568f716d6966c22a35abb0af127ac7bd4bc59da9853a4af:eyJzZWxlY3RlZExpbmVDb3VudCI6MzksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNlYmEyZDdlZWI2M2JmMzQwYTc2ZjMxOGY0Yjk1NGFlN2U3YjE2MWY0NTM2Y2UyZWI5NTU3YTM3Y2RjYjlmZjAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ2ZTlhNTQ3YWVmZmFjMTM4YzE1MDYyYmE5Y2RjM2U0NDI0YjEzYjljMGI1ZjFmMjgxZmYyNTdkODZhNTVlNWYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFiMGIyZTMxOWRiYWFmMGRjNWY1MjkyOTFiNjhhYTQ2ODQ3MDMyNmI5ODU0NzM2YmEwYjhkZjkzMGVhZjUyZDIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImEzNjI1MzYxMjlkZjUyNWZlZTk3ZTZhYTdmNzc2MmRhOTI5ZThmY2E4OWZkMTk3OGEyNzc4ZTZiZjBjNmEzMWMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_db2ff15f3c40427aab6329a6b25c0740",
+      "statement": "bosshunter connect runs diagnostics.py, which reports Node availability, runtime readiness via ensure_runtime, Chrome connection proven by a target list, and BOSS tab presence, and distinguishes a non-BossHunter service occupying the proxy port from a genuinely absent runtime; the command exits non-zero when the runtime and Chrome are not both ready.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/browser/diagnostics.py#L13-L79",
+          "version": "repo-lines-v1:sha256:2eebcdfe7d62f911c904b352ef1c0119fc26451b2129539f4996103e399c3b8b:eyJzZWxlY3RlZExpbmVDb3VudCI6NjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFjOGRlNjhiYjAyZWVjYjExNDU1OTU5ZDA3NTkyMGEyMWNkNTAyOTFiOTYxZDM1MDFkMDlhNWJmYzhjMDU2NzIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk4ZDE4ZGNmYzc2ZmUwZDcxYTY5YWI1Mzg1Y2U0NTY3NDg0Yzk4MjZiNThmNzJmMjE2MmQwYzIzZjkyOTYzNDQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY2YWU1YWUxYTE5MDNkMTdjZWIxYWI4NmMyN2E5YTA1ZjdkZWYwMzhkZDg4NTc2NTk5YmRmMThkMzkzOGQwNTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://src/bosshunter/main.py#L104-L117",
+          "version": "repo-lines-v1:sha256:810dd4ffc9114cfa8d13b9e63fb684b7e3ee8990843b9f5c0f41cbeb317a4aa0:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRkNDdiNmZhZTYwYTUzMDYyNDE1NTVlOTY4MTcwY2ZlMTQwZmZlYzMyYjkyMjlkNzYzNWUyZWM3MWMyZDVkMDciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA1NmQzMDJhYjNmODdlNDZlZjc5OWE1ZTRkZjUzNDczYmZjYzAzOTQ2NGM2MWY2MzI3YzdmYmNmZjRiNWEwMjkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU5NWJjNDk3NjdmOTEzNjczZjgxYTdhZTdkOTc5NzU3ZGIzZGRjNTJiYWJhMDBmODAyMzhlNTljZDdhMTg1MGMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYwNGQwMThmYWZjMjVhY2I0YThkZThjMWNkYTNiMDA1ZDFhZDRkNTQ5MjIxMjQ5NjBjZDg2NGExNGVmMjE2MGEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_a6571a58581c46c5bf0ece5963ef2cfd",
+      "statement": "Browser behavior is covered by flat mocked tests: test_browser_runtime.py pins config defaults, runtime URL/script path, env passing, ensure_runtime auto-start and port fallback, and proxy source identity/discovery assertions; test_browser_facade.py pins facade delegation and falsy defaults; test_browser_launcher.py pins discovery priority and the isolated-profile command; and test_browser_diagnostics.py pins readiness and occupied-port reporting.",
+      "evidence": [
+        {
+          "resource": "repo://tests/test_browser_diagnostics.py#L8-L107",
+          "version": "repo-lines-v1:sha256:d08eaf7bca386196d46d31fc2e454c79df66f7c8ff80e4c35ee32e833a3040c3:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAwLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI2YzgzYmMyMDE1NGNjNzljY2MyMDJiZWVlNTExY2QwYTRkMjllMWI3N2M1MzIyZWI1NmUwNDVkNzNhMTVjODE3IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIwMWJhNDcxOWM4MGI2ZmU5MTFiMDkxYTdjMDUxMjRiNjRlZWVjZTk2NGUwOWMwNThlZjhmOTgwNWRhY2E1NDZiIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJiMGMzZTg2YTllZTRlZGM4MzRjODY0MTY1ODEzMGEyZjc2OTYyNDM4ZjhmMGJkNzAwNjg3OGM1Njg4Zjk3ZDE3IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJhMThlM2YzZTIzZjQ5NDhmNTk2NDA5MDI3MTU2ZDMyYmI0Zjg0MjY4ZDRjNjk1NmU5YjQ0YjE4ZjkyNzcyMWIwIn0"
+        },
+        {
+          "resource": "repo://tests/test_browser_facade.py#L5-L117",
+          "version": "repo-lines-v1:sha256:57d5356b32fefb3466d8c1a54d271802116fe399d00703f1266ef016904fba6b:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEzLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI1NjdiMjkyNTQzNWRiOTdiOWY5NTcyOTJhOTMwYzRhNjcwNmMzZWY4ZmMxOTU5MTA4NWM0ODMzNzM2ZTNjMWJkIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIwMWJhNDcxOWM4MGI2ZmU5MTFiMDkxYTdjMDUxMjRiNjRlZWVjZTk2NGUwOWMwNThlZjhmOTgwNWRhY2E1NDZiIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI4MGNhZDY0ODBlMDY5YjQzZTY0NzkyNThiZGU4NDI5MDk5Y2M3NDMzZjI0NjVlZjMxNzc5NGQzODE1YTI3OTMxIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJhMThlM2YzZTIzZjQ5NDhmNTk2NDA5MDI3MTU2ZDMyYmI0Zjg0MjY4ZDRjNjk1NmU5YjQ0YjE4ZjkyNzcyMWIwIn0"
+        },
+        {
+          "resource": "repo://tests/test_browser_launcher.py#L7-L60",
+          "version": "repo-lines-v1:sha256:381b7d8b10255e8d2d23d833a578e30a616a9b9a51e19a54062429cf634bb9ef:eyJzZWxlY3RlZExpbmVDb3VudCI6NTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNiZjVkZTVlMWIzNzM3MTllYmE0Njk1NjExNWM1NjY0NThiODRlNTQ4NWI5OTFiNmU3YzAyYzEzOGUwNDYxZTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg3YzNlZGQ5YTg2MzI4YTQ2ZTE3MGZjOTc5NDY5MDI1MmYxMTg1OTk5NmUyNDBiMWE3NjQzNzhhM2U0M2E1MDciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjgwY2FkNjQ4MGUwNjliNDNlNjQ3OTI1OGJkZTg0MjkwOTljYzc0MzNmMjQ2NWVmMzE3Nzk0ZDM4MTVhMjc5MzEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://tests/test_browser_runtime.py#L12-L186",
+          "version": "repo-lines-v1:sha256:3c3f0d0a41f80d20571d3ca8a11bac14e94382fa452c60e359bca6be3749db1b:eyJzZWxlY3RlZExpbmVDb3VudCI6MTc1LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJhYjcwMWZjZTQ1ZGUzYmM5ZGM0YjgwMDk1ZTFhYWNmNGM5Y2U2YjJjZTE2NGRkNWI4YzNhMzFlOTY2NjQ2ZjUwIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIwMWJhNDcxOWM4MGI2ZmU5MTFiMDkxYTdjMDUxMjRiNjRlZWVjZTk2NGUwOWMwNThlZjhmOTgwNWRhY2E1NDZiIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJiMzY1MzE0M2JjOTY1NTA1M2U5YjgyYTJkZWQxY2VjOWUwNzY0YTJjZjZjYzA2OTkwN2JhYjBhMWY4ZmIyM2RlIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJhMThlM2YzZTIzZjQ5NDhmNTk2NDA5MDI3MTU2ZDMyYmI0Zjg0MjY4ZDRjNjk1NmU5YjQ0YjE4ZjkyNzcyMWIwIn0"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.5.2",
+    "at": "2026-09-16T06:31:53.644Z"
+  }
+}

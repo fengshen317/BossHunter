@@ -1,0 +1,226 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:c5cef15fffb7acfdf4d949f732295bb273d4ef350dfb864253655acde9387cbe",
+  "claims": [
+    {
+      "id": "claim_f88f04a763a44a6abec5e2ff9122a547",
+      "statement": "load_config always starts from a deep copy of DEFAULTS and recursively deep-merges the user's config.yaml over it, so keys the user does not override resolve to their defaults even when config.yaml is absent.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/config.py#L148-L158",
+          "version": "repo-lines-v1:sha256:e4abeecd4e5fbeada9ed330f91c101724de5724d8d29261ef72421614b96578a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI5NzI5ZGMyMjliNDlkOTQwYmI4NzM0YjYzNTVlNWE2NjY4ODhmNGI1MDgzMmVhNDY1NDQxZDNlNTMzNWU4ZmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZmNGJiNzA2NzAxYTJmMmY5YzkwYWQ5MGIxOWRkZjY3ZDk0MjE1MTgwNGIxZWY3MmVkMDYxYWUwOTU3Y2Y0NDUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA5ZjkzMDgzYzE5NzEyMWI5ODI3MDBiYThhZmFiZDE3MjJjZjFkM2U3NDA0NTA5ZTgwZWZhMjcyNDdmNjJmMDciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFlMTI3OWVlZGRlNzU0NDU0ZTc5YWZmMjNhNjNmNmFkNWJiZDk3MzBhNzBkZmQ4Yzk0YTkxNjExNjNjNDk2NjcifQ"
+        },
+        {
+          "resource": "repo://src/bosshunter/config.py#L168-L186",
+          "version": "repo-lines-v1:sha256:9d9dad754efc5f08a077f89a5c170b478e393aa32f8ff3315a9c11f7e2d52796:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlkNTRhNDU1NGQ5NzA5MDc5Njg4YzMzZjI2NTc0YWY5MmU0NjA4NDQ4NjE5ZGI0NjUyNjdiYjYyZTQyMjFiMjciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRlNmE3YjQ3NmZiMjdlNDYxMTVlZGY3NmQ1NmE4OTUwZjU5Y2I5NGU3ODkxZjk2YzEzZTFhMjEyNzczNDFiZWMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg4OGM4MDdlZmYwMzBkYzY0OWQwNGI1N2QyMmM0NzRjNGQxMWZiYWU0OWY0YjdmN2JlMTAxNjJjM2Y4ZWQ0MjEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_43857a5172a54ed193e72a92a4938b09",
+      "statement": "load_config fails fast with a ValueError when ai.provider is not one of the supported providers {anthropic, openai_compatible}.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/config.py#L161-L165",
+          "version": "repo-lines-v1:sha256:32a0bd384790549d212e4606312ebb9cdc51a48cdea4dae34901e59c7c098aaa:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzdmOTQ5YjY2ZDYxYWQzZTZiMmQ0MGE0YTQxMWYxNDEwNmEwMWI3NzVmOGIzOWNlNGFhZTU5MWMzNTJmZDc2ZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDViMTQzMjdhNGZkZDYyNGVhNGE5ODQxY2MyZTFjNTA0ZTA2YTg0NmRiZjU5ODk1Y2I2NTI2MmZhMjUyODkxNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMWY0NGYxYjg2ODg4NGM3ZGJhMzc4YTZhNmU5NzQxNzU1NDBmOGVlMWI0NWRhMjUxM2QyNGMzZjg3ZWE2OGI0ZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjM3MmI5NjY3YzE4NjdhMzM2OTY3OTBmNmRiMzRlMTI4YTQ0MmI1Mzc2OGFjYmYxYjM4YzRhNTgxNjRjMTgyMiJ9"
+        },
+        {
+          "resource": "repo://src/bosshunter/config.py#L34-L34",
+          "version": "repo-lines-v1:sha256:8712e8291445b5d15aae25df9f3ac05cf9aed5a451db2bd2d72ba0efa85e9ed4:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODcxMmU4MjkxNDQ1YjVkMTVhYWUyNWRmOWYzYWMwNWNmOWFlZDVhNDUxZGIyYmQyZDcyYmEwZWZhODVlOWVkNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODcxMmU4MjkxNDQ1YjVkMTVhYWUyNWRmOWYzYWMwNWNmOWFlZDVhNDUxZGIyYmQyZDcyYmEwZWZhODVlOWVkNCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDlmOTMwODNjMTk3MTIxYjk4MjcwMGJhOGFmYWJkMTcyMmNmMWQzZTc0MDQ1MDllODBlZmEyNzI0N2Y2MmYwNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTE5OGJjNmJkODNiYWIwMzU1ODg4YTI0NzljNmU1MTU0MGYzOGY2NWYyYTEyMmY4ZTkyOWVjOTIxNzg1MGVkOSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_21056854b4c64d6f942b2f47b4188234",
+      "statement": "CITY_CODES maps Chinese city names to BOSS直聘 city codes; the scraper uses it to build city×keyword search combinations and falls back to code 100010000 (全国) when no recognized city is configured, and the Web API exposes the same map at /api/config/cities.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/config.py#L10-L31",
+          "version": "repo-lines-v1:sha256:61ea31df948aa78474517d2fc935ed64718d495a0baa200bde7ab189ce702981:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM0MmRjYmVmY2QwYTFhN2VjZmE5N2RhM2MyMjI4ODkyYjFkOTFhZTNjMDI3ZjQxNDQwMWQ5ODZhMzExZjY2OTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImYyOTJjMDBiOTA5MjFiOGMwODI1OTViZDIyM2M4OGRhOTA5ZjY1ZDRlMjkyMTY1ZWYyYTcwMDJlOWU2MTNkZjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBjZmY0ZjQwNjUyMjJjNDAzZjc1NzNlYWQxN2E4ODBhZDdhYzVjNjJjNjZjODJmODNmM2RiMjM3ZTJmM2U3YTkifQ"
+        },
+        {
+          "resource": "repo://src/bosshunter/scraper/jobs.py#L236-L256",
+          "version": "repo-lines-v1:sha256:281bf76ff62b9b64547c686b945e6ac1b796b21645b8d87f160d02674aab666d:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJkZjNkYzVmNjNjYjZmNmVkMzI2ZDVmMDE4ODc1ZGFkM2QxYWJjN2MwZDdjYTYwN2ZhZmJhYjlhODlhZTdkOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU4ZjNjNDJhN2VhYjNmMWI5N2QxMDI4OThmODNjM2VjZjQ3MTRhM2M0MDQ5NTlhOTg1ZTljYjVlMzI0ZTU0ZTkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZhMTkzNjI5YzZkOTI4OTc4NzUzYWRjYWJmZTY4YWZmMzMwZjBjYzg4MTMwMjA0OTI1NDU5Y2VjMTQwYWIwNGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJlYzIwYjFmZDNmNTQzOThkMGNkYmUxMGU1NDY5Y2QxMTE5ZGZjMmVjMTFkMTIwZDJjMDM1MTA2MzE2NDdmNjAifQ"
+        },
+        {
+          "resource": "repo://src/bosshunter/scraper/jobs.py#L724-L729",
+          "version": "repo-lines-v1:sha256:64299ebd94c8838ba06f89e5bfd0dd3f865a759ca2c3f44c638f052cd3c067c5:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYmZhMGUyZTE3ZmM0ODRkOGNmOGU5ZTM0NjZlZDE1MTQ3NWFiNzFmMzJmOGM2YzYxMWNkN2VhNWY1OWUzMGE3ZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTA0Mzk2YjIwODAwYjYyYjBhNDU0OTUwNDFmMDQyN2M3Mzk1MTNlOGRhMTE5NzFmMGY2NmFlYjVjZjNhMjVlMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiM2MwNzljZTdjYTNlMDJlYjM2ZmRiNTEzYWY0Yjk0YTgzMzFmOGI0NDk2NWExZjA3NmI2MjBkNzE2NGQzYzQxNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjg2M2ZhZTQ1M2QwZDgxMWUxM2RmMmQwN2E0Mjc5MTVhYzI3MDUzNzY4ZDNhMzE1NDBkMTQ0ODE0YmZmNGRlNCJ9"
+        },
+        {
+          "resource": "repo://src/bosshunter/web/server.py#L1926-L1928",
+          "version": "repo-lines-v1:sha256:449f0cd784d76e9d258353e720262ee65037a05f9f9926c94805b342477c6056:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYmFiN2FlNWY0NjI4MTA4OTkxNzBkNTRhOWQ3ZjlhZTU2NDE5YTBlYmRlNWYzNmE1Y2EwZTkxMjkwM2Q2YTY1YiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDQ2YTZlNTZmNGI4Mjg1NzFhMzgzMTBhMzIwMTU0OWJiMzg2YmM4ODIxZmVkZTg0MGViNTE0ZDQ5YWI4YjU4MCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYmFjZmFjNjA3YWQ4NTYzN2UxZTIzZDNjYjY0MzU3Mjg0NGYyOTkzNWQzOTY5YTZlNDcyMmZlYzcxZTdkZjk0NCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjRhNmE3MDQ3YmFhNTRjNGQ3N2M5NDgwYWVhZWI5MmQ0Y2VjZTA4NTQyMzk2ODY0ODkzOWMyNzcyMmY4YjI1NSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_7a9813cc58724d648d7fe030b64bfd76",
+      "statement": "load_local_environment parses a KEY=VALUE .env file, skipping blanks/comments/`=`-less lines and stripping one layer of surrounding quotes, and applies each key with os.environ.setdefault so already-set process variables take precedence over the file.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/environment.py#L17-L37",
+          "version": "repo-lines-v1:sha256:23519f7fd92b84650fe83119635fdba4abd089d919018a8252e092ff1a720fc7:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkyMjAzNWU0M2U0MDZhNjdmMjVhY2Q0NmFjODcyOGJhNGQxMjBjYjY1ZTk2NDRkODlmYjRmZjkyYjg2NjQxNWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU5YWM2ZmE5Njk5NDY0NjRjZjE0ODlhZTc3Y2I1ZmQyZjk2OTEyYTQzNmNmZDc0ZTM0OWY4NjIxMGQ5Mzc4NjYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUxNDgyNTg1MWEwZGFkN2NhYjkxZThlYWNlZGE5YjBhNTNiM2U1NWZlMmVhMzUwMDc2MTMyODMzNjI3OTEwYWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE0ZTIzMzI1NmViZmUxMWNiODQzOGJhN2U1NzRlMzJjYzlkN2M4ZGMwMWZjMDJlMGZlZDg2OWM2NDc0OWVjOGIifQ"
+        },
+        {
+          "resource": "repo://tests/test_environment.py#L11-L29",
+          "version": "repo-lines-v1:sha256:034df9f4101bff466f84b71f0f592470219f11dfb8edbc90a7dd73ba03705806:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlmMzg1YzQzMzc0N2Y3M2U3M2M4ODlkZTBiMDk4Zjk2OWUyZWVjMWNhYzMxMzg3ZWQ4ZTEyNjlhN2RhOTNkZmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQzYmMyYzdlYjY0YzUxZDZkYjRlMzllNDZlNmJjOGUyNzRmYWNiYmEzMTFmNjIyNzZmYmM0YzU4NWUwNDliYmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU5Mjk4ZmY3MDIwYWUyZWUwMzNlOWE2YTAxMjllZDEzZWE2ODljMjg1Y2U2ZjM2ZWM5NDQxOWYxMzFkMGEwZGYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_567b29f43e9e495d97bfe43faf44924d",
+      "statement": "When no path is given, _environment_path resolves .env from BOSSHUNTER_BASE_DIR/.env if that variable is set, otherwise from cwd/.env.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/environment.py#L9-L14",
+          "version": "repo-lines-v1:sha256:d3ab25c018693c3a4d2e0ff8ded2d79e48fba4498824e10777266971178c4036:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTY1NmFhMGVmMWJlMjc3ODk0MDdiZjljY2QyODk2NjM1ZWZkMmFjMTI1YjE5MTMwNDQ4YzNmNjk0M2NhYjU5OCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTRkYmQwYjc2ZDhlNjJmY2YyNGVmYWJiOTFlMzczYmE5ZDkyYjc0OWMxMWI0MWU1MGUwMjNkMDE0ZWJiZDVjNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTkxYmYzZDk2ZjFiMTE5Njg4ZGVlYTlhMDA0YjJiM2ZlYmIxODBiYjhmYjIzNDQ2MjU2MTRhZGM4NTk1NjNhYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYTBhOWQ3NDExMWY1ZmFlNWU1MWExZTdlNzcxNjcyYWIyN2NkYjA3OTEzNGM5ZTgyOTNiYzM5NzBmM2I2ZWQ2ZiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_572812e7b899413b8c6a999b1e1b7e0a",
+      "statement": "The .env file is loaded at package import time in bosshunter/__init__.py so LangSmith/LangGraph tracing variables are set before any business module is imported.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/__init__.py#L9-L10",
+          "version": "repo-lines-v1:sha256:67b2107a7a189ebf3244e7f4d42b3c06bea6696697960123376684db6ee9ff43:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODUwZmQ3NjNkN2EwYzljNzhlYmE1MjBkYWQxMzk5YzJlZWRmYzEzZTVhNTRmZjM1ZDI1YzliYjU4OWUyNWFhYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNzZlOGVkMDdjNDgwY2VlZjU5YjU3MjAyMjM4ODFjM2YyYmY0NDFjMDllNTY2YmM2MTc4Y2IwY2YzNDMwZGE3OCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTkyOThmZjcwMjBhZTJlZTAzM2U5YTZhMDEyOWVkMTNlYTY4OWMyODVjZTZmMzZlYzk0NDE5ZjEzMWQwYTBkZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTRjOWY2ODlkZGEwOTJjNjA1NGI0YzRjMzc2NzVkOWY0MWVkOTFjMmY1MzY3NWU1N2IyNjUxMTM2NzVhNjJhOCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_b19e48cd7b034ee5991452e8d54f1e7b",
+      "statement": "backend.run_backend resolves the runtime directory, loads that instance's .env, calls set_base_dir, configures the browser runtime from load_config(config_path), and only then starts the HTTP server, so the browser runtime and Web API read the same config.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/backend.py#L35-L59",
+          "version": "repo-lines-v1:sha256:94ba2025fd572aa34835eb10e50fe1ead783369718dbb82a1f32e2c420db6b60:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgzYzMzYmU5NGQ3OTMxMjllN2MwNGRhODE2ZDhkMTNmZGU5Njk0ZGRiMDk0NTlhOWZhNGJjNzdjMmQ0ZDhhNjgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhZjFkMzkzN2IyNTU0NTdkNmEwMmVhNjk4ZTBlYzcwN2I0NGFhNzE3MjZiNzljYzFkNmNlMWI0MDc3NzQzMDAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE3OTRmODlhOTU3ZTE3Mjc2MjIwYzUxNWM0NDAzMWIxYTNmYTUyMzFmYzUxY2MxNDRiMDY5NmExNzVjM2I3OTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY4NzhlYjQyOTc4MDFjZTFlY2I0OGJmNmIxYzk3YTZmNDQ5ZTI4M2Y5ODQxYTUxZTJlMjNjMmQ0NjEyODY5NjEifQ"
+        },
+        {
+          "resource": "repo://tests/test_backend_entry.py#L15-L29",
+          "version": "repo-lines-v1:sha256:d784e78b9331ffe9d2b4ac1e7c7de51bce655b564210a2693ff7c9134177bc27:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdkNjBkMjY1YjUwMTc4ZGYxMmM4YzJiZmM3MjYyMDhiM2E0OTdlYWJlYzdhMGM4ZjlhZTI5OTJiMDMzYzI2ZGEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYxM2E0Y2EyMzdlMTQ5ODk3ODMyODRmOGQ3YjhhODMwZTdlNWU3OGEzOWE0ZjEyZWU4ZTUyNTc0YzgwNTJmMTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdlNmY4YWY0MmMzZTA0MzI2MzU0NGM1MTUxMTJhNDI1ZTgzN2E5YjJkNWZjMzRiMmNlMjk5NGZmODE5YzdhMzIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRmY2MyODk2ZDNlM2ZlYzU0OTkyNTQxYTIyNGNiYTVmYTg2NDNmYTZmNGJjMmYyMzFkMDhjNmY3ZGI2NDFmYzgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_9720b057ed3f44f8b4c0f84807c9b8ec",
+      "statement": "backend.resolve_base_dir resolves the runtime directory by preferring an explicit value or BOSSHUNTER_BASE_DIR, then the source root when it contains config.yaml, then the current working directory.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/backend.py#L16-L32",
+          "version": "repo-lines-v1:sha256:b5c17486e5edc47c20e390726ce020022a17295607160d842cd340b74052c750:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQyYzNmNjc3YTIxYWEwM2Y5MzU1NTVhZTQ0NjMxOGJlOTE1MmQ1NjUxMWFmMzRmZmUyNWEyYmZlYTJkZTYxMzkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNhMTRlOGJmNjk4Mzg1ZDUzZjljYTZlNDdkM2ViZjViODAyZGQxMmIzNDY2NTc1MTM2OWU4Mzc2NzllNWFiODIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJkMTNlZmEyYmRhZjA5ZGM3Y2E0Mjc2YzYzMzc5ZjcxMDFhMGQwZGEyODJhMDAzMGY4MTdiYzE3MzY3YmRjM2UiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU5M2ViMzYwOWJlOTI0MWJkNDFiNGM2MWNjNjg5OWY0NTEyM2VjZDcxMmQyY2QxY2IzNGU1Yjc3ZmJhOGI5NWMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_a481119fa0864fa78f87eb1c1efd7a3e",
+      "statement": "config.example.yaml is the canonical documented schema that users copy to config.yaml, and both config.yaml and .env are gitignored so real credentials and local settings are never committed.",
+      "evidence": [
+        {
+          "resource": "repo://.gitignore#L22-L26",
+          "version": "repo-lines-v1:sha256:4feffb0f940b3598a536b2b289ab8b3ec2ca5746ed003fdd508a65b455a30595:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOTc1MThhNDNkMzIwMjEwZGQ0OGE5MGEyYjVlYzM3ZjM2ZWM3OTEwN2VlY2M4NmIxMzEyZjg4ZmNiYWMyNTZiMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiN2MxZDJlMzE4MDc2ZmM5YTBjMGUyNzY2YTc2YTQxMGI0YWYwMGFhNmFkYTYzYzE5YzlkMjY2MDc1ZTM1MzMzNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZGMwODg1MGM1MDA1ZDk5MWZmNGMwZWFlMWU1ZDc3ZGRhYzQ1MzYyMmYyZGQ0OGY3YWRkZDA4NDYxOWU5NTRiYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiN2RiN2JlODZmODMyMGMyYmMyMTkyNTE1NjJhOTM3ZTU1M2YyMzQ1NzJjNzJlYTRjNDM4ODc5ZmE2N2I2NWU5MCJ9"
+        },
+        {
+          "resource": "repo://config.example.yaml#L1-L2",
+          "version": "repo-lines-v1:sha256:0fd87762c052881bd5d79bcca126fa17bc5e673ef7cdceb2718667cd68842812:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTk3YTRiNzRiYWNmYWYyODYyZmQwN2VkMTc1MzQwZjdhZjc1NmI5ODQzMmQ3NjNkNjQ0YjhmYzIyYzEyOWUzNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMGU2ZTc4NTkxMTkyODU0OTI3MmM3N2ZlZGMzN2ZmNDVlMTNiODQxYTc4NzRlN2NmMTcwOTc4YzViZWQ0ODViYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYmFmMzdkYTQzMmJjZjNjYTYwMTZiZWFlMDNkYTUzZjE4YzZmNTE2MDk0MTAxYWVmYjVlNTZkYzdlM2ZhYjE4NyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_3a141fd4a9374380a15c0ebb749bdf5f",
+      "statement": "config_schema.json is the Web form contract served at GET /api/config/schema; it covers profile, search, scoring, throttle, ai, resume, monitor, follow_up, and dedup, while the assistant, browser, database, runtime, and artifacts domains are file-only and absent from the schema.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/web/config_schema.json#L1-L111",
+          "version": "repo-lines-v1:sha256:573fe7a6d9bec6d4302880808b114faee3fbabdb1fdf3b18c4db5a3aeb3f7afa:eyJzZWxlY3RlZExpbmVDb3VudCI6MTExLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJhNmZiMDhmZGExYWNiOTU3YjYxMTZiZDM3ODExYTFmZTQxYTAxNjExYzA2MzFlZGJmNzg2ZDY4ODlhMjdhNTVjIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIzMDY0OGY3N2ZkNWE5YzYzYjNjZGQwYWY0OWRhYTEyOTkyMjBiNzU0MWU4OGNhMTdlZmUxYTZhMTE0YjlmZjJhIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MCwicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MSwiZm9sbG93aW5nQ29udGV4dEhhc2giOiI0MTJjYTM0NWNjZjc1YmY5YzA4MDZiY2U2OTViZThkZTgwOGI3OTk4NDI1MWE3YTU0ZDIwMmNmNjEwMWRkNDUxIn0"
+        },
+        {
+          "resource": "repo://src/bosshunter/web/server.py#L1902-L1909",
+          "version": "repo-lines-v1:sha256:4bafddffe0ab57f59f714d871068cab9d681a86f1fc009611f504133d7e37832:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzdjMDI5NmUxNDRjNzY3YzJmZWU2NWUzMTlmOGVkODM1ZmI3Yjk0ZGJkODc0MjAzMThkZTJlZWQ4MjNhYzMyNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTAzMzUzZWQ0ZTc3NWZlYzJiMDdiYzYzZjY4OGJmNGNiY2IzNGRiMDk0Zjc3ZWMyYWJlYWYyMGQ2OWE4YWFiOCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjU1ZWU5ZTE4NjI2NzViNjMzNmY5ZDE4MDVjMDUzYTZmODc4NDM0NTU3ODllOWU5ZGFhOTlkNTEzMzMzNzQ4ZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOWExNjUxNGY3M2U5NTYzM2VkM2EyY2IzYTVkMDQ3OGI0NTEwM2VhMDM1NTBiOWY3NGUyZmNhYzI1ZWViNTkyNyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_f0bfc83d4f3641c69aabd6ec8214cf5c",
+      "statement": "The Web config API exposes GET/POST /api/config, /api/config/download, and /api/config/cities; POST sanitizes the body, rejects salary_min greater than a non-zero salary_max, and the backend exclusively owns YAML serialization with allow_unicode and sort_keys=false.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/web/server.py#L1867-L1928",
+          "version": "repo-lines-v1:sha256:fbb03f1327dc773ee202ff6b1ed053440e685d1979d87d7cb8645fe494259692:eyJzZWxlY3RlZExpbmVDb3VudCI6NjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI4ZjUxZDNmOTcxNDU3MWI3YjM0NWRhZGI3NGE4NTMyYzIzZjQzZThkZmZlYTY2M2VkYjkxNjJmZTY0ZWZmNjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ0NmE2ZTU2ZjRiODI4NTcxYTM4MzEwYTMyMDE1NDliYjM4NmJjODgyMWZlZGU4NDBlYjUxNGQ0OWFiOGI1ODAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU2NTRhNmEwMDJjMDRmNzAxN2M3ZDc4ZDRjOGI0NTFhZTJiYzMxOWFiYWVmOGI2M2UwYjMxMmZlMjY5MjE0NjMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI0YTZhNzA0N2JhYTU0YzRkNzdjOTQ4MGFlYWViOTJkNGNlY2UwODU0MjM5Njg2NDg5MzljMjc3MjJmOGIyNTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_bef8f924e55a4c6f83882c4b3aea155c",
+      "statement": "Secret redaction removes ai.api_key and ai.auth_token from config responses and replaces them with masked forms via _mask_api_key, which yields first4***last4 for keys longer than 8 characters and *** otherwise.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/web/server.py#L221-L244",
+          "version": "repo-lines-v1:sha256:d40c31e5366cbfcbf86bab4da3eeb933b71687d3d5d9b09a7f4b55a7bc15559f:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI2MDA1OTU0YjBhYjM4MTU4YmQ2ZGE4ZDBlNjczZDVlM2M1NGNlNDU3MWM4MzBlNzU0NGY4ZWRjYmNlYzJkMGEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRhOGUwMjRmYjdhYjQwYjQ1ZDIyMjkyNmEyYjlmODJlYzIyNmM3MDMwMzQwYjBhMjBkYWNiMjk1ZWFhZTVkNjQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk4OGVhMjAyYzlmMjhmMmZmNDFhMzc3ZjFhZWIwNjhkNzFmODFkNjM1ODlmMzM3ZGZmNzQ4OWJhM2E5NzNjYzEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjYxOWRiNzU2ZGFjZWM0YTAzOWRhNmQ1NmQ2ZTgyMmFjOGFiYjBiMWI4MDA4NGQzYzJkYTQ4ZDRhMzgwN2ZlOTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_d209525d15544aa9973650400f80b5ed",
+      "statement": "_sanitize_config_for_write strips browser-only display fields, preserves the existing stored secret when the browser posts a blank or unchanged masked value, accepts a genuinely new key, and normalizes legacy provider values without silently switching to the default provider.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/web/server.py#L252-L286",
+          "version": "repo-lines-v1:sha256:71d6c6c2ac978580038f401f526daa9ec4c2687d09523cc7cd72500cc53c5449:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg5Nzk1YmM3OTdjNzBhYWMzZDQxZDlkMmMyNjUxYzFiOTAwNjdlZWQ4ZjJhODM0OGI5YzU1NTk0NmFiY2QyYzQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMwN2M3Zjg5OGZkN2UxMzUzYzczYTE3MjU5NjNiMWEyYWRiYzY4NDY3NmNmZmFjMDZiYmNkZGNlNDJlNmUyZGMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkyYjExN2M1MDI2NTc4YWRhOWM5MzI1YjE4YzA5YTc3YTMwYjVlYzg3MDhlNmJjMjhlMTM4ZWQ2ZmFjN2E2YTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImIwMmVkNTYzODI2ZjdmYmIzNGIzMzhlYzIzMTJiYzFjOGVhMjE4NDljYzY1OGIxZjRjNWNiYWUwZWY0MWZhZDEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_9e8865a2639d40ef965e7a8146fad821",
+      "statement": "AI credential resolution prefers environment variables over YAML: the Anthropic path uses ANTHROPIC_API_KEY or ANTHROPIC_AUTH_TOKEN before ai.api_key/ai.auth_token, and the OpenAI-compatible path uses OPENAI_API_KEY or ANTHROPIC_API_KEY before ai.api_key.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/ai/credentials.py#L116-L148",
+          "version": "repo-lines-v1:sha256:06157af41118cc8ab2280087b3d727309e2c62097471276d8432966af5cd281b:eyJzZWxlY3RlZExpbmVDb3VudCI6MzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIwYjJlZmYyYjI2M2Q4OGFlYTg2ZGYyMGE1NWM3NjAzOTRhNGQ1MGQ3YjMxMWU2YmFlZjM0ZGZmNmQ0MzRlNjgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQzYjg3NjYxYzU4NTMxYmFmYWVhODAxZjc5YmI1YWVjZTM2NThkYTYzODI5OWMzYmMwZjI0NjE1Yzc4YjYzOTciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFhZWEzMTg1MjQzNTI5NjE3NDc0MDk3OTQzYWZhYWNjZWE0OWI5OTU0Zjk1OTY5MzI1NWEzYmNlYzBlZDVkOWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdmMjU5ZDNlZjk4NzczODE5ZWNlODc4NmQyZjA2MDI3ZTgzZDFjYzJhNjlkZjcwOGY4YmEzMDdiOWYzMjY1NDYifQ"
+        },
+        {
+          "resource": "repo://src/bosshunter/ai/credentials.py#L254-L254",
+          "version": "repo-lines-v1:sha256:7c71aeca6bffde1a0c93cebcea946b5e21c6d4ce0aae7d43eac0921686d712e5:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiN2M3MWFlY2E2YmZmZGUxYTBjOTNjZWJjZWE5NDZiNWUyMWM2ZDRjZTBhYWU3ZDQzZWFjMDkyMTY4NmQ3MTJlNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiN2M3MWFlY2E2YmZmZGUxYTBjOTNjZWJjZWE5NDZiNWUyMWM2ZDRjZTBhYWU3ZDQzZWFjMDkyMTY4NmQ3MTJlNSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDc5YWQ4OWU4ZDE0OTEyMWUyODFlMWFlMWFmZGE5N2YwZWYyMTZjZDVkMWRlNjEyZDFkNzE0ZWQ4Nzg1NjY1MCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTc5NjVkNTk0OGUwMmYyY2M0ZWE1OTc1YzcyODE1OWQyY2UxMjcxMjk0ZWViYmM1NjdiMGQ3ZGU2OWI5Zjc2NyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_c71d92e2ffd2473d92df55686e42898e",
+      "statement": "The Web server refuses to start when bound to a non-loopback host without BOSSHUNTER_AUTH_TOKEN, and when the token is set it enforces Authorization Bearer token checks on /api/* routes using constant-time comparison while keeping loopback binding zero-config.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/web/server.py#L124-L150",
+          "version": "repo-lines-v1:sha256:fe1cbabc8167ce1c741f315fd52de8b48b3cabc5acb6144d617d24c884b95f83:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNmZWRhMTBiNTRhZWFjOWRjZjE1OTdmYWE1OTc2YWQyZThlNDczOGFlMTg0ZGYyMzE5ZmFiMDVlNWU1NWZmNjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc2ZjFjOGY3ZWExMGQzMjgyYmJlZDZiZmQxYTVmYjkwN2FkYTFjYTI4ZTY1ODY0ODcyYmU5ZjA0MTlhOWYyZDYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY3YWE1MTU0OWJhMjZlYzI4ZmRkZWE5M2U5M2FjZDBjZDZmMTUxNTRiMWUyZmIyYjUwMTQyYTE2Mjk0MGIzZTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNlYmJlMzgwNDY4ZDYxY2I4Yzg0MWNlN2FlYTJiNTlkMTIyNjIzZDE0NzgzZDkzYTc4YjU2MDhiMmQ2NDUxZDYifQ"
+        },
+        {
+          "resource": "repo://src/bosshunter/web/server.py#L2170-L2193",
+          "version": "repo-lines-v1:sha256:45ea0b810da535f630c054eb80e2bb9c37722bfd0dd2e50383e6bdbdd0f59543:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIzYmU4NjFkNmM3ZTU2YTc2MzliNjZkYTk2N2JkZDViZjZiYTU1NjYxMzk2OGI3YTE3YmFiYWU5NDJjZmM3ZWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg0NDM0ZTMzZTdhZDk0ZjYxYmU1MGFmOWM4YmNkYzJjMjVjZDQ1NjdiYjlmOWU1YWQzZGMyNmE0MDMxMDU0NzgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdhZTFjOTEzZDg0NzQ2ZTk3ZTA0ZDdmNDBmODQzN2UwYWJmZTE4MTk1NmZiZmMwZjcxMDA5YWJlM2VjYTNlNmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_62ae5f842c8c4f32bf297d1dbcdd10ca",
+      "statement": "Adding a new config field is a three-part extension contract: it must be added to DEFAULTS for resolution, to config.example.yaml for documentation, and to config_schema.json when it should be Web-editable, plus covered by a focused test.",
+      "evidence": [
+        {
+          "resource": "repo://config.example.yaml#L1-L148",
+          "version": "repo-lines-v1:sha256:e4608b01a040f6efdb683222bdeb2b6782d88203c4c50f15161dc11e5f3f4b49:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQ4LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIxOTdhNGI3NGJhY2ZhZjI4NjJmZDA3ZWQxNzUzNDBmN2FmNzU2Yjk4NDMyZDc2M2Q2NDRiOGZjMjJjMTI5ZTM1IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI2NjVlMWQ3YzdkNzdiZDNhNTlmNGQ3NTliYjc0MDM4ODI3NGRiZWNmODc2MGQxZTBiYWZkOTg1ZjhiYjc3MWUwIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MCwicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MCwiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1In0"
+        },
+        {
+          "resource": "repo://src/bosshunter/config.py#L37-L145",
+          "version": "repo-lines-v1:sha256:61d7792a69ca204d3606a2c2eb4b77392e1cc7cccd7537b4ba056c72a52f290f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTA5LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIxMDZiMDBhNzQ2ODEyZjcxMDExODRmYjllZjM2ZTIwNGE2NzQ3YzI2ZTY1NmM2YmEzZmQyNzg1ODQxMzk2YTIyIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0MTJjYTM0NWNjZjc1YmY5YzA4MDZiY2U2OTViZThkZTgwOGI3OTk4NDI1MWE3YTU0ZDIwMmNmNjEwMWRkNDUxIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI1NTllNWY0MTQ4NWZkYWZkYzYyYWI3MWI4NzY2MTViYzQ0ZjU3N2E2YjdmODEyYTFjNDBhZTgxYjIzODQyODM0IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI1MzU0MTEzODJmYTg5NTAxOWM3MDFkYWMxNTNiOTIwYmRhNzBmNzc0ODI3MGU1NDYyYTY5ODM1MDdjYjVmMzliIn0"
+        },
+        {
+          "resource": "repo://src/bosshunter/web/config_schema.json#L1-L111",
+          "version": "repo-lines-v1:sha256:573fe7a6d9bec6d4302880808b114faee3fbabdb1fdf3b18c4db5a3aeb3f7afa:eyJzZWxlY3RlZExpbmVDb3VudCI6MTExLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJhNmZiMDhmZGExYWNiOTU3YjYxMTZiZDM3ODExYTFmZTQxYTAxNjExYzA2MzFlZGJmNzg2ZDY4ODlhMjdhNTVjIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIzMDY0OGY3N2ZkNWE5YzYzYjNjZGQwYWY0OWRhYTEyOTkyMjBiNzU0MWU4OGNhMTdlZmUxYTZhMTE0YjlmZjJhIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MCwicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MSwiZm9sbG93aW5nQ29udGV4dEhhc2giOiI0MTJjYTM0NWNjZjc1YmY5YzA4MDZiY2U2OTViZThkZTgwOGI3OTk4NDI1MWE3YTU0ZDIwMmNmNjEwMWRkNDUxIn0"
+        },
+        {
+          "resource": "repo://tests/test_web_config_api.py#L1-L141",
+          "version": "repo-lines-v1:sha256:07201f26e75efba8c3920814b396116ad550f270c5b64e79d3e8652921dbc8e0:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQxLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIwNTc4MTM5YmFhODgzNTIzMTM1NWUwNmY3ZmM1MTY0M2FkNDhkMmM2MzMzYmQwNzc3ZTgwYjg0YTkzYjhhYWQ3IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI1Mzc3MjUwZGJiMTRhODI5NTY0YzU0YzNiZTQ2NDIxNzFlNDFiYzI1MWM4MDg4MzIzN2FiMmFjNmRjODk1YTViIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MCwicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIzZDQxMzQwY2MyMzlhMTU5Y2U5YjYwMjJlOWY2MzIyODMyZTJlYWQ3NmNhZTllNDc1NGQyMTBlYjhmYjZkNWU4In0"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.5.2",
+    "at": "2026-09-16T06:31:53.644Z"
+  }
+}

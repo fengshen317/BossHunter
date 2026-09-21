@@ -32,9 +32,9 @@ def research_company(company: str, config: dict[str, Any]) -> dict[str, Any]:
 
 	prompt = f"""你是公司的背调子 Agent。只根据下面的搜索结果总结，不要编造事实。
 公司：{company}
-搜索结果：{json.dumps(parts, ensure_ascii=False)}
+搜索结果：{json.dumps(parts, ensure_ascii=False, default=str)}
 请用中文输出：公司概况、业务与产品、经营/融资、员工体验、风险点、面试建议。每个事实尽量标注来源 URL。"""
-	summary = call_anthropic_text(prompt, config, max_tokens=1800) or "未能生成背调总结，请查看原始搜索结果。"
+	summary = call_anthropic_text(prompt, config) or "未能生成背调总结，请查看原始搜索结果。"
 	return {"company": company, "summary": summary, "topics": parts}
 
 

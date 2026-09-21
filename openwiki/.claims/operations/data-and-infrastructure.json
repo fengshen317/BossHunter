@@ -1,0 +1,204 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:a8c992a2a6fa1a626cd54d4fc91273580ad625cf60c03f9b662e897bcdf7f290",
+  "claims": [
+    {
+      "id": "claim_08b245000fd6479d9d0480411ee00e2e",
+      "statement": "PostgreSQL is the sole production business and Agent-runtime database; SQLite is reachable only through explicit local-development or isolated-test paths, and the production factories fail fast rather than silently falling back.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/db.py#L107-L125",
+          "version": "repo-lines-v1:sha256:05c62b24e75b7ebe16097d2e7ea8eafb5765926abdbf25c96d21ea6ad6df4f02:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBmMGYzMWM1ZWI0YjExNmY3MzNiY2Y2NjQxOTA4Y2RlZmQ3ZjIyNGY1MjY4NTUwYjM0YzUwZDcyNzQzYWNlZWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAzNWNjNThiMGUwYzUxOTM0YTBhMzYyZjdiMjNkM2IzOWU2NTJjMjdkNjI3YjViNzQ5ODM4MTJiNDAxNTMxM2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVmYTAwOTc0MzRjMzYwNDM0NWQ1MTEzMDAwYmMxMmEyOGMwYWRlODE3MzlkYzliMDFiYjc0NzI5YmFmMWU1M2EiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU4MmQwY2NhZTc3MWU5M2U3ZGU4NjM0ZWQ4YmQxNGVhMDBlYWFjOGVmNTc2N2E4NWZmYmVlZDBlMDJkZTI2MWUifQ"
+        },
+        {
+          "resource": "repo://src/bosshunter/db.py#L128-L147",
+          "version": "repo-lines-v1:sha256:9b4f5d2ab1a87c36562594253aa80fd428357117d62f509ec7afce8686e5850e:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVlNmQyZTVjMWI4YjQxZTQ1NTE0MGJjNDA0OTkxMGE1YTZiODhjMWQxYTBhNzkzYjUxZDlhZGIwYzE2ZWY5MTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI0MzViM2QwN2YyNWQ4MDgyMTJlMzcwYzJmYzRiNWM4NDBiY2ZhNTJiOTVjNDdiMzg4YjBkNzEwZjUzMzRhOWQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE2ZmI2MWZmM2UzNWUwNTI2M2M4NDhjYjkwMDYwOWFiODQ1MmYyMmE3Mzg4MjVmNzk3NDc3MjMzZDI3NzhhMTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJjMmQzODNiNjhkNzU5OWE5YTFkZjdiZGZhNDM3ZDA3MTA5ODkwNTU0ZjJiMzlmY2I0ZjM3ODU2NDJmZTg4ZDgifQ"
+        },
+        {
+          "resource": "repo://src/bosshunter/infrastructure/runtime_store.py#L355-L361",
+          "version": "repo-lines-v1:sha256:c40833394cec3e060e6e809d96081e5a78d8f8588fc0b7296254ecc9a200fdc2:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiN2FiNTUxOTAzMDgzMjYyZTliMTM5ZTBiZGRjYWUwYjE5ZTgwOTdiYmYzY2I3YTFjNzVmN2Y5MTg3ZGZlMGVkMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDExYTI3OGRkYzk1N2VkNWE3NTBkYzkzMzRhM2NlYjRkZTNjMTU0YTJmM2JkZWZiYWFlN2MyYzBlZjIyYWFhMCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYjNkMGU3ZDQ5MjgzZjgwZjBiNjUxNWJmNDEzZWNmMzNjYTY0YTYyODhjYmY1YmRkMzk0NzAwMDczNWZjMDYyNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDdmNWY0NDYzYTg0NDQyNmEyNmMxNTA1MGNlZmZlYzQwNThjM2M2YTg1YWQxMWM4ZDc3NGMyYWMyODA3NzcxNCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_d7cc4cd7f6154b23953e4db6e248a40d",
+      "statement": "PostgresConnection adapts SQLite-style SQL to psycopg (placeholder translation, INSERT OR IGNORE to ON CONFLICT DO NOTHING, date/time expression translation, literal % escaping) and makes executescript a no-op so schema is never mutated at runtime.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/db.py#L40-L70",
+          "version": "repo-lines-v1:sha256:23b9646e74fb3cf474cae3587073798271ce5851797ea892cdc2f8795fdaa67b:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlhODgzYTk0YjIxMDA0NGM4YjVkYmMzOGMwMGQzYjQxODI0MjExOThmZWVlZDcwZjM5YmFiNjU3YzU5OWRmZTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVlN2M5NTdiY2I0NGZiNjczYzk4YjAwNTBhNzVkMzgwODJkYjgxZDkxOGRlMzEzYTNmMDdjMTIzNTMwNmQ3ZWMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM4NDAwMTExYmE2MjJkZTQ2MTdhOThmZTg0ZDRiZTI2ODM3MmY5NzJmZGMxNjg0OWQ5ZTFkYWM1YjVjZDRmYTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVmMTdkYTljYWZiYmQzNzk2MzYyMzM5MTk5NWUzNDk4NzM5OTZlNGNmYWI3MmQwNzgxODVmMzEzNWRjNTg3MDgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_38287a9d544946748bd242e5e27fe0b0",
+      "statement": "The PostgreSQL schema is owned by four ordered migrations: 001 creates the Agent runtime tables, 002 the business and assistant tables, 003 the job_events trigger plus semantic_job_current and semantic_job_funnel views, and 004 the long-term-memory columns and indexes.",
+      "evidence": [
+        {
+          "resource": "repo://migrations/postgresql/001_agent_runtime.sql#L1-L56",
+          "version": "repo-lines-v1:sha256:3f4b8fb4716760497cde331a486b3ff89331f1438340c50b76f34af858766e9c:eyJzZWxlY3RlZExpbmVDb3VudCI6NTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY3OTJkYjQ2OGVmOTY5MWVlNWE3M2MzNzliZmI1MDQzY2M1MGU1OTM1ZDk1NDVmZTUzNTI0Yjk5MzQ5ZTQ2NGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ5OTY3ZWMxZWQzODM2ZjhlYjE3YWZmMTcyYjViZmVmN2RlNjA0ODVhNDM5YzZjYTExYzU5MWUxNzU1NzM5YWUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI2ZTYwNWZlN2YyNjg2NThkN2Y1ZWYzZGRkYmEwNTEwM2VkOWE5OGU1ODUyNjM5NGM3MzJkNTcwMzU5NTM2YjQifQ"
+        },
+        {
+          "resource": "repo://migrations/postgresql/002_business_data.sql#L1-L82",
+          "version": "repo-lines-v1:sha256:82cacaf04b99322e451985d10ad92dcc27246d8a6e70195e6bf2f531d66e56ad:eyJzZWxlY3RlZExpbmVDb3VudCI6ODIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdkMDk3ZjlkNDIxYTMwN2M5ZGFmYmMxMjYzZjkxODZmOTI2Y2E1OThkYzY1MWEzMDM4ZjY5MTFiOTFhODg4M2EiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM5ZDdmZjY5OTZiNTBiM2YzOWM2Y2JjODRhNTg1YmM3YmJkN2M3N2FiYjJjZTI2Zjc2NTJjYjFkYzRjNzI4NTAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://migrations/postgresql/003_semantic_layer.sql#L16-L76",
+          "version": "repo-lines-v1:sha256:98c4155d7a1e39fa555a44c6029196dab0a8fa03588a9c7c4def3eccf8fe6993:eyJzZWxlY3RlZExpbmVDb3VudCI6NjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM0YmU1MTE2MGM1NTBiMWEyNTk4ZTU4ZjRkMGFlOTg2MDlkNDFmOGE0NzUxOGIxZjZjYTVkMTQ4MThjNzNkOTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4NGFhN2ZlODAxZGM2ZTdhYmJjMjMzMjBhYTU5N2M1NzU1MGVjMDAyMjM5MDM0ZjQzNmJkZTM1ZWM2NThjZTgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRjZDAwNjFmYzM0ZjIxNDEwNTFmOTI5ZGNmODRkODc3NWVmODNmOWI4NjMzZTFmMDA5YTMyMWFkNDc5NDk2NTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://migrations/postgresql/004_context_memory.sql#L1-L30",
+          "version": "repo-lines-v1:sha256:efe3406dc6526e40770aa09d8251f55a5783ca133e4aa4d8a925b85c6204e470:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc3Mzg1ZTZkN2Q1YjU4ZDhiNTY0M2U4ZDNlMWExYjk3ZTI1ZWY3ZDA5MWU3ODY2MTgxMzk2Y2IzNThlMDE1MmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZkMjc0ZDY0ZmZjYWNkNGU1ZDA2MTllYTQwZmRjMTBmYWVjNjliZGJmYTNkZTNlNjhmNTExZjdiMTJhZmVmM2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_817b8f993a39483c80b5f35725931be5",
+      "statement": "The job_events status trigger maps jobs.status transitions to typed funnel events (ai_scored, user_approved, greeting_sent, hr_replied, send_failed, and others), and the semantic views expose one-row-per-job current state and first-arrival funnel timestamps.",
+      "evidence": [
+        {
+          "resource": "repo://migrations/postgresql/003_semantic_layer.sql#L16-L76",
+          "version": "repo-lines-v1:sha256:98c4155d7a1e39fa555a44c6029196dab0a8fa03588a9c7c4def3eccf8fe6993:eyJzZWxlY3RlZExpbmVDb3VudCI6NjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM0YmU1MTE2MGM1NTBiMWEyNTk4ZTU4ZjRkMGFlOTg2MDlkNDFmOGE0NzUxOGIxZjZjYTVkMTQ4MThjNzNkOTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4NGFhN2ZlODAxZGM2ZTdhYmJjMjMzMjBhYTU5N2M1NzU1MGVjMDAyMjM5MDM0ZjQzNmJkZTM1ZWM2NThjZTgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRjZDAwNjFmYzM0ZjIxNDEwNTFmOTI5ZGNmODRkODc3NWVmODNmOWI4NjMzZTFmMDA5YTMyMWFkNDc5NDk2NTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_ad75142d13084746818e0050b6733702",
+      "statement": "RuntimeStore persists agent_runs, agent_plan_steps, agent_observations, action_proposals, and artifacts; steps are saved idempotently by (run_id, id) with a stable idempotency_key, and proposals can be atomically consumed exactly once from the pending state.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/infrastructure/runtime_store.py#L266-L282",
+          "version": "repo-lines-v1:sha256:5dd7373fa14314920d9f364d8493d53e3ff111186d48dd889af3ef12c8438b39:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIwZGIyNjY0YTFkMGEzY2UxMDYyNmVkZmNhYmY0MDMwMmIwYmJiNjFiOWQ5Zjk2MmZiYjJlZDA2NjU1MGVjYmMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBhMTQzNjE0OTYzYTQxMDE2YWE1NjVlYzM4YThjYWIyYjI2MzkxMmZhYTkzMzRkYjkwOWQzNzk0ZDllYmMzNGEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjMyNTVkNDI5ZmMzZDNmNWY5OWQ5ODk4ZWE0NDM5OWEzYjU5YmM5NGVmN2RmMDUzZTZhMmU0MjQyYTU4ZWZlODgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI4MzA4MzhkYzRhNzMwM2RmODQ4MjliZmJiYzY1ODY1YzA0MjA3ZTc3OTI0M2UwODJhMTc3OThjOWU4N2I2MjcifQ"
+        },
+        {
+          "resource": "repo://src/bosshunter/infrastructure/runtime_store.py#L295-L317",
+          "version": "repo-lines-v1:sha256:42426fd78a1641b566cd22f00a777e2539f4d405e14ead37cf3d5d7978d0b876:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIyYjA5NGNlMTlhMmYzNzJkOGRlOTdmN2ZkN2ZhMGJjYjUxOWE3ZDAzODY5ZWE4MmM3MjQ5MDZiOTVmNDZjZWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU0NDc0ZWU2Y2E2NTBlNjI5ODg2NTEyZTQzODRmNzk4NDYyMzhhNWMzNDY5ZTRkM2NmZTBkMGVlN2I2Njg0YTAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhiMjQ5Y2ZiY2EyMWRkZWViZTA0OTVlNWI3MDM4ZjIzNDM5MTRlZjc2OGVkZDg4NmYyYzZmZjc5MGU1MzNmYzgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVmNDFhM2Q3NGUyMTRjYjViYmM2ODdjYjFkZTU4NmFkYmEyNWUyZjhkZjdiMDNlZTUwMzVlMWQ2YjA5ZmQ0MjQifQ"
+        },
+        {
+          "resource": "repo://src/bosshunter/infrastructure/runtime_store.py#L340-L352",
+          "version": "repo-lines-v1:sha256:687882127063d1cb20b3af468d5b8aa64f76b30a0c7ee9a3950a22d27e220f69:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFkYTNlZWI0NTRiZTY5NjEwZjY3M2RjYjBhZDZmZTBmYjFjMWJhZWMwMTMxOTE5OWJlY2U1NzBjZGIwZDVmODYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBhMTQzNjE0OTYzYTQxMDE2YWE1NjVlYzM4YThjYWIyYjI2MzkxMmZhYTkzMzRkYjkwOWQzNzk0ZDllYmMzNGEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNlYWQ1MWIxOGU4YjExMjdiNjkxNDE2Yjg1NzgxMWNhNDNkMTc0ODQ3MjIzYzVjZGIyZWI4OWNiODBkNDdiOGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ1ZmU0YWI3Mzk5OTc2OGJlOWI5Yzg1YzczMjExMmYxYzY5MGJkNmQ1M2FmZTJkNzg1MzEzMjBmZjUxYjY5NmQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_0abb5fd1bce64ca89e09e26208cce2e0",
+      "statement": "Redis is the runtime coordination substrate for per-conversation locks, one-hour cancel signals, and a capped real-time event stream, all under the bosshunter namespace, and it is never the durable source of truth.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/infrastructure/coordination.py#L74-L138",
+          "version": "repo-lines-v1:sha256:a36897507cb995fecfd8cd879ad9488fabebb6644ce9381f41f416a2a63e1ea0:eyJzZWxlY3RlZExpbmVDb3VudCI6NjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk5M2EzYmIyMGM0Mjg3NjdmNzViNjYzYjcwYmZiYzk3NjlmZDFmYmQ4ZWZjNDI2YmY5OTI5N2ExYjdiNGM5ODUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgxOTlkZWE4NDA0MGY0MzkxZmI3NWJiY2E1ZWI1ZDlkNGFiYjBjYzRiNDI5NWM5N2RkMTM3ZjdjYWQzOGEzMjEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRmNTZhMjQ5YjMyZDljYTY0YTYzMTNiOWRiNTQ5NDRkZWExODI2YmZkZmFhMGExYWRlNjY3NDM3OWVhYmU2N2YiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjliNGY2MWEyNGQ0NGNjMGYxMmIzOGRlZDUxODg4OTA0MmRjYjBiNTM0NTNlMThhZTc3MzBlZmE3ZDgzMzg3ZDMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_c7b6400d45374957b8155cfa4e019b7f",
+      "statement": "RedisCoordinator auto-renews lock leases while a task runs, stops renewing once ownership is lost, and on cleanup releases the lock only if it still owns it so a lost lease cannot mask the real execution result.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/infrastructure/coordination.py#L88-L125",
+          "version": "repo-lines-v1:sha256:07cd0906dae1faf74a22e7d8f42d5f254b70b76806bff70c41d9a5b5a79cca4f:eyJzZWxlY3RlZExpbmVDb3VudCI6MzgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIyNjFhZWEwMTRiMzg3Yjc5ZGZmNWE0M2QxNTMzMDMyNDY1M2ZjNzZiM2I1OGUxMjVhODg3ZTNlZTU4YjMzOTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg4MDMwYjgxYTVhYjYyNzVhZWFkNDVjMGVhZmUyOWFiYTAzZjczZGI2YTdiOGY5Njg0YzQ5YjI1YTZhZGFlMDkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY1MGZiMTgwZjk5NGI1ZjUzNzU5MTJkMzk4MzRiOTE4NDVkZDg3ZmZmMmI3MDU5Yzg2MzJkMmUzODgyMWI4YTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZlMWYyOTYwMzBhZjFmYjA5NTg2ZWMyNGI0MjllZjg0NDhhYWMxNjU4M2M2YWQ1YTkwMTEzY2QwMWY0ZDZhMzYifQ"
+        },
+        {
+          "resource": "repo://tests/test_agent_infrastructure.py#L75-L110",
+          "version": "repo-lines-v1:sha256:f343b322e8b0697c1c622c02cbd169e4a2d4441cedacd1cfe378255ae8c4387f:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEwMmU5NTlmNzYzOWNlYjkwOGM2MWM2YTFjZDBmMTNhYzg0ODIxZDUwZGY5MmM3NjcxMDYwYzVjN2U4YjFhOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFhZTFiMDU1ZWU5YTQzN2M0MDg3YjI4MTE0MDBjNmY0ZWM1OTc4YTJhNWE2ZTk5YTdhOTYzMjIyMDM0ODUzYzQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJmNTI5ZWJlZDUxOTAwYTYyNzczNDk0NWU3OWRkZGIwZTI0YWY5MDM4YjM1MGM5Y2ExZjg0ZGNkN2VlODI1N2UiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNmMTBmNWY1ZGQwZTQxOTRiMzVjYTZhYjdlOGZkNTY0ODFmNDNiMjEyYjNlYTMxMDFmNGI0OWJjM2JhZmM3MmMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_02fef284e3c94bf19ad74ebf828ab5c1",
+      "statement": "create_coordinator selects the in-process LocalCoordinator only when Redis is not configured and not required; redis_required without a redis_url raises, and a configured Redis that fails its ping raises when required and otherwise falls back.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/infrastructure/coordination.py#L141-L157",
+          "version": "repo-lines-v1:sha256:085cfe6fa1a10ecc56cb72bbb1d94ebb5658473e108a58be086b7ef721f562a0:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY1YzA3ODIyZWVjOGYwYWFiYmRmZjc2ZmM4MDMwMjM0YjBlZDkzMjQxOGM0YTY4OGE2NzgxMmNjMmU2NGIzMTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdmMjMzNzQ1ZjQ0OGFmMGY0MjQ5YWY5MDQwY2U1NTcyNWQ1MTE1YTE5YWM3MGJiZDA0OTRlYjg3M2EzMWJlOWEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc0YjdjM2RjMWJjYmY0ZDk1NWQyNTI2Y2JlNDFiYjA3ZDc1ODkxYzk1MmIxNDg3MGI2MzE5Zjc5YTAxNDk3NzMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjEwMjY0ODgyNGFkYmJlZjBlZGY4NTE2MDI3ZjU5ZmYxNmY5NTNjYWEyNWU4Y2M1OGJjYjNhMjM0Zjk4ZTM5ZmYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_915949f60ed74d0a95f572c93e5bbc8c",
+      "statement": "The background worker executes only tasks registered through register_task and disables automatic retry for send_greetings, send_hr_reply, and run_pipeline; the Dramatiq actor is configured with max_retries=0 and a 10-minute time limit.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/infrastructure/worker.py#L11-L11",
+          "version": "repo-lines-v1:sha256:bc6e36e7d29ee55a5dc33566334c8d24223d06b221eea05a6e3c27e0b0697975:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYmM2ZTM2ZTdkMjllZTU1YTVkYzMzNTY2MzM0YzhkMjQyMjNkMDZiMjIxZWVhMDVhNmUzYzI3ZTBiMDY5Nzk3NSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYmM2ZTM2ZTdkMjllZTU1YTVkYzMzNTY2MzM0YzhkMjQyMjNkMDZiMjIxZWVhMDVhNmUzYzI3ZTBiMDY5Nzk3NSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDVhMmQ4NTI1MTRhNmE4NDhhYzNiNjg4MzhiOTcxM2Q3YWVhM2Q4MDM0NGJhMWIwODJmNjJhZWJlOTgwZTAyNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTFkZWEwZmMxMzI2YWEyOTMyMWJmNzUxOGJhZDBiZmY0ODk0ZTY0ODg1YWI5MTg0ODlkMDJiYTkwZGRhOWQ4ZCJ9"
+        },
+        {
+          "resource": "repo://src/bosshunter/infrastructure/worker.py#L14-L31",
+          "version": "repo-lines-v1:sha256:2aa4604bbb0d92a4f4f4c740fd6b8c4fbf9461082b66323a1410d95416f8ee3c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBlZTY2NGMyZmQ4ZDhjNTZlOTQ1NGRkNzJkZjgxNDk0N2YyYTliMTE4ZWRkYzM3NTg4MDVhYTE2OWI1OGU0ZGEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ1ZWFhMmNjYWE2NTRlZDEzODVmNzg2MTQ2ZDUzZGQ3ODNiYTgwNjVhNTdjZmVhMGU4ODlkYjRhYWI3MzJjNTIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYyMTQwZTdiZjcyODdiZDRlMDA3MWE1YTVlMTQzNjM0MmVkNzMwOTNhOTQ1Yjc2Mjc2ZWRjZjA1MDM3NzNlZjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU0Y2M3NzYwMTE3OTIxMmU5ZTNlN2VhNjEyN2JiODRkNDQxY2JkYWQ5MGJmYWVkMWVjNjc3MzM4YzUyMDAzZTYifQ"
+        },
+        {
+          "resource": "repo://src/bosshunter/infrastructure/worker.py#L34-L54",
+          "version": "repo-lines-v1:sha256:bd10d21810f5fe1e23d9151ce24fd9ef6021c0da0ecb3d93f65fd953ac5e0b1a:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI2NDQzNWE4Yzk2YTRjOGJiOGQ5NzFhNjBhN2Q3MzFkNmI4OWQ3MjgwMzljY2Y1YTNkYTY5OTY4MmQ5YTkyNGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMwMjFjNTE3ZWZhMTI4Nzg0Y2QxMGM3YjJhYzg5YTdhNDM5MTZiZGFmNGM3OTRmZmNmZWE4YmQ0MzVhMTRiNTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE0NDIwYjU4YTMyNjc3MDEyNDllNjA2OTA2ZWVmNmRlZGY2MjM3MmYzOGJmMGM5N2E5YWU1MjM2NzI5ZDQwMjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgwMGZkMzBhYjZjMzBiZmZjOTU0Zjg1MDE0MjhlYTEyODIzZjYzMWVhNjBjODM2ZjczZjgwM2E3NjI2ZjBlZjgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_c44c063599aa4db48523dadb0305eeda",
+      "statement": "The live assistant action dispatcher currently maps confirmed proposals to the in-process WorkbenchTaskRunner, which runs each mode in a daemon thread with its own mutex and deadline rules, separate from the registered-task Dramatiq wiring in infrastructure/worker.py.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/web/server.py#L360-L444",
+          "version": "repo-lines-v1:sha256:69457a718b09cff428535af0551926fb98589b5e48e4e038e36aab87a8602359:eyJzZWxlY3RlZExpbmVDb3VudCI6ODUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQwNDM5MjI3NzE4NDRmN2I4OTAyZjI2OGI2ZjllMjczMzk4NzQyN2M3YjhhOWEzNDA3OGZjOTNiYjY2Njc4ZDciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJjMWQ3NDMxYjgzM2JmZWE4MGEyZDFmNTJlYzE5N2NiNDQzOTdmMjEwMjJhODYzODE0NjNiYjdmNWIxZmE3NDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZiZjhjZTZkNzQ3ZjM4NDNiNzBjYTNlYjA5ZmFlYzhmODgyYjY1YjdhNjg3ODY0YzkyYWQwMTcyMDEzNGExOWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU5OWU1ZjY0MmQwOGYxYjA1NTdjOWMzMzA0N2YzNjVlMzE1OWMxZWMxNWI1NWI3ZTdiYjM2MzFjOWQ5MTIwZDkifQ"
+        },
+        {
+          "resource": "repo://src/bosshunter/web/tasks.py#L75-L122",
+          "version": "repo-lines-v1:sha256:a96ae6c86e99b5b55eee07e60c16fa4ec96657f7197bd34c06e923c990f3c694:eyJzZWxlY3RlZExpbmVDb3VudCI6NDgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMxOTM2M2YwMzc2OTMzNzFmYTE3N2NlMDYwY2MwNTc4NjBhYmUxMGY1ZDI3YWMxODkwYmYyNDg4YmFhYmE3NmEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkyY2M0NmI1YzM4Y2NhMDg3NDJhM2ViMjRjNWE2Mzc2NzNmNTg1ZmRkNzgxZDIyOTc3ZGIzYjQ1MmM1N2YxNTQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI2MzY1YmUyNTZmMThkNzI4MGY0NzgyOTIzYTU2OTQ2MjBlYTg0MzZjODE4OTA4NTI0OTdiZDkxYmFlZmY4YTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZjMTI0NjU4ODMxNmE2YmEyOTIyNDA4ZGZmY2FmYTI1MDkzNzc1ZWYyZDIwOWUyYzVmODMxODRmYmIxNDk3MTAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_2893c7c2335b4db0bd1c30a0e0a2671a",
+      "statement": "Local and S3 artifact stores reject absolute and parent-traversal keys and return content-addressed references whose id is the SHA-256 checksum; observations whose serialized result exceeds 16,384 bytes are offloaded to the store with only a summary and data_ref kept in the runtime store.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/assistant/service.py#L238-L251",
+          "version": "repo-lines-v1:sha256:56d0bcb2951730cf1e159fc289523fe9bb483955f4a22ee8122242b690e7e26f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4NmQ2NDIyOTZmYmI1MTcwNjY1OTIxNjkwYjUxYjNlMjNhMTRiNDJkYmE2YjVjMWE0ZTQ5OTE3ODA1ZmFhNWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY5ZjhmOGEwN2EzOTI1YmQ1ZjAwNmEwNTQ1NzRkZDllNDdjNzRlZGMzYjk1Mjc1ZmFlOWM3ZDI5YmM2YTVkNzgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImVkM2NiMzJiOWU2MzUzY2YzYjY0MTdlNzg4YjE4OTQxOWE2ZGMyOGJmZTY4NDMyYzMwODM5ZWI1YzYzYzgzYjQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMxMTM1NjRjN2JiNjZiMzhjMzEyYzhmMDcxODk0ZWJjNzY0M2VjNDBlMzFiNTUxNTZlMmFmZGQwYzE1NzAzOWYifQ"
+        },
+        {
+          "resource": "repo://src/bosshunter/infrastructure/artifacts.py#L35-L67",
+          "version": "repo-lines-v1:sha256:5ac13b3ce6ec22ed6cccb2e1085a964dbdc50491a63d30630fd281cdfeebfb3d:eyJzZWxlY3RlZExpbmVDb3VudCI6MzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc5Mjg3NjU2Y2QzZWQ0Yjc3Y2Y3ZDZhODZkN2U3NmI3NDhkNDY2NDg3YTQ3OWFmNzlkNmRiZjkyYTYxZjJmOTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY0ZWZjNDk0MThkMjZkY2YxMjliMjJhNmFhMjExMDhjZWVjMzc2NzdhMzJkMDhlOWQ1ZmVlMzVkZGE2NmJiOWQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImYxYzM2MDdiMjQ5ODQzNTlkOGVjODg0NzIxZGQzZmExNjJiZjhjNTFiZjI1YTBlNDRkYjYwMGIxNzdmNzIyNWQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI5NjIyMTExNjZiM2M4MjM2MzlmZjVhODkwZTJhMmEzMzIwM2JhOTRmNzlhOTYzZDc4NzFlYzgxMjBiNDhjNjAifQ"
+        },
+        {
+          "resource": "repo://src/bosshunter/infrastructure/artifacts.py#L78-L108",
+          "version": "repo-lines-v1:sha256:fd8e3279934859a68937146dfb30934153cf15d344294576310ad81d369dd397:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFjNTk0NmM3ZmE5NDM1M2Q1OWM2ZDllM2U2YTU2MzdjNjQ4MDYwYjEyZWEzMWUyNjZmMThhM2I1ZmQ2MWU1NTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ5NGE3MDhkMzk3YWQ1ODQ3MWUxNzdmNDgyYzJkNDJmMDI1ZTc4M2Y3OGFjODIwYzZmZmRmZTBjNTQ5YjBjMmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE5MTU0ZGEyYTQxNjQyMWUyNThlYTJmZDI0MTdjZjllZDFjNzg2OWIyODBiM2YyMjUyMWU4OGJhOWMxMGVjZjMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg5ZTBhZTM3OGJkODYzODk3M2Q4YzM2NWFmNjI3OGUxZTg5ODQ3ZGQzYTAxMTlmMGFkZjhkNTViNmNhMDM4NmMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_d9d1509a515940ada3015df389c98a7d",
+      "statement": "AssistantService wires the runtime store, coordinator, and artifact store factories at startup; cancellation writes the coordinator cancel signal and immediately marks the run cancelled, while the DAG scheduler checks that signal before each parallel batch and skips remaining pending steps.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/assistant/dag_scheduler.py#L99-L105",
+          "version": "repo-lines-v1:sha256:ab644f0abc3ae2421bea6494e630de5228bf4b3495737297fe0040ba52b094de:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYWZmZTRjMjgzZjJhZTNhZjQzNzhkZWFlYTUxMDM1ZTNhNjBjMmFjMThhNGE0MjgwYTYzMzFmYWRkZWVjMzU4YyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFkYTg3OTQ4MTY0ZWRhNjE4YTM3ZjY3M2RlOGZiZDYzYTkzNGQ1MzEyMTVlMmYyYTg4NGI0NmE2MjdjNDQyMSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTQxNTk2MDU2NDM2MDk5YzVhNWU1OTc2ZTFmYTE3YzAyNGE2MThkODEzNGIyMTcyNTYyNDNkYWNjZGY3YTQ5NCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDlkZjdmM2I3ZWJhOGEwMGQ4OWVkZjYzYjljNjIyMjVjYWVjOGUwYzczN2RiNzk2MTQxMDY4ZDZiMTcwMTRmNSJ9"
+        },
+        {
+          "resource": "repo://src/bosshunter/assistant/service.py#L228-L231",
+          "version": "repo-lines-v1:sha256:54282e9fd38bf0982db114c4364cf86ef3e22472bb2c05eee8d310dfc69908ac:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNGQ4Yjk3Njg3YmNkNzAzNDYwMmJiZmVjNjZkNDdmN2E2MDllY2ViM2IzNzQ1MzZhNDQwMzc4OWYzZDZmZDJiNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMThhYTVmZWIzNjU1ZGEwOGMyNzA5NTY4N2I2OTAyYTYzYzA3YWUyMzFlZmNlNDMyNjI0ODY5YWFhNjdkNGJiZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYzkwZjhiY2M2MjU4NzFlMTc1YjA2ZTIyMDczYzhiOTRmZWYyYzI4Y2Y0MzBjNDE5ZTIwNTM5Y2U3MjkxYzcxZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDE3NzQyZjQ5NzllNDM4YjRkOTI5MGU5MTJiODE2YjE0NDUyNGZmNTE3MTczYTM0YjE0OTBlYjdlMTE1NWMwMiJ9"
+        },
+        {
+          "resource": "repo://src/bosshunter/assistant/service.py#L52-L55",
+          "version": "repo-lines-v1:sha256:b710ed1fb4fc092ec931f78a32a22571412dbb8cae215d52074ffbcc71955e59:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjUzMzZjMDU4MmZjMjgwNTE0NTUxMzkyZTUxNTJlMTlhYTE5ZDc2N2RjM2ExMzdiNmY2MTAxY2RlNDliNGM5NiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOWY3MzhmOGUwYWJjMmRjMjAwNGQxNTBmODQ3MzYyZmIwMTEzMTJmNTc3YTcwZTU0MDBjYzU0YjBhZjkyY2U3ZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMmU4MDhjMzAyZWZkODJmMDhmMmI1ODMzYjA2ZjhlNTZiMGZmYWQ5YjNkYmRhYWEzNWFkNWRkMjQ1ZTNjYjk5MSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiN2Y2N2RkMGFjMzIyYjJlMzE0Yzg5NjhjNWJmNTEyZmQwODJiYTVmNTRlMWUxNDM0NDg4MmJhMjIwMzg1ZjM5YiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_d1068d9d5d224d1aa51eafe063d158b8",
+      "statement": "Legacy SQLite business data and LangGraph checkpoints are migrated to PostgreSQL by two idempotent scripts that copy tables with ON CONFLICT DO NOTHING and replay checkpoints in parent-before-child order.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/migrate_checkpoints_to_postgresql.py#L13-L50",
+          "version": "repo-lines-v1:sha256:707c13136645f111ddc4b3f69c0263efc05e76db1fca9a131b6d9c623888cc01:eyJzZWxlY3RlZExpbmVDb3VudCI6MzgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ3NTZiOTdhNTI4NzZjZDA1NjQ2YWQyMmMzNTNlOTgwODU4OTMxZDVlYjQ5OTZiYzk3OWVlOWNhOTYzNDQyODMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFmYmI4YWIxMDIzMDQ4Y2RhYTY3ZjU2NGQxM2FlNzlmMmUxMzYxOGZjNTMyZWRlYjZhOWNmZWU4NjY2MzNjMjQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJiMzM2ZjBiYzhlYTRhNThjNjE3MWQ1NTExY2VlZTM4YTU5NTc0YzY0ZTU4YzhkYzJmNDAxMGJiM2ZkMTRjYzkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY4NzhlYjQyOTc4MDFjZTFlY2I0OGJmNmIxYzk3YTZmNDQ5ZTI4M2Y5ODQxYTUxZTJlMjNjMmQ0NjEyODY5NjEifQ"
+        },
+        {
+          "resource": "repo://scripts/migrate_sqlite_to_postgresql.py#L83-L99",
+          "version": "repo-lines-v1:sha256:9ad36c5c2047745cff09db1650a7e145484f73dcdc40c4f901ec88143446634c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE3OGEyYzhjZDYwYzg4N2RlM2RkYWM0NDdmOWViOGRiYTcwNDY5M2U3MzhhOTRlMjA1YjJlZjFhNjVjZTc2MjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYzYmE5OWQ0ODc1ZDA1NDE0MWE2NjYxYjE5MmM4YTBiZTYxYjEwMjNkMWU1ODE1MDEyMDgyY2QwMTRjYzk1YmEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY1NmMxZTZiNjU1ZmI1MjBjOTQ0ZGJhMzJiMjFjOWEwZTU1Mjc0MzY2MWIzZTg4ZTNmN2UwYzhlZGIxYWU2NzIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjcyYzJlYzE0OGRiOGVlZDY0ODhmZWRmMTI1NzA0MTIyNmJiYTMzZDM2ZjIyZDcxYTc4ZGYzYjYwNGZkN2E4NmIifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.5.2",
+    "at": "2026-09-16T06:31:53.644Z"
+  }
+}

@@ -1,0 +1,248 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:bf78cdc2b60470481c6b7fd7c29c5556c74e600c90cad73aae884bb47c0421ec",
+  "claims": [
+    {
+      "id": "claim_51ad6ca9ac9841cab6201f8e9a6042ab",
+      "statement": "run_pipeline in src/bosshunter/pipeline.py is the top-level orchestrator: it checks the Browser Runtime and BOSS tab first, then drives scrape → score (which generates greetings) → confirm → send, and finally loops monitor_and_send_resumes every monitor.interval minutes until interrupted, preserving the fixed stage order.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/pipeline.py#L10-L88",
+          "version": "repo-lines-v1:sha256:11abce77817d1094efe565d3d4123505657f76bd28878cdcf61b7df3ab9548ac:eyJzZWxlY3RlZExpbmVDb3VudCI6NzksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY2OWYxNGIwNGQyZTQ1M2IwZWJhYzgxOTZhNjdmYWJmYzExMWU0MTRiODA3YjhlYjdjZjVmMjg5NzExYWI4MzMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAwMzdhODdiNjA1NjEyYWU4NGEwMmI3OWFmYjU0YWU5MDJjYzNmMTRmM2ZjZGNmYWMxZmQzZjVmZGI0MTA3YzAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBiNTZkZTRlZGU4MTEyNThjY2ZlMDg3MWNlNDQwZGNlN2Q0OGNjYmE5ZTRkYWQzNzQyNGM4OTYyYzQ5MGFjNWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_1fd705dba512464f9200ad652656902f",
+      "statement": "Greeting generation is folded into the scoring stage rather than a separate post-confirm step in the one-shot path: score_jobs moves passing jobs to ready and batch-generates their greetings before confirmation so the confirmation UI can preview them.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/ai/scorer.py#L459-L468",
+          "version": "repo-lines-v1:sha256:51797c636dbdede55061329fb8e2f6a703750c6f39fe43ebcff3ad67725dd981:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdiMzkzYTc2MjZjZGY4NmI2Njk1NDNiNzMzZGU3YzczZThlZjI2YzVjZWNhNzQ4YzUxODJmYWVhNmQ1Y2VjNmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQxYjVhMmRjOWMwZDI1YzgzYTMxYmJhNTVhMjU5ZDljM2MyMmFiZTExMjI2OWMwMjA3MzA5MTY4ZjAzNzI4ZjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRlZjJmYWJhNDE1NTA4Y2E5NTBlNDNmYzBiZGMwMWQyMjUxMWZhNDhjOWZjNmI3OTFjNjVjNTViMDEyOTM1ZDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBiNmE3NjVmY2MxMTJlMGY5MTljZDU3NGY2MWU4NzQ1YTk3MTE4YjM5M2UwYmNiOGNiNGRkM2I4MjI3MGE5OTMifQ"
+        },
+        {
+          "resource": "repo://src/bosshunter/pipeline.py#L37-L48",
+          "version": "repo-lines-v1:sha256:13ed24fc277de0af1b94afac146c1d864133ea8e97ef1220bb8a42a88db890e5:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlhNDI1MTk2OTY3MmMzNTM5MjI2MmVmMTVmNmMxODZhYTMzNzIxNTM4NWQ5ZTM1Y2RkOWE5MDQ2NGM0OWYyNmMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJmNWIwZDRmNTE3YTRlNjFlNWM0NjIzMDk4YzUyYjA5NWQ2ZDRlNzA3MjZkMTBmNzAxNWY1Mzc0ODIzYmI4MDEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM3ZGI3NWFjNjQ4Yjc4NzViNWQ0YTk5OWZlNTdjYzhjNTk0MTJmNGY4NGY0ODNjMzkzOTNiN2Q1MmQ1MzY2MGUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdhN2IyOWY2ZWRiYWI1MzUxNWY3MWE2MzA5NDA1Y2U2YzQzOGY0MzQwYzQ4ZmVhODE3OWE1ZDgyMTVhYmU0NTIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_220df294ac0843f5b62d3b4747ab9a4a",
+      "statement": "scrape_jobs enumerates city×keyword search combinations with pagination capped at 10 pages, extracts job cards and detail pages through the JS_EXTRACT_LIST and JS_EXTRACT_DETAIL selectors, and derives a stable job id from the detail URL path with an md5 fallback.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/scraper/jobs.py#L187-L203",
+          "version": "repo-lines-v1:sha256:51316f9f04e3ef1fb1bf5700d9db780df67a0fdff736964b1facedf32d2f963f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ5OTdhOTU3YjBkMzIxN2Q3M2M5MmY1ZGZmODMwNDRhN2M3MjdmYzRhM2E1MTkzZjM5Yjc1MWM2NDhiZjVjMzMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY3NDRkOWE0MzI2NTliMzJlOTJjOTFiMWQ4YzZjOTlkY2YzNzZiYWM4NTM3MzhmZmJmOTFjMGFkMDQwOWNiNWEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM4YWU2MGEwOWE3ODRiNDdlYTA4NTMxNmJmZjkyYzY4MDExZGQ2NzBkODlmMjhkYWY1ZGE5YmI2YWU0MWJjNDIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNhZmNhYmI3ZWM0NTA1MzMyYWZkNWFmM2JhNWJlODg3MTYwYzU4NDRiMzNhZjE3MDgzZWJjOWMzMTVhN2M1YWEifQ"
+        },
+        {
+          "resource": "repo://src/bosshunter/scraper/jobs.py#L232-L285",
+          "version": "repo-lines-v1:sha256:e210406ec15668a2d0d84990cdb026ab4f209d827c1c9be1e3aaa3cc3a917bf3:eyJzZWxlY3RlZExpbmVDb3VudCI6NTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY1MDkxYzFlYzEwMTA3MWU5NzcxYmUwZTE1ZTRjNTM2NDU3NzlhZmQwYzUzOTBlODA3ZjI5YWEyMjFjZmY1YmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhMTM3YzZkZjc4MGJkYWRhNTBiYTZkN2RjOTE0Zjk1MzBlMTZjNTc5OGRkMmExOTc4ODc3OWU1NDE3MGZiZTYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRiZTMzZTlkYTQ0ZTkzZDhjNmRmMGNhNzY5ODJlYmRjZjk5MWFjYjY5NjdiOGUzNjgwZDRmMGI3MWE2ZjE2YTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM5NDJlYWNmNGM4ZDEyMjJkZWEyMmFhYTQxYTA5NDhiNjc0MWNjZTVlZjRjNzFjZTAzNWJiNjlmZDMzODhhNzIifQ"
+        },
+        {
+          "resource": "repo://src/bosshunter/scraper/jobs.py#L42-L184",
+          "version": "repo-lines-v1:sha256:818525d99b218203189088f17964a6b24eedac1fde699c5ae533323b0c0e45db:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQzLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI4ZGQ0NDgyNzhmMDlkOWRjOTAxMmU3ZTliNDU5OWQ0YzAyZTI4NWU4ZGQ2MDNhYjYxMmUxYWFjYTQwNmQ1OTQzIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJhMzAzZWNkZDRhNGQxMGYxOWM3M2ZkNDJmZDEyNDM3ZmQzMzU0YTgyNjgxNjA1ZGE1MjU1YTk3YTM5MDY4ZGJiIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI2MTA1ZTk3ZDgwZjkyNzA1MDk0ZjM3OGRkOGE5NWM3MDkzMzM3NzAwNTZhNDMzYjVjMTNiMmY3NTdhZjY4NTVkIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI5MTMwODZjYmNlODU0YmE5YTAwNTk2YTg4OTVhOTc2ODRmZWNhNDhmNWY0ZTUyNGU2ZTkyMjVkZmE5MTFjNTNlIn0"
+        }
+      ]
+    },
+    {
+      "id": "claim_a264c7d49e324dc4952cf2061d99b778",
+      "statement": "scrape_jobs deduplicates by job id: existing rows whose district, company_background and registered_capital are already populated are skipped, otherwise the detail page is re-opened and only blank enrichment fields are filled via update_job_enrichment, while new rows are inserted with the default pending status.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/db.py#L300-L331",
+          "version": "repo-lines-v1:sha256:49eb5aabfda9ba578af09da2c85daffcd8ef6b1212e4a6abc6d007190c8bfe23:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVkZGU0YzBmMzg2ODE5NWMyOTIyNGM2NTdiOWE3ZjUwMzFmNTM0MjZkMGEzYjJiNWU3M2E2MzFjZGVlY2RlYzMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY4ZGIxN2FlZGJmYzhhZWIwOTMyYTA4NWIwZGIwNjk5OWFjMTBhYzcyOTEwNWJjZjViY2M2NDdkMWEwMzYxYWEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM1Y2YyNDMxYThhY2I4ZjRmNDBkNTBiMTc3MDUzMDJiM2Y4MWJiMmNiNTVmMTdjMWU5NjBjNDY1Mzg5MTg0OWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM0MjVhOTAzOGUwZTZiMjcwZTZmYTgzNjc4YTZjNWI4NWFiOTk2ZjBhMDc1ZmE4MmNmMjczMWJkZTk0MzkxYTgifQ"
+        },
+        {
+          "resource": "repo://src/bosshunter/scraper/jobs.py#L343-L416",
+          "version": "repo-lines-v1:sha256:685b9ea403bad713a345770757df53dc31d212a4cfa01d48d79d47bfad85611d:eyJzZWxlY3RlZExpbmVDb3VudCI6NzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMwNjFjNzkyYzg2YjI3ZDhhYThlN2M2OTJkMzJhNDg5NDJiY2RjM2IxZTIyNjc1YTFiZGU4YmQwMWQwYWQwNmMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc1OTg3YjY0OTJkNGQxM2FhOGVkMTMxZWMzNDhjYjE1ZjExMDM4MWRmM2Y5MTMwZGUwMGYyOTE0YTk1MzlhODIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImMwZDg5OTJmNGQyZWNhMzFkNjVhZmNkZGU5NmY2MTA5ZjExNDI0OTM1OTA3MjliM2Q2ZGRkNGYwY2ZlZTc1OTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU5Y2QyNWI1YzYzZTc1NjUyMmEwNzQ5MmYzMjMyMmZmMDRjZjAzNjAxOWQ3YTliOGY4ZmRjMjNiNzg4ZmY4YjMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_8d12d9545cb94fda97f955a915d3f69c",
+      "statement": "The BOSS直聘 site selectors encoded in JS_EXTRACT_LIST and JS_EXTRACT_DETAIL are fragile (a site redesign yields empty extraction rather than an exception), so selector changes require deterministic regression tests such as tests/test_job_selection.py, tests/test_job_enrichment.py, tests/test_reenrich.py and tests/test_import_job.py.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/scraper/jobs.py#L42-L184",
+          "version": "repo-lines-v1:sha256:818525d99b218203189088f17964a6b24eedac1fde699c5ae533323b0c0e45db:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQzLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI4ZGQ0NDgyNzhmMDlkOWRjOTAxMmU3ZTliNDU5OWQ0YzAyZTI4NWU4ZGQ2MDNhYjYxMmUxYWFjYTQwNmQ1OTQzIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJhMzAzZWNkZDRhNGQxMGYxOWM3M2ZkNDJmZDEyNDM3ZmQzMzU0YTgyNjgxNjA1ZGE1MjU1YTk3YTM5MDY4ZGJiIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI2MTA1ZTk3ZDgwZjkyNzA1MDk0ZjM3OGRkOGE5NWM3MDkzMzM3NzAwNTZhNDMzYjVjMTNiMmY3NTdhZjY4NTVkIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI5MTMwODZjYmNlODU0YmE5YTAwNTk2YTg4OTVhOTc2ODRmZWNhNDhmNWY0ZTUyNGU2ZTkyMjVkZmE5MTFjNTNlIn0"
+        },
+        {
+          "resource": "repo://tests/test_import_job.py",
+          "version": "repo-file-v1:sha256:4327accc168262304b16666b1168a829e8e5e1169e121ddea6a3eb2ec6001a60"
+        },
+        {
+          "resource": "repo://tests/test_job_enrichment.py",
+          "version": "repo-file-v1:sha256:3c1fcab0fa12aecc83afa2bf2c638f773cf9811df024a32552afcb4e6d5bc11b"
+        },
+        {
+          "resource": "repo://tests/test_job_selection.py",
+          "version": "repo-file-v1:sha256:c08c94ff8dedeeaaa7a8b46483e67d33b78aab4b4affd8fa44540b2d8cce987d"
+        },
+        {
+          "resource": "repo://tests/test_reenrich.py",
+          "version": "repo-file-v1:sha256:bb86258bbd6ad843f92f42cd62c84deba659463db9ea0fd26fdef5126f2176de"
+        }
+      ]
+    },
+    {
+      "id": "claim_f62f3ff78dd7435eb695ff5d521972dd",
+      "statement": "quick_score in src/bosshunter/ai/prefilter.py is the free pre-LLM hard filter that rejects a job on deal-breaker title keywords, agency/headhunter company names, internship signals, a salary floor, and a registered-capital floor that only applies when a capital value was actually parsed.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/ai/prefilter.py#L11-L41",
+          "version": "repo-lines-v1:sha256:557263a4c6915bbca0a9a4b718964cc7ad1126fd540af44d4b8aafdd764fc349:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ2NTI0Mjk0YjE3YjFmNjk0ZThiN2RlNTA2MDBhMjFkYjBkNjM4NGM2M2E0MTc2YjRmOWUyZTE3N2UwMjI1YjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI2OGYxYTI2YzAwOTIyZDY5MTAzN2VmZWY3NDdkZWM2ZmNhY2Y5NDZiYThmMjE4ZjUzOWUxODYwNzYwMDZlY2YiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIyMDI3YzQ5ZjkzNmM4NDA0NTIyMjU0MmVhMWY0MDAwYzVjNWRiYjYyYWU3MzIyY2I0YzJkODM4OWE1N2FhYjciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk1NmI0YzMzNDhlYWUzMmVmYTExNTVhMjgwNTM0NmFhNDJkZjZiNzkyNzk2NDRkYWNmYWMzMDg1YjZhYmNlMjcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_7b574b0743cd4710ae39bc4ff640c7fa",
+      "statement": "score_jobs processes only pending jobs whose title is non-empty and not the HR主动沟通 placeholder and whose JD is non-empty; it runs quick_score first (rejecting to filtered without an LLM call) and then LLM deep scoring with bounded concurrency (default 3, clamped to 5), keeping the prefilter and all SQLite writes on the caller thread.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/ai/scorer.py#L366-L418",
+          "version": "repo-lines-v1:sha256:fbfe48aef0983cb9376427460a1a66695d8843adb28d9d082424f7af9b16cffd:eyJzZWxlY3RlZExpbmVDb3VudCI6NTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEwMzMzYThhMzE5ZWU4OTA2ZTQ5Y2JlMjFiY2Q2YzQ2OGVkNWRhZDkxMzRiZmI0NDY1NmVkZGY1NWY5ZGQ2MTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjliYWE4OWNhZDlhMzI3MjNjYTY2MTFiZDE2ZTQ1ZWU0MmU1Yzk0ZTE0Y2Y4MDdkZDBhZTZhM2Q5MmMwZjcwZTYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM3ZmNjYTgyMjY3ZGJhNTdlYWJjZjQ4ZjdjYzg0MGFjNDA4OGIyNGFjY2RmNzA0MDRiYjg3ZjUyMWNiZTQ4ODciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVkNjAzZTY3NTJlYjhiMDhjNTNmZDY0YWU4NTM0MzlkMTVmMzhhOTcxNWFmZmM5ZDE0YzRhZDkwNGQ5MjFmYTEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_18217008b37e48399249902350fc08f2",
+      "statement": "A deep score at or above scoring.threshold (default 60) transitions a job pending → ready, a lower score transitions it pending → filtered, and an AI call or JSON parse failure leaves it pending so it stays retryable after an AI configuration fix.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/ai/scorer.py#L366-L368",
+          "version": "repo-lines-v1:sha256:e83117e37e75ed8e9ccb308a44a2cce4b2e3e37d368c3c19a63717448bab7a27:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTAzMzNhOGEzMTllZTg5MDZlNDljYmUyMWJjZDZjNDY4ZWQ1ZGFkOTEzNGJmYjQ0NjU2ZWRkZjU1ZjlkZDYxNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjFlOTFjNjliNTIyMTExMzdhOTYzMjNjNDZiMzI0YWY3NTFhOGQ3ZDg0MTlhZGMwYmVmY2NlZDUzOTFlMDIyZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzdmY2NhODIyNjdkYmE1N2VhYmNmNDhmN2NjODQwYWM0MDg4YjI0YWNjZGY3MDQwNGJiODdmNTIxY2JlNDg4NyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODJlMDJiZWFjNTk5YjNlYzE0NzY0NmUzNDhjODY2NDczYWU0NDQzZjdjZGE4ZDU3MjhkZTExMTFkMTQ2MzcyNyJ9"
+        },
+        {
+          "resource": "repo://src/bosshunter/ai/scorer.py#L434-L457",
+          "version": "repo-lines-v1:sha256:414b4ed07a2a5818ad1e9f6b3ec9e845894a3fd13e9c23d7fcf3de8b8724989b:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEwNDNhNGRiNjFlNGMyZjI1YmFlNzg0MGI0YTI0MDM1YTZjZDQ1ZjFhMDVmMzUxMTgxYWZhMzRhMjBkMjVlNmMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNhZDM0MDJiNzBhNWNjMjU3ZjU1ZTc5MDBhMDNmZDRiNTUxNjQ1MThjYzQ4ZjJkYzFiNTg1OWE3N2VmODBjNjIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc0YmFlM2RmNmJkNTk4M2IxNDM3OWNkN2IzYjFkMzRkNjZiYzI2OTNlMzNiMWEzMzhkMjk2NTM1YmY1MmU1MmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjUyZDU3ZWZlNmFkOWMzM2YwMWZhYWZmYjNlNGZiMWUwNTU2Y2RjYjcyNzQ1ZTFkMzU4NGY0ZjAwM2I0YjA1MDkifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_f73c4a0bc6894f1e8d423ca3316aebbc",
+      "statement": "After batch greeting generation, _recover_jobs_with_failed_greetings rolls any still-empty ready job back to approved and writes an error history row, because the sender filters empty greetings and the confirmation UI only lists ready jobs; get_jobs_needing_greeting then re-selects such jobs (approved/ready with empty greeting) for regeneration.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/ai/scorer.py#L28-L48",
+          "version": "repo-lines-v1:sha256:360d1d06fe489ac93a8c36ac06ad591d0b538b6234a1416a04dd3e2bb7f8ff37:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQwYzQ5YWIyNzUxZmY3MTg4ODg4YzdiZWY3ZGFhYWU1MjVjODY0NGZlMmM4OTgzZmEzNTc3ZTI2MjliNjMzMDciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVmMDhlMWE0MTkwN2QyYTIyNDdhZmRkOGU5Nzk2MGQ1ZmEyZWE5NmQ4NzY4ODdiNDRhMzRjNGFiYTIzN2ZjMWEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBiNTZkZTRlZGU4MTEyNThjY2ZlMDg3MWNlNDQwZGNlN2Q0OGNjYmE5ZTRkYWQzNzQyNGM4OTYyYzQ5MGFjNWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYwYzBhN2ViNGY5NDAxZTBkZmVkMjk5MDg1NGE2NTBlOTMxMTJlYWY1NTA2NWIyNzgzYmQ1YmVlNGY3ZGNjYzYifQ"
+        },
+        {
+          "resource": "repo://src/bosshunter/ai/scorer.py#L459-L468",
+          "version": "repo-lines-v1:sha256:51797c636dbdede55061329fb8e2f6a703750c6f39fe43ebcff3ad67725dd981:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdiMzkzYTc2MjZjZGY4NmI2Njk1NDNiNzMzZGU3YzczZThlZjI2YzVjZWNhNzQ4YzUxODJmYWVhNmQ1Y2VjNmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQxYjVhMmRjOWMwZDI1YzgzYTMxYmJhNTVhMjU5ZDljM2MyMmFiZTExMjI2OWMwMjA3MzA5MTY4ZjAzNzI4ZjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRlZjJmYWJhNDE1NTA4Y2E5NTBlNDNmYzBiZGMwMWQyMjUxMWZhNDhjOWZjNmI3OTFjNjVjNTViMDEyOTM1ZDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBiNmE3NjVmY2MxMTJlMGY5MTljZDU3NGY2MWU4NzQ1YTk3MTE4YjM5M2UwYmNiOGNiNGRkM2I4MjI3MGE5OTMifQ"
+        },
+        {
+          "resource": "repo://src/bosshunter/db.py#L557-L570",
+          "version": "repo-lines-v1:sha256:104de947823c54d9dfc0c1acf4ddc55a91d2f0b03c81bc5b7ba1d3b363514524:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjczODI0YzY0M2ExYWMyM2U4ZGVkMjQ5ZDM4MzdhNDdkYjk3MDlkMjU2MzdhNDU3MWZlZTQ3NDVhZDljYjUxY2YiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2NmEwZTBjYjE4MWM0Y2VkNGQ1NDczNTBkOTg4YzRhODkzOGIyNDA4MWI4ZTU4Y2M1Y2UxYjgxMGRkYzVlZWIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIyMTNkYjQxMWEzZjQwM2QyMWRhMDcwNDQxNDQ5M2YyMGQ1NTA3MDg0Mzg4MTM5YjY4MTFjMTJjNTliYmVkM2IiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQzZjkwOTRjYjdmZWFhYzQxMTEyODgwZDg0MGVlM2JjMjNhMjcyMGE2YjM3MmUxMjBmZjFkZjk2MmFmMTk4MDEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_a7d75bb1dde84551a19e1fad416fd921",
+      "statement": "Human confirmation is a mandatory gate: show_confirmation lists only ready jobs ordered by score, defaults every individual decision to 'n' so blind input cannot approve a send, and supports approve-all, per-job approve/skip, greeting edit, and regeneration.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/ui/confirm.py#L24-L149",
+          "version": "repo-lines-v1:sha256:763b15d5337df9b8577b72e742c0698340187a7c057e3675249eb00816a2fe88:eyJzZWxlY3RlZExpbmVDb3VudCI6MTI2LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI0ZjUwNTAxYzEzMGNmYzkzZGEwOTU0Zjk0NTc2OWE3ODkxM2IwOTU1MDI0MTA3MzIwNDA2YWVjNDczNDUzOTgyIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJlNzk0ZmFkZmMxNGE4YjEyZDA5YjBhMzU1MGIzZDYyOTE5YzY5OTAwMzk4YTAyNzE1NjgyNzZlM2NjZmJlNDgyIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIyMjAwNjhjN2QxMjNhZjg3YmUwYzFlYTZjNWFmNDg4OTJmYzFlNDg1YzUzYzkwNDEyYzc4ZDlkMDQ5NmU0ZjdmIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MCwiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1In0"
+        }
+      ]
+    },
+    {
+      "id": "claim_34e118c73e8041bb8facb3095aa6ec7c",
+      "statement": "get_jobs_ready_to_send is the send-side enforcement of mandatory confirmation: it returns only approved jobs with a non-empty greeting, so ready (unreviewed) jobs can never reach the sender.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/db.py#L512-L535",
+          "version": "repo-lines-v1:sha256:e649668e0936f071c9e4d1033312c2c6c38b563738b07f05a028831eacbc7052:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhmN2Q3OTg1NjM0MGQ1MTI5ZWRkYzQzYzY0NTg3OGZjYmU3NjNlM2YxZjBlZmNkZGMxN2FkMmYxN2JlYjBmMTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2NmEwZTBjYjE4MWM0Y2VkNGQ1NDczNTBkOTg4YzRhODkzOGIyNDA4MWI4ZTU4Y2M1Y2UxYjgxMGRkYzVlZWIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIyMTNkYjQxMWEzZjQwM2QyMWRhMDcwNDQxNDQ5M2YyMGQ1NTA3MDg0Mzg4MTM5YjY4MTFjMTJjNTliYmVkM2IiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRlMDQ5ZGM5Njg5ZTA3ZDY0MzYwOGVlZjYxMTIyMzU1YTUyMjM3NmY2YjM5ZjUxOGIzNmVkZDFiMzgxZWU2NGQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_32c51d74bded4a60b4942986c99ae96c",
+      "statement": "The greeter generates a three-sentence IM greeting via GREETING_PROMPT and self-reviews via REVIEW_PROMPT, regenerating until the average score, truthfulness (≥8) and replyability (≥7) pass their thresholds, bounded by ai.greeting_max_iterations; deterministic _quality_issues checks can short-circuit the AI review when they already identify a fixable critique.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/ai/greeter.py#L138-L156",
+          "version": "repo-lines-v1:sha256:bb473d297222a7ea72116f1a546657924cb16d0cb903d03334c8a403086e9cba:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUzYTk1ZWQ5MDdkOTI4NmZhZDY4NDkwYTc4YTQ5NGNjZmM3M2JiOTUxYWJlNjBlYTIyMWE5M2E1Njk2NzQ3NTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY1NWE3ZDI2OThhMWRjODkzZDg1ODNmMzk0ZjEzYTk4Y2Y1MTY5MGFjZTZhMTU4ZjhlYzZhNmNiZWY0MDIyZmMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ3MDE0OWUwNjlhZDY3ZWNjZjQ3MzY0NmZmMWM3NTAwNTBkMzI5ZDExMDAxOGRjNTc2Njg3OGVhZmExZDYwN2QiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjUzOGVmZmJiYjc1NDM5NzY3MGNhZWY0MDEyMDgyN2QzZGM1NmViZTRiYTBhN2UyZTNmNTk0YTZhMzRjZDM0YjQifQ"
+        },
+        {
+          "resource": "repo://src/bosshunter/ai/greeter.py#L224-L276",
+          "version": "repo-lines-v1:sha256:aaf4dac5b62f8474cfeade8bdc5d3ec34a16538d1ea673043f95ded652f89636:eyJzZWxlY3RlZExpbmVDb3VudCI6NTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFmZWVmMmQyYjExZjU3YTU2ZTg2OTI0MDQ4YjNjMzNkZDQ5MjU5MWUwOGEwMGY3NTM2NDJjNWQ1NmVkMzM1ODciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRjZGVmMjc3MDhmM2NjYWM3MTVmM2ZiMjVlNmVhYThlYjgxMDBjNGFkMWFjMDY0OTI3Y2E4ZTlkYmVjYWFlMzUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjcxMzQyOWFiZTU2ODJiMTEzZDczYjhiNTg1NTgxMzFiMTVmMDI1ZDdmNDhlZGEwY2Q5ODkwZWM1NjcxZmEyNmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBkNmJmZTJkNWM2N2VkY2E2MzM4Njc4ZTZmZWM4N2MzN2I4ODFmNjdiM2Q4ZWUyMGYwOWY2YmNkOTk4NzFlNWQifQ"
+        },
+        {
+          "resource": "repo://src/bosshunter/ai/greeter.py#L28-L97",
+          "version": "repo-lines-v1:sha256:1a063454ef6d8937d83eabb009ab20c111717f14a49bb9334ea4028a3ac538f5:eyJzZWxlY3RlZExpbmVDb3VudCI6NzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg3Y2YxMDg3MmZmODc4YTlhODNkMGZkODgzNWYxNTA3MzZhYmQ3ZTRjNzMwYjE1YWE0ODUwOWI0NGUyZmMxMTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZhZmJhMDUyN2MzOTUzYzRiNmUwZTViNTczOWJhODM2MTJmODA1M2JjZGM5NDY2NzMwMTkzY2QxZDU5MGI0MDgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjMwMDdlY2IzMzMxM2M1MjU0NGNlYWYxZWFiMDNmNmZlZWRiOGE0Mzk5YmY4ZjJhY2NiOWM1YWFkODQzNDU2NmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNkNDQxMjRlNGIyOGFmODY3MDg3NzA3YWQxMzcxOTI1ZDkxZWEzNzA5Yjk5MzkwNDEyMmUzY2JjMmYzOGIyMzcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_2e24aa17bf6e41488a999c04459c375a",
+      "statement": "Greeting generation concurrency is governed by ai.greeting_concurrency (default 4, clamped to at least 1); AI calls run in a ThreadPoolExecutor while database writes and Rich progress updates stay on the caller thread to avoid cross-thread SQLite access and interleaved output.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/ai/greeter.py#L16-L26",
+          "version": "repo-lines-v1:sha256:b63c8425687f823f2a77084e23eb6277379cd22cd6fb855112e7bbabf2f705fa:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI4YjliMGEzMDMzYjc2ODgzYjBmZTM4YWU0N2ZmMTFhMmU2YWMyZGI1ZDA3ZTI1YzBmYTVmZGEyZmU1MzU5NGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEyMWNkY2QyZGIxNTQ1OGE5MzdmMzJmN2JiOGE4NWJkNzliZjc3Y2M4ZGRiNGViNDNhYjA1NDAwOWRiMzQzYzIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM1MGZjMjY5OGE0NGE4Mjc3ZGVhODA3NjI2MWJmNjMyOTE1OThhNDY1YjI1OTQyN2U2NWY1MWQyOTljZGMzN2YiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZmMWIxNGEzOGI0ZmRiZDNkNzRmOGJjZTY2N2I0YWRhNzIzNDJkZDQwZDNmOGY4MzI0MDA1MDA1OWE1ODBjMmQifQ"
+        },
+        {
+          "resource": "repo://src/bosshunter/ai/greeter.py#L279-L376",
+          "version": "repo-lines-v1:sha256:28b0e7be88fcb91a1f2e6eb73d89b15809d4ab0b3ac92a5eeaa8a47768a15d29:eyJzZWxlY3RlZExpbmVDb3VudCI6OTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEzZGIyODhjMjg5MmRlYWVkNzgxZDc3MjQ2NGY4NWU1NDQ2MDEzNTkzMzY5MmJiYjVjMTY3OGY0MzU0OTcwZDciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhjM2RiZjY1NmQ0MmFhOTM2ZGVkZDU1NDFjY2Q4MDgxZmFiNTdmNDY0N2NiNzZkN2Y3NWVmZTg5NWJlZjQ1OTYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM5ZDE1YmZkZWVmMzg1NmJjNzEyZmFhMmU5NjEyMzBjODYxNzQ2YjlkOWNlZTUzOGQzMGU1NTE4ZTU0NTk3ZTciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMwNGUzYjBjZjk2NjY2MDNlOGU0NDE4YmU0YWE0YzA0ZDU3NDlmN2Q1ZDkxOTEyMjYzMmVjOTIyMWU1ZjdlYTQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_e646714cc810490bb2afb97ef877324f",
+      "statement": "regenerate_greeting clears the old greeting and resets the job to approved (via reset_job_greeting) before regenerating and returning it to ready, so a regeneration request can never leave a stale greeting queued for sending.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/ai/greeter.py#L379-L419",
+          "version": "repo-lines-v1:sha256:8828916d94b050b401a2e1ee8d14af00fbc283c7b6707ed7fcde1de31a262b71:eyJzZWxlY3RlZExpbmVDb3VudCI6NDEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI1YWUwZTcxZmQxZDk2ZWJiNWE4ODFmZTc2MzIwYWRlNzY4ZGExZTNmMWQ1Y2Y0MzI5MTc3YzM0Y2MzMjQwMjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFlMjE3ZmI0YWQwMzkyMThiNzcxZjc5YzcyOTVkMDVkYWZhYzVkZmE2MGFlZjQxNGMwOWQzYTE1Zjc0N2JiNWEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjlmNGQ4MDdhMDk4NGM1MzQwMDFkZDEzNGE4MzI3YmFkYzJiOTRlY2IzMmUzYzNiMTUyMjk0ZWU2ODE0Nzc3OGUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjYwYjdjNTQ2M2IwOGM0Yzk4MTdiOGI5ZjVhYjczMjJkYmYxN2ZhMWIyNzU1NTc4NDIzODNlMTE3ZjVjNWNhMDkifQ"
+        },
+        {
+          "resource": "repo://src/bosshunter/db.py#L352-L361",
+          "version": "repo-lines-v1:sha256:ac5d3a172435e4b56876670a9bc9b5dcbf4444b415a1fe47e3e892314a27ed95:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk5N2FiZDM0Y2QwNGVjODM1Y2M3ZTI3YjVjNjY3YTEwMWE3OGZhM2MzOTA1MjcwNDRhMjFmMDNjY2ZmZjQ2MzIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY4ZGIxN2FlZGJmYzhhZWIwOTMyYTA4NWIwZGIwNjk5OWFjMTBhYzcyOTEwNWJjZjViY2M2NDdkMWEwMzYxYWEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY1MzE0ZTk0MTIzMTA0ZDZlZDIwZDJmM2M4NDM5ZmRhMGU0Nzk2Njc1YjQ4YjcwOWU3YTM5ZjkwODk2N2JmZmQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImViOGYwNTU0ZjJlYWNkNGZmYzU0NWE4Njc5YmFkOGIwY2Q5ZDQ2ZGQ4NTJiMGFmZDQ0Yzk1NGI4Mjk3NWRhNmQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_7eae6ae2e44f45a3b59af809e1904bdd",
+      "statement": "send_greetings sends only approved jobs with greetings and enforces anti-ban gates (random day off, send window, daily quota, randomized intervals); on success it writes history(action='sent') before the status update so the daily quota stays accurate across a crash.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/executor/sender.py#L709-L912",
+          "version": "repo-lines-v1:sha256:6efe3b48c2253ecc07f017b691505091a1f69a4f3bfc6fc538770f73c020650a:eyJzZWxlY3RlZExpbmVDb3VudCI6MjA0LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIzZjY4YjBhOGFjYWUyMDMyYmIxZDg2OTIxNjAxYjRlMGE5MWVjMmI5YjZhMWExOGM1MGMzNGMxNmU3MzQ2NGM2IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIyMWVkY2QyY2Q3NDQ0NmFjNDRkYjg4MWJlMDA1ODc2NjEwMGFkZTAwOWY4ODBmNDkxYTUyNGFhNjc2ZGExOWJjIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIyYmU0OGE4ZDQ1N2NjMDQxZjM0MTNiOWY5MmM3Y2VjYWQ4MzkwZDc3ZTBlMTg1ZGY2ODJkYzM5NWJmMzg3ZTUwIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MCwiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1In0"
+        }
+      ]
+    },
+    {
+      "id": "claim_a2add64cf53b4a31a837beccab2bc875",
+      "statement": "Send failures are classified into transient and permanent: transient errors are retried inside the job, job_closed/job_page_unavailable moves the job to closed, already_sent converges it to sent idempotently, and other failures move it to error with backoff-based recovery back to approved (never ready) until the retry count is exhausted.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/db.py#L414-L451",
+          "version": "repo-lines-v1:sha256:a0d2b5fcb03f63ece2e973f75a92fc0f9faacff9eb0b9413af55ccb0c28491a5:eyJzZWxlY3RlZExpbmVDb3VudCI6MzgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQwMDQ1YzA0NDA5YzNiMTY3MTY3ODNlOTVhNTRmMDUzZTExYThiNWU5YTNiMzIxN2JkMTAzMDVlOTRkNzhkMWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFkMDhmMDJkOGMwNWRhNWQyZmEwOWM0ZWEzYTFiMzQ4MzI1MDhlZTBiOGI5YTIxNWQ4NGY0MTI1MDRhODhjOGYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY1MzE0ZTk0MTIzMTA0ZDZlZDIwZDJmM2M4NDM5ZmRhMGU0Nzk2Njc1YjQ4YjcwOWU3YTM5ZjkwODk2N2JmZmQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjExMTJjOTE5OTk1NDllYTIwYjRhZjUxMTAyZDhhNWQ0MzA0OWQxNmFlYTUwNWE3MDEyZjY2M2VjMjQ3NjRiYjEifQ"
+        },
+        {
+          "resource": "repo://src/bosshunter/executor/sender.py#L146-L182",
+          "version": "repo-lines-v1:sha256:e02a85af2b9c806f5f5ec5237a2c637c50e2ee62b87c001a2b66bc0439a34260:eyJzZWxlY3RlZExpbmVDb3VudCI6MzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYzMjQ0NDg4ODg2N2E3NzJmY2RhMWMzYmIxOGQ2ZjFhZjgxZjhjNTFlMjFmODkwNGRkZTY0ZmY2Nzc3YTBjZjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE2YmQ0OTk2YjJlODM2OGRlNTEwNWYyNTYwMGNmYmFkNzBjZWNlYWRjY2VmOGE1Nzk1Yjg1MzBiZDVjNzQwNDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFjOGYzNjZkYTI1OWU5Zjk2ZWFhZDhjYzA0ZjdkZTU4OTlmYzg2YTdjMzJmOWZkNTY3ZDZkOWE3NTg2MWMwNmQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhmNmYxYWE0NWUxMzQyZDhmNDI1YjEyODdjYzBlNDI4YzBmMmVkZjYzMzMyNzhlYTA0N2E4MTA3NjY3ZTUzMDUifQ"
+        },
+        {
+          "resource": "repo://src/bosshunter/executor/sender.py#L847-L906",
+          "version": "repo-lines-v1:sha256:af94b072b299b91a28098ae73448a8e01a3300f5fa1bb665d5c5fb62eb036d37:eyJzZWxlY3RlZExpbmVDb3VudCI6NjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE1N2QyYmZkYWI1ZjI1ZTc5ZTIzZWI0MjlhMjg1N2EwYTcxOTc3NTM3NDA0N2ZiNjViZGM1MDU0ODkzMzQyMDgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVkNjllNWM0Yzk4YmFkYjI5ZTYxOGM5OWVjNmFhZGQ2Njg3NDhkNTJkY2Y4NTFlYTJmMTY1N2Q2NjFhNTU3Y2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdkM2Y5NmM4NjY4NzlmMzU5ZWVlNmNjMjk0NmY2NDUxY2NkZjIzMGJiOGQ0Y2Q1NzU2ZjUwY2JhZjY2OWYxODciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImIzMTBiNWQ0MDlhODk3NmI5M2UzYjQ4NmEzNTFkYzllYTY1YzJjYzcxNzMyYmFkODk3NjA5MTk1NGViMWJmYzIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_39bfe52194d04df6abe568c639b1ee4f",
+      "statement": "monitor_and_send_resumes checks the work time window, detects and handles HR replies first, advances a job sent → replied only when the action is reply_pending or auto_replied and the prior status is sent, then runs follow-ups only on jobs with no HR reply this cycle.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/executor/monitor.py#L1629-L1746",
+          "version": "repo-lines-v1:sha256:c346084de3771dbca14b48b124715e61ebba1eba48904c1cac523fe5abfeb816:eyJzZWxlY3RlZExpbmVDb3VudCI6MTE4LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI3ZGQ4OTI2ZDc5YjlhMTU3NGJlN2QyZGRkZWE2YWU2MDgxOWQ0Y2I5OTFlNjkxNTBlOGEyZTYxMjdmYzUzYjlkIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI1YjkyNTAwMWY0OTgxNThkYTFiODNlZjJjZjJiOGQwNzZkMjM1ZGZkNmY2M2ZhNzQ1YjAzZjIxMzQ3NzIxOTA3IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIxYzA2Y2U4NmU1OTYyYWUwOTY1NzYxYjEyZmRjN2VhYzdmMDQ5YzAxN2ZjZmQ2Mjk5ZjNmZDc0NzNlNDM5NWU0IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MCwiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1In0"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.5.2",
+    "at": "2026-09-16T06:31:53.644Z"
+  }
+}

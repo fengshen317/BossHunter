@@ -65,9 +65,9 @@ class FakeClaude:
             return '{"naturalness": 9, "relevance": 9, "differentiation": 9, "truthfulness": 10, "replyability": 9, "avg": 9.2, "critique": "良好"}'
         self.generate_calls.append(prompt)
         # 从 prompt 里提取被生成的 job_id（_make_job 的 title/company 组合唯一）。
-        # 返回一条通过确定性质量校验的招呼语（长度≥45、无禁词、含标点、我≤5），
+        # 返回一条通过确定性质量校验的招呼语（长度≥80、无禁词、含标点、我≤5），
         # 这样 with_review=False 路径的确定性重试不会被触发，便于精确统计调用次数。
-        return "您好，这个岗位同时提到工作流编排和服务稳定性，我之前用 LangGraph 把知识库接进订单问数场景并稳定上线。想了解一下，团队目前更侧重任务编排，还是生产稳定性？"
+        return "您好，我做过 Python 后端和 AI 应用开发，负责过高并发接口、任务编排和异常治理。相关系统已在实际业务中稳定运行，与岗位对工程落地和服务稳定性的要求比较契合。如果岗位目前仍在招聘，希望能进一步沟通具体职责和团队情况。"
 
 
 class GreetingBatchConcurrencyTests(unittest.TestCase):
@@ -122,7 +122,7 @@ class GreetingBatchConcurrencyTests(unittest.TestCase):
             if not call_state["first_done"]:
                 call_state["first_done"] = True
                 return "您好，看到贵司在招聘，我对这个岗位很感兴趣，相信我能胜任。"
-            return "您好，这个岗位同时提到工作流编排和服务稳定性，我用 LangGraph 做过订单问数工作流。想了解一下，团队目前更侧重任务编排，还是生产稳定性？"
+            return "您好，我做过 Python 后端和 AI 应用开发，负责过高并发接口、任务编排和异常治理。相关系统已在实际业务中稳定运行，与岗位对工程落地和服务稳定性的要求比较契合。如果岗位目前仍在招聘，希望能进一步沟通具体职责和团队情况。"
 
         jobs = [_make_job("mixing-job")]
         with mock.patch.object(greeter, "_call_claude", side_effect=alternating_fake) as mock_call:

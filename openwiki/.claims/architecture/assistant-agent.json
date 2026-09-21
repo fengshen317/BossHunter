@@ -1,0 +1,204 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:d0f0a781162f48847c0ba3b30438906c53e88064e803883b77c0db400ff004ad",
+  "claims": [
+    {
+      "id": "claim_4c088da1617743e792c5e0261ba51c92",
+      "statement": "build_assistant_graph() registers a controlled LangGraph node graph: the fixed pipeline context_resolver → goal_extractor → ambiguity_checker, conditional routing into clarification/sql_prepare/direct/capability/planner, planner→plan_evaluator↔replanner, capability_matcher→dag_executor/react_agent/execution_engine, a react_agent↔react_tool loop, execution_engine→approval/result_processor, and approval→execution_engine/result_processor.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/assistant/graph.py#L1959-L2024",
+          "version": "repo-lines-v1:sha256:747682e4c5fe977cbd268fa76755c787c058c686ed8fc644f5a08b981e0fa074:eyJzZWxlY3RlZExpbmVDb3VudCI6NjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQwZGZkYzY1MmY0OWUxNGFkZTg5ZGU1NTlmNGEzMzMxODU5ZDE1NmM2ZmY0ZGE5NWYzZjY3NjJjOGZjNmVmYWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhNGI3OGY1OTUwMTM5OWU5NDA2NjAzN2MyYjQyMWEyZDZhNGFkMWUxOGFhMzcwNjZkNjc2NmU3M2Q2YTg2YjQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImEzZTQ5Y2U5MWUxMzViNTI3NTE5NTYzYWUwM2RhNTZhMDkzYWJlZDM2MjM3NzA0N2YwZjhiM2ZmMGU4NjExYmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjYzMjdiYmQ0ZmFlYmM2ZjRmZWQ1NjZjZTc5ZTIwZDZmNmZhOGZjNjg5Njc5YmFkMTdiNzhiMzNkMjA1MDFlZTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_f9e76576708e4249943b41aaa3285975",
+      "statement": "build_assistant_graph() creates an AsyncPostgresSaver checkpointer from the configured database.url, requires the URL to begin with postgresql:// or postgresql+psycopg://, fails fast when it does not, and returns the compiled graph together with its async checkpoint connection.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/assistant/graph.py#L2026-L2045",
+          "version": "repo-lines-v1:sha256:8560711730e3f48083c27d1533aab7aed9b66e439849adab53db79b4e6fac3d7:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcxZTJiM2UxOTZlNjJiOGI3NGFjMWM0Y2FiMjkwNTkzZGU5ZmEyMDRjOTFmZGExODk2MzdlYzkwNTc4MmRlNDkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQzNWNiZjI4ZTEwM2MwMjNhOTQ3ZDBmODVmYzNjOWQ2MGY3ZDlkNGIwNjI1ZmZhOWFmNmYzMzRhNjkyY2IxY2YiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM1NmE3MGZjY2QwOWNiMjkzOTZiNTMzZTM0YzNhMDdiNzg0ZWEwMWFiMGIxZmRkZmY2ZTNmMTY5MmM4ZjI5MTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNiMjM2N2JkMGRmMGE2MmRmYzNkMTIxOTkxYjI5OGZlNGU5YzNkMzI2NzUyZTY5ODU1OTQzYjZjZjRiMjQ4M2QifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_91fbf9615de640cdaed9423507d4b308",
+      "statement": "AssistantService runs the graph inside a dedicated SelectorEventLoop, acquires a per-conversation lock, sets token/execution-event/cancel-check context variables, and invokes the graph with the run ID as the checkpoint thread_id.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/assistant/service.py#L108-L150",
+          "version": "repo-lines-v1:sha256:3853712850d2fd3dc1010f7ceacc45d05b0c886ccc83a247baf4a2c6d733a28e:eyJzZWxlY3RlZExpbmVDb3VudCI6NDMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhjNjExMGU1YjY1ZWU3OTUwNzYxOGVlOGQyMmY0NWQ2ZjcwNWY1N2MwOTUzMTMyZjJmZTczZjViMDQxYTNiYTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBhMTQzNjE0OTYzYTQxMDE2YWE1NjVlYzM4YThjYWIyYjI2MzkxMmZhYTkzMzRkYjkwOWQzNzk0ZDllYmMzNGEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJjZTg5NWJiYTdiYmVlZGVmM2ZhNTZmODY0N2U3OGUxZjNhNDU5MTY4ZTM3ODU0YzM1ODI2YTQ0YzlhYjQzMzkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE5N2ZlMDI4M2Q0NjllYTlkMWI1ZWUwMzY1NDI0OGIwNTVmNzEwOGFmZjBjZGZkZjkxNmFlNDU2NjYyMGVjMDAifQ"
+        },
+        {
+          "resource": "repo://src/bosshunter/assistant/service.py#L167-L190",
+          "version": "repo-lines-v1:sha256:da517003d76b623f88523304b7ecdd5e52233f1e8ab5ef36a89a8df1579e111c:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImExZDM0OTk4ODU3NmQ3Y2E3NDMyMDYwMDQ3ZTZmZWNmMGYwNzhlMzkxNDVkZjYzZDNjODE4Mjg4ZTIwYzlhOWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIzODQwMzVlYzQwZDMxNjRjM2JjNmVlZDE3Y2M5ODFjZDg3ZmZiODNlNjU3ZmNlMGRhMDNkNzI3M2Y3OTdlMzgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk5OTMzZGViZGFkNjE1OTMzMDc3NDkwNDE1MjgxYmFjMWJlNTJhYTcwYTk2MjI4ZWUyNGNjNWJkODRjNzViOWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhjMDBiZjQ4N2I3Zjg5MzEyYzg5MTVmNGYzYTc4YzM1NjBjNTY3YTIzZDkyYTVkZWRiNGU1Zjg2MmYxNzAyMjAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_6aa42cbd387640669de8920db6f1acfa",
+      "statement": "route_evidence() classifies a question into direct/structured_data/private_document/public_current/mixed using deterministic term lists and the intent type, and defaults definition questions to direct even when they contain analytics words.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/assistant/evidence_router.py#L23-L68",
+          "version": "repo-lines-v1:sha256:f9c857af0ed0e0befd2483e42b7feb542e4f3b3e4d36df4401447ee9b66e3c0f:eyJzZWxlY3RlZExpbmVDb3VudCI6NDYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM3ZTVjOGQ3YTZlZWE2MDI5YzY3OWM0MDA3Y2QzZDUwODY4YTVhMjRjYzkwNmQ4MmJlMDdiMTgyMjczOTNiMzAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY3Y2RhODJkYTYwNjIzOGUwNWU2MjM5OTU2OWM1ZWUwMzk5MzQxOTY0OGFlNWQ0M2EyYmY4Y2Q2MzQ3ZjgyNjMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImExOWZhMTc1NzU4N2ZmNjdlZmY0MmNkNmMxMWM2OTBhYzhhOWY2OTU0NWM4YjZiOWY4NTcxNmJhODllMTBjODgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjlkZmU2YTc1ZDcwYzdiYmU2YjUzMWNiNTAwMTNjYmViOTI0YmMwM2RlMTFmZTI3ZTkyNTM2ZjJkNmI1YjRmMGEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_f7a30d94b38741279e9cd75b644134b3",
+      "statement": "allowed_tool_names() converts an evidence route into a read-only tool whitelist, mapping structured_data to job_database, private_document to resume_read, and public_current to web_search plus company_research only when web is enabled.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/assistant/evidence_router.py#L71-L89",
+          "version": "repo-lines-v1:sha256:0d7a8bb854143d53bdc68fa472e307eb81abe2955f946abc6f87df9610a688e4:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJkNmUzYzNkMTU5NThmYzUyYTU1NDcyMjEzNzM4NTFhZDVmYTQ0MmI3NzBkY2Q1ZmY5ZDgyMTY5M2ZlMzVhM2YiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNmNDhlODY1N2I2N2Y5NGRiNTU3YTliZWM4M2Q1YmQ5ZGIwYTBjNGQyOTI5YjY5YTBhNTIxMmY3M2U5YjIxMmMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJiMjZlNzI3NDkyOWE3OTQzMWYxNjkwMmIzNmU1NWY4MTE0NDJiNTA4YWJkN2UyMWQyYjVjM2I2MmVmMWYwODUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImEyZThhMGFkNDIwYzRiYTIyZTJmOTE4YjJjNzlkYzFiYzg4MWFjNWY1NWZhYzI4ZWY5ODk2ZDA5YzhlNGI5ZjMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_ac8e71c418ca4e22a8829ae0febdb662",
+      "statement": "The evidence-domain route gates only read-only tools; side-effect action tools are converted into approval proposals by _build_pending_action and are never executed directly inside the execution engine.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/assistant/graph.py#L1508-L1576",
+          "version": "repo-lines-v1:sha256:697c73ffe77a125092fc9dca4b410f5716128536bbda5005f931fc2d1bb91d60:eyJzZWxlY3RlZExpbmVDb3VudCI6NjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMzYTljYTcxYjgzN2RmN2QyODAwOTVkMzQxYjRlYjQzYjViZjI3NzIxOTIxMDI0NmE3ZTk4OWZjMmFiNjI3NTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2ODA2ZjE1NWM1YWMxYWUyNzIyY2EwNmYyYWM5Y2FkY2I4ODFiOTEyM2NiNjI0YTNjMTA0NzViNDQ0OWRjMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFmYzA4MDBmYWY3NTEyODc5YjFlMDU5NWM3ZWI2M2IzYjgwOGI3OTY2ZGQ2YjU2NzJmZmM1MDg1NzQyNDFiMGYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYyMWU5ODZlYTYwYTJkMzM2OTlkMzE0N2UxYTgwNjNiYzc1NWY0ZTZjYmVhN2ZjZTJlM2NiMDJhNzQ4YTY4ZTAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_7fdb544aaf7c419a9ef3549250c94750",
+      "statement": "For mixed evidence routes, build_evidence_tasks() imposes a fixed structured_data → private_document → public_current dependency order so public research is scoped to already-shortlisted candidates.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/assistant/evidence_planning.py#L15-L44",
+          "version": "repo-lines-v1:sha256:f579772f437a8fee31ecdca761f82270edbc924c1d9ba669d13ca13d85ddefa2:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNmMzQ1ODQ3YjdjOWVjZjc1MWEwZjJkYjhjMDQxZjE1NDMwMmE5MmYxYWY3M2YyOTRiMWIxNmRjZThmZDViNzciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImExMGFlNWQwMTEwNjg1YmI4NGMxMjU4N2EwZDVhODVmOWZjODc1Njk0ODUwNDdmZDc0YjA3YTRiNzlkYjhiOGQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA5ZjkzMDgzYzE5NzEyMWI5ODI3MDBiYThhZmFiZDE3MjJjZjFkM2U3NDA0NTA5ZTgwZWZhMjcyNDdmNjJmMDciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY1ZDk1MjNiM2Q4OGE1NWFhYTMyNjI4YWJjM2MzZmIwYTdmYTA1YTI5NTc0NzM5OGExZmI3M2ZkNjczMGZkZWEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_f38db5251b2f4262872f3e27eb2a9cf3",
+      "statement": "route_after_capability_match selects the DAG executor when every planned step is a registered side-effect-none capability, the ReAct loop when read-only tools are present, and the execution engine otherwise.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/assistant/graph.py#L1115-L1124",
+          "version": "repo-lines-v1:sha256:f4a0bad0d8f2f75d33136d6e3894119bb83edbb3ce8a952c044510a54c7e45d1:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNhZDJmMjNiMDUzYTNmMGIwNzEzMTFhZDk0ZjIxODJiYjE4ODJlOWVjNzY1YjkwNDY0OWY2MDMwMzk4MmUzNTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk0MDBmYTQ2OGY3ZmQ3MWRiNjcxNTNlOTI5ZmVjYWQ2MThiODg0YmI5Y2JlYzQyNGM5MTE5YmNkMjUwMjlkYTkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVhZjc4ZGMyODMyODgxNWNlZDkyNzViYjZhNmZkYjk3MzNmY2U0NGMyN2MyNjRiNDMxYzZmNmJmM2YyZjVjZGUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM0ZjA2Mzg5MmMyOGE1NmNjYjZhNWQ2MWM0NDdhMjNkZjlmYjJiZTQ4ZmU5NzMwNjQ5NGE4ZjA3YTU4NTVhYjgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_0498ee2effe44a3b838bba07908a9319",
+      "statement": "dag_executor_node runs read-only plans through DagScheduler with max_concurrency=4, deadline_seconds=120, and the cancel check, and its step adapter raises PermissionError for any capability whose side_effect is not none.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/assistant/graph.py#L1126-L1210",
+          "version": "repo-lines-v1:sha256:a85716427cf4e0c4f72f203def3e2f79623c6a313013c8b941fd654b97d5806f:eyJzZWxlY3RlZExpbmVDb3VudCI6ODUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMzMjQyN2YwODVkNjYwM2RjN2Y0YzJlM2U5OTM5ZGZmM2Q2OWNhMjI4ZjZlNDdiNGQ4ZWM2NjBjZmZmYjNlYzgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJhOGUyNjhhMTA2YTNhMzZlMWZhNDQ0ZGIzMGQwMGQ4MTFlYzZmNjVmZDRjNzViYmJkZTRiYzE1Y2FkNjc5M2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRkZjJlZTc1OTY5YTliYmE2ZmRmZWRmMjQxNTNjZDM3NDc1YmJmMGYxYjk2ODAxM2NiYWRiMzg2YTA3ZjZiNTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI4MDVmYmI3YjA2MTIyNzI1YWIwMDU3ODRlYmJlY2I1NmFjYzkxN2UwNGZjZTZjYTM0YTM0MGQzZjExMDQ1YzQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_2189e4dee6474c9f933d8cc6a5a88f52",
+      "statement": "The ReAct loop is bounded by MAX_REACT_ITERATIONS = 4 and deduplicates repeated tool calls using a stable action signature.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/assistant/react.py#L9-L100",
+          "version": "repo-lines-v1:sha256:fe93f08ea1aa250c430d13af8db761908745f3203d56b73679a688e2c6efff8f:eyJzZWxlY3RlZExpbmVDb3VudCI6OTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxZWZmYWJjZTRhMThmZDQyYmZiNWJhZjA4NzEzMDUyNjBkMzlkMmE0YTg5YjJkYWVkZTg1OTBkNjk1NDIwZWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQzYzMxYjM5NmFjODM0ZGNmNmRkMWRiNzBkODBiNjUyYjkyZWZmNmRkZjg3NzczZWIzZTI2MzMxMWY0NDE0NGYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ0ZmZkOWFjNWIwZWEzZjBiYzcxOGY0OTg5YjJkNDk3OTEwZTBlOTU3ZjVhNTZjZTU3NGQ5Y2U1Y2IwNDgwMjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNiMjM2N2JkMGRmMGE2MmRmYzNkMTIxOTkxYjI5OGZlNGU5YzNkMzI2NzUyZTY5ODU1OTQzYjZjZjRiMjQ4M2QifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_5daf720a53984260b182185cfaa18758",
+      "statement": "The approval node pauses the graph with interrupt(action), validates the action_id, revalidates edited read-only SQL, and on approve either executes the hashed read-only SQL or dispatches the proposal through action_dispatcher.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/assistant/graph.py#L1836-L1949",
+          "version": "repo-lines-v1:sha256:0e79f8d47f604cc5791e7e8bed540d0849067a737f5538401ad7ffc0451a1178:eyJzZWxlY3RlZExpbmVDb3VudCI6MTE0LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI1Y2JlOTM1NDA1YzExZmJjZDM5NDcwNmZhMGJmMThlYjUwMjYxODQ2ZjA2ZWMyNGQyMGFlZGEwMDczMGI2NDdjIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI2NGVmYzQ5NDE4ZDI2ZGNmMTI5YjIyYTZhYTIxMTA4Y2VlYzM3Njc3YTMyZDA4ZTlkNWZlZTM1ZGRhNjZiYjlkIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIyNjZjMjNjYTkyYjA4NTAxMGE1YjI5NzM5ZGMwNGVlNzlmMDQ5YzRmZGY5YWQwOTAyYWNkMWI4NmVmMmUzZTQzIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI0YjRkNDQ3ODU2MTczZWRmZWZlNTUyMTU4YzI2ZjJhZDk5ZjMzMzA2MGFiMDhlZTBmZDFmOGMwNTJmYWEyNDExIn0"
+        }
+      ]
+    },
+    {
+      "id": "claim_c658a56965e346448b53c4b7eb3b78b5",
+      "statement": "AssistantService.resume() resumes the paused checkpoint by invoking graph.ainvoke(Command(resume=decision)) with the same run ID thread, then persists the runtime result and the assistant message.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/assistant/service.py#L205-L226",
+          "version": "repo-lines-v1:sha256:51845576a115573fa74144bd02de9bbdbde45ba0e71aeae3c03d44a5e35b5e1c:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc3MThmZDBkY2ZjZGFjZDU2YzlkZDk3MGI0NGE3MGFlOTJlZjNlNzEzNTUwZTIxMzM2ZWQyNTRmMWE4MTlhMzEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE2NWNhMTZiZWViOTZhNzc5NGQxNzI3OTc4ZDNkYmViOWYwMmM0MTRiNDliNmIzM2MzMWJkZTlmY2YxNWIxNTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI4MTVkNWY2MDFiN2ZiNTNkM2FmNjFkNGJiN2UyYTU0OGExZTEzMzU1ZGU3NGQ5MWE5YjBiNTU2YTE0NjkzYjEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQyYzlhNDVkMzc2ODg4NjhlNDVmMzc2MDk5ZWIxZWU1MmY2MWVjZmIyYTJhY2ZjYmQyMTRjZTA4NDBmNDdlNWEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_0c00120a426d42438cb6def57f3e2934",
+      "statement": "The model can never authorize its own side effects: policy.py deterministically extracts negative constraints into forbidden_actions and do_not_send, retrieve_capabilities() drops side-effect capabilities in the read-only slice, and _enforce_mode_capability_boundary() keeps answer/cancel modes read-only.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/assistant/capability_retriever.py#L39-L52",
+          "version": "repo-lines-v1:sha256:7ba5e794fec8a66838b254c8b5d6811c7ae66486f3cde21902daf011ed89432d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcyNWI4NjllYThhMjc1Y2Y3MDAyOGYxNzdlNGEyM2RkODhhMjg4YjM5NGQ3ZmI0OWRhZjM3MGMzNWFlYmVmYzUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNkNjc0ZTMwNTBlMDU4OTc0ZDJkNzRiMWQ0ZDIxYWIzMGQ3NzE1MTYyZDRmZWJiOGNiZTFhN2M3ZWRmNjg3YWQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjViNjUxNDM1MjFhMzU1YzAyYjcyOTE3MWIyMzNlMDYwNzMxMmZhYzMyNjE4MTI0MzA3MDAxOGIxNTc1Mzc1Y2YiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA0ZWNmYzQ1YTYyNjdiNzQ3MGU3OTJlZWE2NjQ2ZTQxMWM4M2Q3MzExMTY1NWYwM2EwYWZmYjFiZTI0OTIwMjQifQ"
+        },
+        {
+          "resource": "repo://src/bosshunter/assistant/graph.py#L419-L434",
+          "version": "repo-lines-v1:sha256:b4ebac6d48f1352ad9dac1f2f8454470a9b73f71b45829fc5c458af73065ac8e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVlYmI0MmYwNjFlNjlmNjJmZjgwMzNjNTAxNTgyMjM1ZmM0NzFjNWM1MzZiZjkyYjhmMjhmZDYxZDU3MzlmY2QiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM0ZGMyNGRiZjdhNzY3MzFjYjYwNGZlYjg1MTY1YWFlYzE2ZTA2ZWExODJlMTE0MmRmN2UyOTAzMjlhZmNmNmMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA5YzkzYzE4Y2MwMzM5ODBlYTJmODRjY2U1OTBhM2Y0NWE0YTFmYWMzYmYyODAwNjMzOTZjMzUxM2EzMjExNGUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg1OGY4YmM1YTJkYjU3Zjk4ZmVjYWY2OGFlNTI2NDczMTA2ZThkMzMxODIwYjQ2MmY2MGExYjM1YzczZDZkMjkifQ"
+        },
+        {
+          "resource": "repo://src/bosshunter/assistant/policy.py#L25-L87",
+          "version": "repo-lines-v1:sha256:aaa4c4dba593a88a3e1acbe31975f7c170757fff9249c8fd04929493f90f3bf7:eyJzZWxlY3RlZExpbmVDb3VudCI6NjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkxZTYxNGQ1NDYyN2Y5NTY1MDk0N2ZhN2MzYTE0MWNlMGIzYzE3NWVjMGZmYmI2N2M2MWIzMTZjYzdhYzlmZTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQyZTdhMGIyOWM3NzkxZjNjNGQ2YWJlYzM3MzA3Y2QwMTU3YWNmNmMzZDE1NzQwM2E5NTI0MDI3ZTYwNGJhMGMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM0ZDBiYTM1ODBjZTY4ZGE0YjQ2MmQ2ZDMyY2Y3OTRkOGU5MWI0MDZkNDNlYzdkMTE5YzUyYzkwMGE5YjM0NjQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNjZTA2M2EzYjVlODYwNzlmMzZjOGUwOTJiZjQzY2MyZmNmZjFlYWExNzk0ZDkyZGY0OTVjZWUxZmM0MmE1MmUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_1a901b2b995b4968a07fe9de532d1783",
+      "statement": "The semantic SQL path maps natural language onto whitelisted metrics, dimensions, and filters while SQL is generated deterministically; validate_readonly_sql rejects writes and multi-statement payloads, and sql_prepare pauses for approval with a SQL hash before any data is read.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/assistant/graph.py#L943-L983",
+          "version": "repo-lines-v1:sha256:173ac88c5235f5234732f26bf29390a62844a7a3740c9678409428741926a2e6:eyJzZWxlY3RlZExpbmVDb3VudCI6NDEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYxMDA1MDJjZGQ2ZGFjNGM2OWY3MjYzNzM1ZmI4NTJkNzVmZGFiNDI1OWI0Y2VkYTdiMGQzZWY5M2UzMWRhMTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY0ZWZjNDk0MThkMjZkY2YxMjliMjJhNmFhMjExMDhjZWVjMzc2NzdhMzJkMDhlOWQ1ZmVlMzVkZGE2NmJiOWQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY3NDY3OGVjYWE1NTkwNWYyMjRlMWFiYzZiOWQzMDE1ZmFlMTBlNTVhZDUzYmNiMGI1NTg0NzM2NjZjYTk4ZDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjIzZTdkYjNlZjE4MGQ1Y2UzM2RhNzM2ZTA3N2RlMzljYzNiNTc0NzFmNDRmNWU3ZGI3YjJhYjdjNGE0NTc3MTUifQ"
+        },
+        {
+          "resource": "repo://src/bosshunter/assistant/semantic_layer.py#L331-L371",
+          "version": "repo-lines-v1:sha256:90c5cecbdad77f60e7a5f1a71f67240e4351baf16c46b7db05e0b3a288bbd053:eyJzZWxlY3RlZExpbmVDb3VudCI6NDEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc2ZTY2MzE0OGZiMWI0M2FkYjNmYTQxMGY4MjI4MTJmN2M1MTZiMmJlY2I5ZDk5YjQ5MzBhMjRkOGU2ZjNiNzkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZhY2RmODExM2YzYjRkNTUwOWU3MWZjMzc5NTEyMjc4ZDA5MDE5MDUzZmU5ZTNhNWEzOGEzNWVmODA0ZWIxNjUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZhOWFiNjkzOWZiZWYxZGQyNzMzMjg1Nzk1ZDMzOTg0YTQ3MThlMmVjM2I1YTNhNDEzNTRhYTc1NjE1YTVkMzYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNlMTAwMzgxNzEwNzU2ZjViZTM2MmFkYjcwMTg2YWU4OTA4NzdkNDdiY2JiZWQ3ZmQ5ZmY5NTI1YzU0NGI5NzMifQ"
+        },
+        {
+          "resource": "repo://src/bosshunter/assistant/sql_tool.py#L136-L214",
+          "version": "repo-lines-v1:sha256:eac32ab1a56d8a37d802bac5353b1aee646beb833a60bbb085c78a7311928b5e:eyJzZWxlY3RlZExpbmVDb3VudCI6NzksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU1YjIyMDE2ZTlhOGIxY2E4MDJiYjI2YTdjNmJjODFjZmIxM2YzYjNjMzk2NDdmZWM2MTQ3ZTFjYjI1ZWUwOTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYzMmFlNDc5M2U4YWU4MmZjMjkwYzc0MjUyNzMwYmZkYzBiMGFhNzY4Y2JiNWUzOTg5MTZmMDlmNjUwZmNjNjEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZlMDAwM2E3NzllNWI2YzNlOTU1YmJjN2IwMmJjZTYzMDAzYzE4MGJjM2VkYjQ3ZTAxYmVlOGNlYzAxYmI1OTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM2NDQwOTZiZDNlNDIwYzgyOTMwYjBkYjk5YWYwNzc1M2UzM2NhNjBjNDRkNmZjZjU3OTMxN2RjYWQyMzlhNmQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_3ae124cd149741e7b0b437a85fe1b2ed",
+      "statement": "The execution engine respond() serves casual greetings locally, consumes only routed evidence, builds pending approval actions for side-effect tools, and assembles a bounded final prompt with citations and evidence-coverage checks.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/assistant/graph.py#L1438-L1834",
+          "version": "repo-lines-v1:sha256:e95f287b439d6f4634c0587f9af93d416d630a6c961b2b8c4e3ee0256b76a973:eyJzZWxlY3RlZExpbmVDb3VudCI6Mzk3LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI4MmNhZWZlMmNlNzMyYmJlNDI0MWFhMmEwNWQ5MjU4NTdhMGRkYWFkYzdiNWE3MWNjY2M2ZDdjZTIxZjA5NTE0IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI2NGVmYzQ5NDE4ZDI2ZGNmMTI5YjIyYTZhYTIxMTA4Y2VlYzM3Njc3YTMyZDA4ZTlkNWZlZTM1ZGRhNjZiYjlkIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJjYzI2MWIzYzJjZjFjYjY2MTRhMmQ4YzI5Mzk3OGI2NDBkN2MxN2FhZDYzMWIxMzc0YWU4M2M5NTQzYTczMDNkIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJmZTM5ZmU2NGE2MjEzZmIzYTAzNDM0OTAyMzkyOGMzNzdhNDA3ZGYwMTRhOTU0OTAxZDcyZWMwMDgyOWRlMTg4In0"
+        }
+      ]
+    },
+    {
+      "id": "claim_2bf2b61e5eb04fd193cf31799fdd959f",
+      "statement": "AssistantService persists DAG steps, observations, and approval proposals to the RuntimeStore, stores observations larger than 16 KiB as Artifact Store references, and marks a run awaiting_approval when the graph returns an interrupt.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/assistant/service.py#L233-L259",
+          "version": "repo-lines-v1:sha256:ef8b1eeb3fc79d2c8ed4958498d112aa142282a2c8b888f5b114e9e4ddec7cc2:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNlZjkyMGY0YmNmMmYwNDNlMmU5NjJiMGM0NGFlMGQ4YjJhY2YwNjc5NTc1ZmQzYjc0MmEzZDEzMWU4Yjc2ZmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNjMWRhOTQyMzFjODRlYTNlYTBjN2RiNzg5ZmVkN2ViOGU4ZmM3Zjk0ZTJhYTAwNzcxYWVlNjE1YWI2OGQyZDMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE0YjE4ZDkwNzk1YjhkMGQzNzUwZDc0YTkxZDNmZDVhMmVhNTM4ZTEyYmRlMDAyODU4MDI4NjAwMjkxYmNhYzciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjlkMzAxNGFlYzQwZjY2ZWM0MDVjMjE1YWI5ZDVkODU2MWU3NWJkN2NkMWM3NzdlNzNlMTdkZWJlNDk4ZWQyNGQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_46e54609a31248c79cb76bcb9433b868",
+      "statement": "The assistant's shared data contracts (IntentResult, GoalState, CapabilitySpec, PlanStep, ReactObservation, EvidenceResult, ExecutionEvent) and the AssistantState session state are defined in models.py and graph.py and are consumed by every layer.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/assistant/graph.py#L221-L256",
+          "version": "repo-lines-v1:sha256:dcae6cb6095448000a5962fc7c2169921ac8ecf9179761f4133d27b3d96886d5:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIyYjY3ZmIxZmY1ZDNkNzYzOWE2ODYyNDBiZDkwNDFkZTJkOGVkNTU4ODYzN2M5NTdhOTk2ZWVhNGIyYWU1Y2QiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUwNjI0ZjJkYjlkZTY0OTM0OGVkNmFhYWVlZDQ3OWNmZmRkMzQ3OThmYmQ2Mzk0YjgxYjJiNmZiNWZmYmNkYzgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJjNjE2ZTEzYWJiOTA1ZGQyZWZlMmE4ODNlMGI3ZjNhZThlNjJjMDkwNjlhZjBjYzIwMmYxZGMwZGUxZjQ1YWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE3Mjc0Yjg0NDk1NmY3ZGFkZTYzYWFhYTI4OTBjNTE3NWYyYzMyYzYxMmQ0NTkwODNkZWJmOTE0ZDFhMDlkYzUifQ"
+        },
+        {
+          "resource": "repo://src/bosshunter/assistant/models.py#L1-L277",
+          "version": "repo-lines-v1:sha256:997c771c49fe4d3f51baac39eb8c583e98d203d4419c787f26730856982826d3:eyJzZWxlY3RlZExpbmVDb3VudCI6Mjc3LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJhZjc0ZWRkMzM4MGM2ZmI3NDIxYjFiZTk0NDJkOTcxOTU4MGQ5MmM0ZmVhZWZiMzE3Y2E3ZTU1MTYwZWM3NTVkIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJlZDRkNzdhMGE1NDM2YmYyMmIwZDhjN2ZmMjBmN2ZmNzdjNGYxY2IzMmM2YThjOTFkNTAyZDgyY2E2NjY3NmI0IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MCwicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJiYjAyMjIyMDE2ZTRmZDhmYmQ2ZmNiZGFmNzAxZjBmZDEzYjMyZTIwNDZkMjUwYjkxZDBjYjhjYjBiOWE1MDNiIn0"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.5.2",
+    "at": "2026-09-16T06:31:53.644Z"
+  }
+}

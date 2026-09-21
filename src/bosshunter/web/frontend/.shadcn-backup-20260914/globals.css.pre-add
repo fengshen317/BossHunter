@@ -1,0 +1,434 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer components {
+  .assistant-stage-list {
+    position: relative;
+  }
+
+  .assistant-stage-item {
+    position: relative;
+    display: flex;
+    gap: 0.625rem;
+  }
+
+  .assistant-stage-item:not(:last-child)::before {
+    position: absolute;
+    top: 1.25rem;
+    bottom: 0;
+    left: 0.625rem;
+    width: 1px;
+    content: '';
+    background: rgb(var(--color-card-border));
+  }
+
+  .assistant-stage-icon {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    width: 1.25rem;
+    height: 1.25rem;
+    flex: none;
+    place-items: center;
+    border-width: 1px;
+    border-radius: 9999px;
+  }
+
+  .assistant-technical-details > summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .assistant-technical-details[open] .assistant-technical-chevron {
+    transform: rotate(180deg);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .assistant-technical-chevron {
+      transition: none;
+    }
+  }
+}
+
+/* ============================================================
+   BossHunter 工作台 · 克制亮色主题
+   近白底 + 单一 teal 强调 + 高对比墨色文字。
+   设计取向：让工具隐入任务，装饰让位于状态与数据。
+   ============================================================ */
+
+:root {
+	--background: #F6F7F9;
+	--foreground: #0F172A;
+	--surface: #FFFFFF;
+	--primary: #0F766E;
+	--border: #E4E8EF;
+	--radius: 8px;
+	--color-background: 246 247 249;
+	--color-foreground: 15 23 42;
+	--color-surface: 255 255 255;
+	--color-surface-raised: 252 252 253;
+	--color-surface-overlay: 255 255 255;
+	--color-card-border: 228 232 239;
+	--color-card-border-strong: 203 210 220;
+	--color-primary: 15 118 110;
+	--color-primary-dim: 17 94 89;
+	--color-primary-bright: 13 148 136;
+	--color-success: 22 163 74;
+	--color-warning: 217 119 6;
+	--color-danger: 220 38 38;
+	--color-info: 37 99 235;
+	--color-muted: 100 116 139;
+	--color-text-secondary: 71 85 105;
+	--color-text-tertiary: 100 116 139;
+	color-scheme: light;
+}
+
+:root.dark {
+	--background: #0B1118;
+	--foreground: #E8EEF5;
+	--surface: #111922;
+	--primary: #2DD4BF;
+	--border: #263342;
+	--color-background: 11 17 24;
+	--color-foreground: 232 238 245;
+	--color-surface: 17 25 34;
+	--color-surface-raised: 22 31 42;
+	--color-surface-overlay: 27 37 49;
+	--color-card-border: 38 51 66;
+	--color-card-border-strong: 55 70 87;
+	--color-primary: 45 212 191;
+	--color-primary-dim: 20 184 166;
+	--color-primary-bright: 94 234 212;
+	--color-success: 74 222 128;
+	--color-warning: 251 191 36;
+	--color-danger: 248 113 113;
+	--color-info: 96 165 250;
+	--color-muted: 148 163 184;
+	--color-text-secondary: 190 201 214;
+	--color-text-tertiary: 148 163 184;
+	color-scheme: dark;
+}
+
+/* 默认描边色：未显式指定颜色的 border 走克制中性灰 */
+* {
+	border-color: var(--border);
+}
+
+html,
+body,
+#root {
+	height: 100%;
+}
+
+body {
+	background-color: var(--background);
+	color: var(--foreground);
+	font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft YaHei', sans-serif;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+	text-rendering: optimizeLegibility;
+}
+
+/* Scrollbar — 克制的中性灰，不抢视觉 */
+::-webkit-scrollbar {
+	width: 10px;
+	height: 10px;
+}
+::-webkit-scrollbar-track {
+	background: transparent;
+}
+::-webkit-scrollbar-thumb {
+	background: #D1D6DF;
+	border: 3px solid transparent;
+	background-clip: content-box;
+	border-radius: 8px;
+}
+::-webkit-scrollbar-thumb:hover {
+	background: #B6BDC9;
+	background-clip: content-box;
+}
+
+/* 状态指示脉冲：仅用于「在线 / 有待处理回复」这类真实状态，不用作装饰 */
+.status-pulse {
+	animation: bh-pulse-dot 2.4s ease-in-out infinite;
+}
+@keyframes bh-pulse-dot {
+	0%, 100% { opacity: 1; }
+	50% { opacity: 0.45; }
+}
+@media (prefers-reduced-motion: reduce) {
+	.status-pulse { animation: none; }
+}
+
+/* 单色强调文字（非渐变） */
+.accent-text {
+	color: var(--primary);
+}
+
+/* 等宽数据展示：仅用于数字/数据 */
+.data-value {
+	font-family: 'JetBrains Mono', monospace;
+	font-variant-numeric: tabular-nums;
+	letter-spacing: -0.01em;
+}
+
+/* 原生 select：Windows 下 option 是独立系统表面，显式声明亮色配色保证一致 */
+select {
+	color-scheme: inherit;
+}
+
+.dark select option,
+.dark select optgroup {
+	background-color: rgb(var(--color-surface-overlay));
+	color: rgb(var(--color-foreground));
+}
+
+.dark ::-webkit-scrollbar-thumb {
+	background: #405064;
+	background-clip: content-box;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+	background: #53657A;
+	background-clip: content-box;
+}
+
+.dark .assistant-markdown,
+.dark .assistant-markdown strong {
+	color: rgb(var(--color-foreground));
+}
+
+.dark .assistant-markdown code,
+.dark .assistant-markdown pre,
+.dark .assistant-markdown table,
+.dark .assistant-markdown th,
+.dark .assistant-markdown td {
+	border-color: rgb(var(--color-card-border));
+}
+
+.dark .assistant-markdown code,
+.dark .assistant-markdown pre,
+.dark .assistant-markdown th {
+	background: rgb(var(--color-surface-raised));
+}
+
+.dark .assistant-markdown pre code {
+	color: rgb(var(--color-text-secondary));
+}
+select option,
+select optgroup {
+	background-color: #FFFFFF;
+	color: #0F172A;
+}
+select option:checked {
+	background-color: rgba(15, 118, 110, 0.12);
+	color: #0F172A;
+}
+
+/* ============================================================
+   AI 助手 Markdown 渲染
+   ============================================================ */
+.assistant-markdown {
+	max-width: 70ch;
+	color: rgb(var(--color-foreground));
+	font-size: 0.9375rem;
+	line-height: 1.8;
+	letter-spacing: -0.006em;
+	text-wrap: pretty;
+}
+
+.assistant-markdown a:not(.assistant-inline-citation) {
+	color: rgb(var(--color-primary));
+	font-weight: 500;
+	text-decoration: underline;
+	text-decoration-color: rgb(var(--color-primary) / 0.35);
+	text-underline-offset: 0.18em;
+}
+
+.assistant-markdown a:not(.assistant-inline-citation):hover {
+	text-decoration-color: currentColor;
+}
+
+.assistant-markdown .assistant-inline-citation {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-width: 1.05rem;
+	height: 1.05rem;
+	margin: 0 0.08rem;
+	border: 1px solid rgb(var(--color-card-border-strong));
+	border-radius: 999px;
+	background: rgb(var(--color-surface-raised));
+	color: rgb(var(--color-text-secondary));
+	font-size: 0.625rem;
+	font-weight: 650;
+	line-height: 1;
+	text-decoration: none;
+	vertical-align: 0.12em;
+	transition: border-color 160ms ease, color 160ms ease, background-color 160ms ease;
+}
+.assistant-markdown .assistant-inline-citation:hover {
+	border-color: rgb(var(--color-primary) / 0.45);
+	background: rgb(var(--color-primary) / 0.08);
+	color: rgb(var(--color-primary));
+}
+
+.assistant-citation {
+	display: flex;
+	align-items: flex-start;
+	gap: 0.55rem;
+	width: 100%;
+	padding: 0.65rem 0.25rem;
+	color: rgb(var(--color-text-secondary));
+	text-decoration: none;
+	transition: color 160ms ease, background-color 160ms ease;
+}
+a.assistant-citation:hover {
+	background: rgb(var(--color-surface-raised));
+	color: rgb(var(--color-primary));
+}
+a.assistant-citation:focus-visible {
+	outline: 2px solid rgb(var(--color-primary) / 0.45);
+	outline-offset: -2px;
+}
+
+.assistant-citation-index {
+	display: grid;
+	width: 1.25rem;
+	height: 1.25rem;
+	flex: 0 0 auto;
+	place-items: center;
+	border-radius: 999px;
+	background: rgb(var(--color-surface-raised));
+	color: rgb(var(--color-text-tertiary));
+	font-size: 0.625rem;
+	font-weight: 650;
+	line-height: 1;
+}
+
+.assistant-sources > summary::-webkit-details-marker {
+	display: none;
+}
+
+.assistant-sources-chevron {
+	transition: transform 180ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.assistant-sources[open] .assistant-sources-chevron {
+	transform: rotate(180deg);
+}
+
+.assistant-markdown p + p,
+.assistant-markdown p + ul,
+.assistant-markdown p + ol,
+.assistant-markdown p + blockquote,
+.assistant-markdown ul + p,
+.assistant-markdown ol + p,
+.assistant-markdown blockquote + p {
+	margin-top: 1rem;
+}
+
+.assistant-markdown ul,
+.assistant-markdown ol {
+	padding-left: 1.5rem;
+}
+.assistant-markdown ul { list-style: disc; }
+.assistant-markdown ol { list-style: decimal; }
+.assistant-markdown li { padding-left: 0.15rem; }
+.assistant-markdown li + li { margin-top: 0.5rem; }
+.assistant-markdown li::marker { color: rgb(var(--color-text-tertiary)); }
+
+.assistant-markdown h1,
+.assistant-markdown h2,
+.assistant-markdown h3 {
+	color: rgb(var(--color-foreground));
+	font-weight: 650;
+	line-height: 1.35;
+	text-wrap: balance;
+}
+.assistant-markdown h1 { margin: 1.5rem 0 0.7rem; font-size: 1.25rem; }
+.assistant-markdown h2 { margin: 1.35rem 0 0.6rem; font-size: 1.125rem; }
+.assistant-markdown h3 { margin: 1.2rem 0 0.5rem; font-size: 1rem; }
+.assistant-markdown > :first-child { margin-top: 0; }
+.assistant-markdown > :last-child { margin-bottom: 0; }
+
+.assistant-markdown blockquote {
+	margin: 0.9rem 0;
+	border: 1px solid rgb(var(--color-card-border));
+	border-radius: 0.65rem;
+	background: rgb(var(--color-surface-raised));
+	padding: 0.8rem 0.95rem;
+	color: rgb(var(--color-text-secondary));
+}
+
+.assistant-markdown strong {
+	color: rgb(var(--color-foreground));
+	font-weight: 650;
+}
+
+.assistant-markdown code {
+	border: 1px solid #E4E8EF;
+	border-radius: 4px;
+	background: #F1F3F7;
+	padding: 0.1rem 0.35rem;
+	font-family: 'JetBrains Mono', Consolas, monospace;
+	font-size: 0.86em;
+	color: #0F766E;
+}
+
+.assistant-markdown pre {
+	overflow-x: auto;
+	margin: 0.85rem 0;
+	border: 1px solid #E4E8EF;
+	border-radius: 8px;
+	background: #F8F9FB;
+	padding: 0.8rem 0.95rem;
+	font-size: 0.82rem;
+	line-height: 1.65;
+}
+.assistant-markdown pre code {
+	border: 0;
+	padding: 0;
+	background: transparent;
+	color: #334155;
+}
+
+.assistant-markdown table {
+	display: block;
+	overflow-x: auto;
+	width: 100%;
+	margin: 0.9rem 0;
+	border-collapse: collapse;
+	font-size: 0.82rem;
+	border: 1px solid #E4E8EF;
+	border-radius: 8px;
+}
+.assistant-markdown th,
+.assistant-markdown td {
+	min-width: 7rem;
+	border: 1px solid #E4E8EF;
+	padding: 0.55rem 0.7rem;
+	text-align: left;
+	vertical-align: top;
+}
+.assistant-markdown th {
+	background: #F6F7F9;
+	color: #0F172A;
+	font-weight: 600;
+}
+.assistant-markdown td {
+	background: #FFFFFF;
+	color: #334155;
+}
+
+/* 打招呼语预览：克制的引用块 */
+.greeting-block {
+	font-family: Inter, -apple-system, sans-serif;
+	font-size: 0.8125rem;
+	line-height: 1.75rem;
+	background: rgba(15, 118, 110, 0.04);
+	border: 1px solid rgba(15, 118, 110, 0.16);
+	border-radius: 8px;
+	padding: 12px;
+	color: #1E293B;
+}

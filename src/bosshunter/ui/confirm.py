@@ -93,7 +93,9 @@ def show_confirmation(config: dict) -> bool:
     approved_count = 0
     for i, job in enumerate(jobs, 1):
         _show_job_detail(i, job)
-        action = Prompt.ask("  ", choices=["y", "n", "e", "r", "q"], default="y")
+        # 默认 n（不批准）：盲按回车/脚本空输入不应意外批准敏感操作，
+        # 强制用户显式选择 y 才会确认投递。
+        action = Prompt.ask("  ", choices=["y", "n", "e", "r", "q"], default="n")
 
         if action == "q":
             break
@@ -109,7 +111,7 @@ def show_confirmation(config: dict) -> bool:
                 console.print(f"  [green]  新招呼语: {new_greeting[:100]}[/green]")
                 # 重新显示后让用户决定
                 _show_job_detail(i, job)
-                action2 = Prompt.ask("  ", choices=["y", "n", "e", "r", "q"], default="y")
+                action2 = Prompt.ask("  ", choices=["y", "n", "e", "r", "q"], default="n")
                 if action2 == "q":
                     break
                 elif action2 == "y":

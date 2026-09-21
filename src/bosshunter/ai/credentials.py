@@ -7,7 +7,7 @@ import random
 import re
 import threading
 import time
-from collections.abc import Iterator
+from collections.abc import Iterator, Callable
 from typing import Any
 
 import httpx
@@ -23,6 +23,9 @@ _MODEL_RESOLVE_LOCK = threading.Lock()
 DEFAULT_REQUEST_TIMEOUT = 180
 _MIN_REQUEST_TIMEOUT = 10
 _MAX_REQUEST_TIMEOUT = 600
+# Anthropic Messages API 强制要求 max_tokens，无法像 OpenAI-compatible 一样省略。
+# 该值仅作为协议适配默认值，业务调用方不再各自设置输出上限。
+DEFAULT_ANTHROPIC_MAX_TOKENS = 8192
 
 
 def _request_timeout(ai_cfg: dict) -> int:
@@ -59,6 +62,55 @@ def _http_retry_settings(ai_cfg: dict) -> tuple[int, float, float]:
 		DEFAULT_HTTP_BACKOFF_BASE,
 		DEFAULT_HTTP_BACKOFF_CAP,
 	)
+
+
+def _sleep_backoff(attempt: int, backoff_base: float, backoff_cap: float) -> None:
+	"""指数退避 + jitter：min(cap, base * 2**attempt) + uniform(0, base)。
+
+	jitter 避免并发重试（招呼语默认并发 4）同步打到同一个限流窗口。
+	"""
+	delay = min(backoff_cap, backoff_base * (2 ** attempt)) + random.uniform(0, backoff_base)
+	time.sleep(delay)
+
+
+def _request_with_retry(
+	request_fn: Callable[[], Any],
+	ai_cfg: dict,
+	retryable_statuses: frozenset[int] = _RETRYABLE_STATUS,
+) -> Any:
+	"""带 HTTP 层重试的请求包装：对 5xx/429 与网络瞬时错误指数退避，其余错误直接抛出。
+
+	Args:
+		request_fn: 无参请求函数；其 ``httpx.HTTPStatusError`` 会被按状态码分类。
+		ai_cfg: AI 配置（读取 http_max_retries）。
+		retryable_statuses: 可重试的状态码集合。
+
+	Raises:
+		httpx.HTTPStatusError: 非可重试状态码（如 404/401/403）立即抛出，
+			保持原契约——调用方按语义处理，不被重试掩盖。
+		httpx.TransportError / httpx.TimeoutException: 重试耗尽后抛出。
+	"""
+	max_retries, backoff_base, backoff_cap = _http_retry_settings(ai_cfg)
+	last_exc: Exception | None = None
+	for attempt in range(max_retries + 1):
+		try:
+			return request_fn()
+		except httpx.HTTPStatusError as exc:
+			status = exc.response.status_code
+			if status not in retryable_statuses or attempt >= max_retries:
+				raise
+			last_exc = exc
+		except (httpx.TransportError, httpx.TimeoutException) as exc:
+			# 连接重置、DNS 抖动、读超时等网络层瞬时错误同样可重试。
+			if attempt >= max_retries:
+				raise
+			last_exc = exc
+
+		_sleep_backoff(attempt, backoff_base, backoff_cap)
+
+	# 理论上不可达（循环内已 return/raise），保险起见把最后一次异常抛出。
+	assert last_exc is not None
+	raise last_exc
 
 
 def get_anthropic_api_key(config: dict) -> str | None:
@@ -129,264 +181,284 @@ def resolve_anthropic_model(model: str, config: dict) -> str:
             response = httpx.get(f"{base_url.rstrip('/')}/v1/models", headers=headers, timeout=10)
             response.raise_for_status()
             model_ids = [item.get("id", "") for item in response.json().get("data", [])]
+            resolved = _match_model_name(model, model_ids) or model
+            # 只缓存"探测成功"的结果。失败（超时/DNS/5xx）不缓存，否则一次
+            # 瞬时抖动会让整个进程生命周期内都拿不到正确模型名（负缓存）。
+            _MODEL_RESOLVE_CACHE[cache_key] = resolved
+            return resolved
         except Exception:
-            _MODEL_RESOLVE_CACHE[cache_key] = model
             return model
 
-        resolved = _match_model_name(model, model_ids) or model
-        _MODEL_RESOLVE_CACHE[cache_key] = resolved
-        return resolved
+
+def _anthropic_client(config: dict):
+	"""构建 Anthropic SDK 客户端，强制注入超时与重试上限。
+
+	SDK 默认超时约 10 分钟且不自动重试，一次挂起的调用会卡住调用线程很久；
+	这里始终注入 180s 请求超时（可用 ai.request_timeout 调整）与 max_retries
+	（默认 3，走 SDK 自身的指数退避）。
+	"""
+	import anthropic
+
+	ai_cfg = config.get("ai", {}) if isinstance(config, dict) else {}
+	kwargs = build_anthropic_client_kwargs(config)
+	kwargs["timeout"] = _request_timeout(ai_cfg)
+	max_retries, _, _ = _http_retry_settings(ai_cfg)
+	kwargs["max_retries"] = max_retries
+	return anthropic.Anthropic(**kwargs)
 
 
-def call_anthropic_text(prompt: str, config: dict, max_tokens: int) -> str | None:
-    """Call Anthropic-compatible Messages API and return the first text block."""
-    ai_cfg = config.get("ai", {}) if isinstance(config, dict) else {}
-    if ai_cfg.get("provider") == "openai_compatible":
-        return call_openai_compatible_text(prompt, config, max_tokens)
+def call_anthropic_text(prompt: str, config: dict, max_tokens: int | None = None) -> str | None:
+	"""Call Anthropic-compatible Messages API and return the first text block."""
+	ai_cfg = config.get("ai", {}) if isinstance(config, dict) else {}
+	if ai_cfg.get("provider") == "openai_compatible":
+		return call_openai_compatible_text(prompt, config)
 
-    try:
-        import anthropic
-    except ImportError:
-        return None
+	try:
+		import anthropic
+	except ImportError:
+		return None
 
-    if not get_anthropic_api_key(config):
-        return None
+	if not get_anthropic_api_key(config):
+		return None
 
-    model = resolve_anthropic_model(ai_cfg.get("model", "claude-sonnet-4-6"), config)
-    client = anthropic.Anthropic(**build_anthropic_client_kwargs(config))
-    response = client.messages.create(
-        model=model,
-        max_tokens=max_tokens,
-        messages=[{"role": "user", "content": prompt}],
-    )
-    for block in response.content:
-        text = getattr(block, "text", None)
-        if text is not None:
-            return text.strip()
-    return None
+	model = resolve_anthropic_model(ai_cfg.get("model", "claude-sonnet-4-6"), config)
+	client = _anthropic_client(config)
+	required_max_tokens = int(ai_cfg.get("anthropic_max_tokens") or max_tokens or DEFAULT_ANTHROPIC_MAX_TOKENS)
+	response = client.messages.create(
+		model=model,
+		max_tokens=required_max_tokens,
+		messages=[{"role": "user", "content": prompt}],
+	)
+	for block in response.content:
+		text = getattr(block, "text", None)
+		if text is not None:
+			return text.strip()
+	return None
 
 
 def call_ai_with_tools(
-    prompt: str,
-    config: dict[str, Any],
-    tools: list[dict[str, Any]],
-    max_tokens: int = 800,
+	prompt: str,
+	config: dict[str, Any],
+	tools: list[dict[str, Any]],
+	max_tokens: int | None = None,
 ) -> dict[str, Any]:
-    """调用模型并归一化返回文本与原生工具调用。
+	"""调用模型并归一化返回文本与原生工具调用。
 
-    OpenAI 兼容接口使用 ``tools`` / ``tool_calls`` 标准字段。Anthropic
-    路径保留文本回答兼容性；其调用方可安全降级为不执行工具。
-    """
-    ai_cfg = config.get("ai", {}) if isinstance(config, dict) else {}
-    if ai_cfg.get("provider") != "openai_compatible":
-        return {"content": call_anthropic_text(prompt, config, max_tokens) or "", "tool_calls": []}
+	OpenAI 兼容接口使用 ``tools`` / ``tool_calls`` 标准字段。Anthropic
+	路径保留文本回答兼容性；其调用方可安全降级为不执行工具。
+	"""
+	ai_cfg = config.get("ai", {}) if isinstance(config, dict) else {}
+	if ai_cfg.get("provider") != "openai_compatible":
+		return {"content": call_anthropic_text(prompt, config, max_tokens) or "", "tool_calls": []}
 
-    api_key = os.environ.get("OPENAI_API_KEY") or os.environ.get("ANTHROPIC_API_KEY") or ai_cfg.get("api_key")
-    base_url = os.environ.get("OPENAI_BASE_URL") or os.environ.get("ANTHROPIC_BASE_URL") or ai_cfg.get("base_url")
-    if not api_key or not base_url:
-        return {"content": "", "tool_calls": []}
-    response = httpx.post(
-        f"{base_url.rstrip('/')}/chat/completions",
-        headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
-        json={
-            "model": ai_cfg.get("model", "deepseek-chat"),
-            "messages": [{"role": "user", "content": prompt}],
-            "tools": tools,
-            "tool_choice": "auto",
-            "temperature": 0.1,
-        },
-        timeout=_request_timeout(ai_cfg),
-    )
-    response.raise_for_status()
-    choices = response.json().get("choices", [])
-    if not choices:
-        return {"content": "", "tool_calls": []}
-    message = choices[0].get("message", {})
-    calls: list[dict[str, Any]] = []
-    for call in message.get("tool_calls", []) or []:
-        function = call.get("function", {})
-        try:
-            arguments = json.loads(function.get("arguments", "{}"))
-        except (TypeError, ValueError):
-            continue
-        if isinstance(arguments, dict) and isinstance(function.get("name"), str):
-            calls.append({"id": str(call.get("id", "")), "name": function["name"], "arguments": arguments})
-    return {"content": str(message.get("content") or ""), "tool_calls": calls}
+	api_key = os.environ.get("OPENAI_API_KEY") or os.environ.get("ANTHROPIC_API_KEY") or ai_cfg.get("api_key")
+	base_url = os.environ.get("OPENAI_BASE_URL") or os.environ.get("ANTHROPIC_BASE_URL") or ai_cfg.get("base_url")
+	if not api_key or not base_url:
+		return {"content": "", "tool_calls": []}
 
+	def _request() -> dict[str, Any]:
+		response = httpx.post(
+			f"{base_url.rstrip('/')}/chat/completions",
+			headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
+			json={
+				"model": ai_cfg.get("model", "deepseek-chat"),
+				"messages": [{"role": "user", "content": prompt}],
+				"tools": tools,
+				"tool_choice": "auto",
+				"temperature": 0.1,
+			},
+			timeout=_request_timeout(ai_cfg),
+		)
+		response.raise_for_status()
+		choices = response.json().get("choices", [])
+		if not choices:
+			return {"content": "", "tool_calls": []}
+		message = choices[0].get("message", {})
+		calls: list[dict[str, Any]] = []
+		for call in message.get("tool_calls", []) or []:
+			function = call.get("function", {})
+			try:
+				arguments = json.loads(function.get("arguments", "{}"))
+			except (TypeError, ValueError):
+				continue
+			if isinstance(arguments, dict) and isinstance(function.get("name"), str):
+				calls.append({"id": str(call.get("id", "")), "name": function["name"], "arguments": arguments})
+		return {"content": str(message.get("content") or ""), "tool_calls": calls}
 
-def stream_ai_text(prompt: str, config: dict, max_tokens: int) -> Iterator[str]:
-    """调用已配置模型并逐块返回正文。
-
-    Args:
-        prompt: 完整提示词。
-        config: BossHunter 配置。
-        max_tokens: 最大输出 token 数。
-
-    Yields:
-        模型实时返回的文本增量。
-    """
-    ai_cfg = config.get("ai", {}) if isinstance(config, dict) else {}
-    if ai_cfg.get("provider") == "openai_compatible":
-        yield from _stream_openai_compatible_text(prompt, config, max_tokens)
-        return
-
-    try:
-        import anthropic
-    except ImportError:
-        return
-    if not get_anthropic_api_key(config):
-        return
-
-    model = resolve_anthropic_model(ai_cfg.get("model", "claude-sonnet-4-6"), config)
-    client = anthropic.Anthropic(**build_anthropic_client_kwargs(config))
-    with client.messages.stream(
-        model=model,
-        max_tokens=max_tokens,
-        messages=[{"role": "user", "content": prompt}],
-    ) as stream:
-        yield from stream.text_stream
+	return _request_with_retry(_request, ai_cfg)
 
 
-def _stream_openai_compatible_text(prompt: str, config: dict, max_tokens: int) -> Iterator[str]:
-    """解析 OpenAI 兼容接口的 SSE 文本增量。"""
-    ai_cfg = config.get("ai", {}) if isinstance(config, dict) else {}
-    api_key = os.environ.get("OPENAI_API_KEY") or os.environ.get("ANTHROPIC_API_KEY") or ai_cfg.get("api_key")
-    base_url = os.environ.get("OPENAI_BASE_URL") or os.environ.get("ANTHROPIC_BASE_URL") or ai_cfg.get("base_url")
-    if not api_key or not base_url:
-        return
+def stream_ai_text(prompt: str, config: dict, max_tokens: int | None = None) -> Iterator[str]:
+	"""调用已配置模型并逐块返回正文。
 
-    url = f"{base_url.rstrip('/')}/chat/completions"
-    headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
-    model = ai_cfg.get("model", "deepseek-chat")
-    for attempt in range(1, 2):
-        emitted_chars = 0
-        reasoning_chars = 0
-        finish_reason = None
-        print(f"[AI助手] 模型流请求开始：model={model}，attempt={attempt}", flush=True)
-        with httpx.stream(
-            "POST",
-            url,
-            headers=headers,
-            json={
-                "model": model,
-                "messages": [{"role": "user", "content": prompt}],
-                "temperature": 0.2,
-                "stream": True,
-            },
-            timeout=_request_timeout(ai_cfg),
-        ) as response:
-            response.raise_for_status()
-            for line in response.iter_lines():
-                if not line.startswith("data: "):
-                    continue
-                payload = line[6:].strip()
-                if payload == "[DONE]":
-                    break
-                try:
-                    event = json.loads(payload)
-                except (ValueError, TypeError):
-                    continue
-                choices = event.get("choices", [])
-                if not choices:
-                    continue
-                choice = choices[0]
-                finish_reason = choice.get("finish_reason") or finish_reason
-                delta_payload = choice.get("delta", {})
-                reasoning = delta_payload.get("reasoning_content")
-                if isinstance(reasoning, str):
-                    reasoning_chars += len(reasoning)
-                delta = delta_payload.get("content")
-                if isinstance(delta, str) and delta:
-                    emitted_chars += len(delta)
-                    yield delta
-        print(
-            f"[AI助手] 模型流请求结束：正文={emitted_chars} 字，推理={reasoning_chars} 字，"
-            f"finish_reason={finish_reason or 'unknown'}",
-            flush=True,
-        )
-        if emitted_chars:
-            return
-        print("[AI助手] 本次流请求没有正文。", flush=True)
+	Args:
+		prompt: 完整提示词。
+		config: BossHunter 配置。
+		max_tokens: 仅为兼容旧调用保留；业务层通常不应传入。
+
+	Yields:
+		模型实时返回的文本增量。
+	"""
+	ai_cfg = config.get("ai", {}) if isinstance(config, dict) else {}
+	if ai_cfg.get("provider") == "openai_compatible":
+		yield from _stream_openai_compatible_text(prompt, config)
+		return
+
+	try:
+		import anthropic
+	except ImportError:
+		return
+	if not get_anthropic_api_key(config):
+		return
+
+	model = resolve_anthropic_model(ai_cfg.get("model", "claude-sonnet-4-6"), config)
+	client = _anthropic_client(config)
+	required_max_tokens = int(ai_cfg.get("anthropic_max_tokens") or max_tokens or DEFAULT_ANTHROPIC_MAX_TOKENS)
+	with client.messages.stream(
+		model=model,
+		max_tokens=required_max_tokens,
+		messages=[{"role": "user", "content": prompt}],
+	) as stream:
+		yield from stream.text_stream
 
 
-def call_openai_compatible_text(prompt: str, config: dict, max_tokens: int) -> str | None:
-    """Call an OpenAI-compatible chat completions endpoint.
+def _stream_openai_compatible_text(prompt: str, config: dict) -> Iterator[str]:
+	"""解析 OpenAI 兼容接口的 SSE 文本增量。
 
-    对推理类模型（如 deepseek-v4-flash，会在 reasoning_content 字段输出思维链）做兜底：
-    当响应成功但正式 content 为空时，通常是思维链挤占了 max_tokens 预算，故自动以更大
-    的 max_tokens 重试一次，避免上层把空字符串误判为"生成失败"。
-    """
-    ai_cfg = config.get("ai", {}) if isinstance(config, dict) else {}
-    api_key = os.environ.get("OPENAI_API_KEY") or os.environ.get("ANTHROPIC_API_KEY") or ai_cfg.get("api_key")
-    base_url = os.environ.get("OPENAI_BASE_URL") or os.environ.get("ANTHROPIC_BASE_URL") or ai_cfg.get("base_url")
-    model = ai_cfg.get("model", "deepseek-chat")
-    if not api_key or not base_url:
-        return None
+	在生成器内部对 5xx/429 与网络瞬时错误做指数退避重试（流在出错时已结束，
+	只能整体重发请求）。若模型返回空正文，则同样按可重试的空结果重试一次
+	（推理模型偶发空完成），全部尝试无正文时 yield 结束。
+	"""
+	ai_cfg = config.get("ai", {}) if isinstance(config, dict) else {}
+	api_key = os.environ.get("OPENAI_API_KEY") or os.environ.get("ANTHROPIC_API_KEY") or ai_cfg.get("api_key")
+	base_url = os.environ.get("OPENAI_BASE_URL") or os.environ.get("ANTHROPIC_BASE_URL") or ai_cfg.get("base_url")
+	if not api_key or not base_url:
+		return
 
-    url = f"{base_url.rstrip('/')}/chat/completions"
-    headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
-    # 推理模型思维链较长，旧的硬编码 60s 会触发 "The read operation timed out"；
-    # 默认 180s，用户可通过 ai.request_timeout 调整。
-    timeout = _request_timeout(ai_cfg)
-    # 5xx/429 与网络层瞬时错误（连接重置、读超时）自动指数退避重试。
-    max_retries, backoff_base, backoff_cap = _http_retry_settings(ai_cfg)
+	url = f"{base_url.rstrip('/')}/chat/completions"
+	headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
+	model = ai_cfg.get("model", "deepseek-chat")
+	timeout = _request_timeout(ai_cfg)
+	max_retries, backoff_base, backoff_cap = _http_retry_settings(ai_cfg)
+	# 空正文也值得重试一次：推理模型偶发"只吐 reasoning 无 content"的完成。
+	empty_retries = 1
 
-    def _request(budget: int) -> tuple[str | None, str | None]:
-        """发一次请求，返回 (content, finish_reason)；content 为 None 表示非字符串或无 choices。"""
-        response = httpx.post(
-            url,
-            headers=headers,
-            json={
-                "model": model,
-                "messages": [{"role": "user", "content": prompt}],
-                "temperature": 0.2,
-            },
-            timeout=timeout,
-        )
-        response.raise_for_status()
-        choices = response.json().get("choices", [])
-        if not choices:
-            return None, None
-        first = choices[0]
-        content = first.get("message", {}).get("content")
-        text = content.strip() if isinstance(content, str) else None
-        return text, first.get("finish_reason")
+	last_exc: Exception | None = None
+	for attempt in range(max_retries + 1):
+		print(f"[AI助手] 模型流请求开始：model={model}，attempt={attempt + 1}", flush=True)
+		emitted_chars = 0
+		reasoning_chars = 0
+		finish_reason = None
+		try:
+			with httpx.stream(
+				"POST",
+				url,
+				headers=headers,
+				json={
+					"model": model,
+					"messages": [{"role": "user", "content": prompt}],
+					"temperature": 0.2,
+					"stream": True,
+				},
+				timeout=timeout,
+			) as response:
+				response.raise_for_status()
+				for line in response.iter_lines():
+					if not line.startswith("data: "):
+						continue
+					payload = line[6:].strip()
+					if payload == "[DONE]":
+						break
+					try:
+						event = json.loads(payload)
+					except (ValueError, TypeError):
+						continue
+					choices = event.get("choices", [])
+					if not choices:
+						continue
+					choice = choices[0]
+					finish_reason = choice.get("finish_reason") or finish_reason
+					delta_payload = choice.get("delta", {})
+					reasoning = delta_payload.get("reasoning_content")
+					if isinstance(reasoning, str):
+						reasoning_chars += len(reasoning)
+					delta = delta_payload.get("content")
+					if isinstance(delta, str) and delta:
+						emitted_chars += len(delta)
+						# 必须在读取下一条网络事件前交给 SSE 层，避免“伪流式”。
+						yield delta
+		except httpx.HTTPStatusError as exc:
+			status = exc.response.status_code
+			if emitted_chars or status not in _RETRYABLE_STATUS or attempt >= max_retries:
+				raise
+			last_exc = exc
+		except (httpx.TransportError, httpx.TimeoutException) as exc:
+			# 已经向用户显示正文后不能整体重放，否则会产生重复段落。
+			if emitted_chars or attempt >= max_retries:
+				raise
+			last_exc = exc
+		else:
+			print(
+				f"[AI助手] 模型流请求结束：正文={emitted_chars} 字，推理={reasoning_chars} 字，"
+				f"finish_reason={finish_reason or 'unknown'}",
+				flush=True,
+			)
+			if emitted_chars:
+				return
+			# 空正文：仅在剩余空正文重试额度内重试。
+			if attempt >= empty_retries:
+				print("[AI助手] 流请求多次无正文，结束本次流。", flush=True)
+				return
+			last_exc = None
 
-    def _request_with_retry(budget: int) -> tuple[str | None, str | None]:
-        """带 HTTP 层重试的请求：对 5xx/429 与网络瞬时错误指数退避，其余错误直接抛出。
+		_sleep_backoff(attempt, backoff_base, backoff_cap)
 
-        非可重试状态码（如 404/401/403）保持原契约——立即向上抛 HTTPStatusError，
-        让调用方按语义处理，不被重试掩盖。
-        """
-        last_exc: Exception | None = None
-        for attempt in range(max_retries + 1):
-            try:
-                return _request(budget)
-            except httpx.HTTPStatusError as exc:
-                status = exc.response.status_code
-                if status not in _RETRYABLE_STATUS or attempt >= max_retries:
-                    raise
-                last_exc = exc
-            except (httpx.TransportError, httpx.TimeoutException) as exc:
-                # 连接重置、DNS 抖动、读超时等网络层瞬时错误同样可重试。
-                if attempt >= max_retries:
-                    raise
-                last_exc = exc
+	# 循环内已 raise/return，理论上不可达。
+	assert last_exc is not None
+	raise last_exc
 
-            # 指数退避 + jitter：min(cap, base * 2**attempt) + uniform(0, base)。
-            # jitter 避免并发重试（招呼语默认并发 4）同步打到同一个限流窗口。
-            delay = min(backoff_cap, backoff_base * (2 ** attempt)) + random.uniform(0, backoff_base)
-            time.sleep(delay)
 
-        # 理论上不可达（循环内已 return/raise），保险起见把最后一次异常抛出。
-        assert last_exc is not None
-        raise last_exc
+def call_openai_compatible_text(prompt: str, config: dict, max_tokens: int | None = None) -> str | None:
+	"""调用 OpenAI-compatible Chat Completions，且不设置输出 token 上限。
 
-    content, _ = _request_with_retry(max_tokens)
+	``max_tokens`` 仅为兼容旧调用保留，不会写入请求体。
+	"""
+	ai_cfg = config.get("ai", {}) if isinstance(config, dict) else {}
+	api_key = os.environ.get("OPENAI_API_KEY") or os.environ.get("ANTHROPIC_API_KEY") or ai_cfg.get("api_key")
+	base_url = os.environ.get("OPENAI_BASE_URL") or os.environ.get("ANTHROPIC_BASE_URL") or ai_cfg.get("base_url")
+	model = ai_cfg.get("model", "deepseek-chat")
+	if not api_key or not base_url:
+		return None
 
-    # content 为空但响应成功：常见于推理模型思维链挤占预算（finish_reason 为 "length"），
-    # 也可能是兼容接口偶发返回空 content。给予 4 倍 max_tokens 重试一次，仍为空才放弃。
-    return content
+	url = f"{base_url.rstrip('/')}/chat/completions"
+	headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
+	# 推理模型思维链较长，旧的硬编码 60s 会触发 "The read operation timed out"；
+	# 默认 180s，用户可通过 ai.request_timeout 调整。
+	timeout = _request_timeout(ai_cfg)
+
+	def _request() -> tuple[str | None, str | None]:
+		"""发一次请求，返回 (content, finish_reason)；content 为 None 表示非字符串或无 choices。"""
+		response = httpx.post(
+			url,
+			headers=headers,
+			json={
+				"model": model,
+				"messages": [{"role": "user", "content": prompt}],
+				"temperature": 0.2,
+			},
+			timeout=timeout,
+		)
+		response.raise_for_status()
+		choices = response.json().get("choices", [])
+		if not choices:
+			return None, None
+		first = choices[0]
+		content = first.get("message", {}).get("content")
+		text = content.strip() if isinstance(content, str) else None
+		return text, first.get("finish_reason")
+
+	content, _ = _request_with_retry(_request, ai_cfg)
+	return content
 
 
 def _match_model_name(requested: str, available: list[str]) -> str | None:

@@ -1,0 +1,102 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "BossHunter AI 问答流程",
+    "locale": "zh-CN",
+    "animation": "none",
+    "quality_profile": "showcase",
+    "output": "问答流程图.html",
+    "views": [
+      {
+        "id": "normal_answer",
+        "label": "正常问答",
+        "focus": ["user", "chat_ui", "sse_api", "context_goal", "ambiguity", "plan_route", "execute", "answer", "render"],
+        "note": "从用户输入、规划执行到 SSE 流式渲染的完整主链路。"
+      },
+      {
+        "id": "human_gate",
+        "label": "人工确认",
+        "focus": ["plan_route", "execute", "approval", "answer"],
+        "note": "敏感操作先中断等待，确认、编辑或取消后再恢复 LangGraph。"
+      },
+      {
+        "id": "stream_control",
+        "label": "暂停与打断",
+        "focus": ["chat_ui", "stream_control", "sse_api", "answer", "render"],
+        "note": "暂停只阻断输出；打断会取消 Run，并保存已经生成的部分回答。"
+      }
+    ]
+  },
+  "lanes": [
+    { "id": "interaction", "label": "用户与前端" },
+    { "id": "transport", "label": "Web API 与流式传输" },
+    { "id": "agent", "label": "LangGraph Agent" },
+    { "id": "safety", "label": "人工确认与控制", "variant": "exception" }
+  ],
+  "phases": [
+    { "id": "intake", "label": "接收与理解", "fromCol": 0, "toCol": 1 },
+    { "id": "reasoning", "label": "规划与执行", "fromCol": 2, "toCol": 3, "variant": "emphasis" },
+    { "id": "delivery", "label": "整理与呈现", "fromCol": 4, "toCol": 5, "variant": "dashed" }
+  ],
+  "groups": [
+    { "id": "agent_reasoning", "label": "可审计执行链", "lane": "agent", "fromCol": 1, "toCol": 4, "variant": "emphasis" },
+    { "id": "safety_gate", "label": "需要用户决定的分支", "lane": "safety", "fromCol": 2, "toCol": 4, "variant": "security" }
+  ],
+  "mainPath": ["user", "chat_ui", "sse_api", "context_goal", "ambiguity", "plan_route", "execute", "answer", "render"],
+  "semanticChecks": {
+    "allowedRoots": ["user"],
+    "allowedTerminals": ["render", "clarification"],
+    "requiredPaths": [
+      { "from": "user", "to": "render" },
+      { "from": "approval", "to": "execute" }
+    ]
+  },
+  "nodes": [
+    { "id": "user", "lane": "interaction", "col": 0, "type": "external", "label": "用户", "sublabel": "提问或补充信息", "width": 138 },
+    { "id": "chat_ui", "lane": "interaction", "col": 1, "type": "frontend", "label": "AI 助手页面", "sublabel": "创建占位消息", "width": 146 },
+    { "id": "render", "lane": "interaction", "col": 5, "type": "frontend", "label": "回答呈现", "sublabel": "正文、引用与执行记录", "width": 154 },
+    { "id": "sse_api", "lane": "transport", "col": 1, "type": "messagebus", "label": "SSE 流式接口", "sublabel": "start / delta / trace / done", "tag": "POST messages/stream", "width": 154 },
+    { "id": "answer", "lane": "transport", "col": 4, "type": "backend", "label": "结果与持久化", "sublabel": "消息、轨迹、引用、状态", "width": 154 },
+    { "id": "context_goal", "lane": "agent", "col": 1, "type": "backend", "label": "上下文与目标", "sublabel": "会话、记忆、岗位上下文", "width": 154 },
+    { "id": "ambiguity", "lane": "agent", "col": 2, "type": "backend", "label": "意图与歧义检查", "sublabel": "决定直接答复或继续规划", "width": 160 },
+    { "id": "plan_route", "lane": "agent", "col": 3, "type": "backend", "label": "规划与能力路由", "sublabel": "DAG、ReAct 或直接执行", "width": 160 },
+    { "id": "execute", "lane": "agent", "col": 4, "type": "cloud", "label": "执行与证据收集", "sublabel": "工具调用、SQL、检索与模型", "width": 166 },
+    { "id": "clarification", "lane": "safety", "col": 2, "type": "messagebus", "label": "请求澄清", "sublabel": "保存待补充意图", "width": 146 },
+    { "id": "approval", "lane": "safety", "col": 3, "type": "security", "label": "人工确认", "sublabel": "确认、编辑或取消", "tag": "LangGraph interrupt", "width": 150 },
+    { "id": "stream_control", "lane": "safety", "col": 0, "type": "security", "label": "暂停或打断", "sublabel": "流门控、取消 Run、保留部分回答", "width": 172 }
+  ],
+  "edges": [
+    { "id": "user_to_chat", "from": "user", "to": "chat_ui", "label": "提交问题", "role": "main", "variant": "default" },
+    { "id": "chat_to_sse", "from": "chat_ui", "to": "sse_api", "label": "POST + AbortSignal", "role": "main", "variant": "emphasis" },
+    { "id": "sse_to_context", "from": "sse_api", "to": "context_goal", "label": "创建 Run 并加会话锁", "role": "main", "variant": "default" },
+    { "id": "context_to_ambiguity", "from": "context_goal", "to": "ambiguity", "role": "main", "variant": "default" },
+    { "id": "ambiguity_to_plan", "from": "ambiguity", "to": "plan_route", "label": "信息充分", "role": "main", "variant": "emphasis" },
+    { "id": "plan_to_execute", "from": "plan_route", "to": "execute", "label": "只读或无副作用", "role": "main", "variant": "default" },
+    { "id": "execute_to_answer", "from": "execute", "to": "answer", "label": "结果与执行证据", "role": "main", "variant": "emphasis" },
+    { "id": "answer_to_render", "from": "answer", "to": "render", "label": "SSE 增量与最终元数据", "role": "main", "variant": "emphasis" },
+    { "id": "ambiguity_to_clarify", "from": "ambiguity", "to": "clarification", "label": "缺少必要信息", "role": "branch", "variant": "dashed" },
+    { "id": "plan_to_approval", "from": "plan_route", "to": "approval", "label": "敏感操作或 SQL", "role": "branch", "variant": "security" },
+    { "id": "approval_to_execute", "from": "approval", "to": "execute", "label": "确认后 Command(resume)", "role": "return", "variant": "security" },
+    { "id": "chat_to_control", "from": "chat_ui", "to": "stream_control", "label": "暂停、继续或停止", "role": "branch", "variant": "security" },
+    { "id": "control_to_sse", "from": "stream_control", "to": "sse_api", "label": "暂停/继续：门控输出", "role": "return", "variant": "dashed" }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "流式反馈",
+      "items": [
+        "delta 更新回答正文，trace 更新折叠的执行过程",
+        "done 携带持久化消息 ID、引用、计划与最终状态"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "安全边界",
+      "items": [
+        "所有敏感操作通过 LangGraph interrupt 等待人工确认",
+        "暂停不停止生成；打断请求在下一个安全检查点取消"
+      ]
+    }
+  ]
+}

@@ -5,7 +5,7 @@ import { HTMLAttributes } from 'react'
 /* 统一的 6 个语义角色：所有 status 都映射到其中之一，避免彩虹色板。
    文字色均为 700 级，确保在浅色底上满足小号文字 4.5:1 对比。 */
 const badgeVariants = cva(
-	'inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-medium border',
+	'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium border',
 	{
 		variants: {
 			variant: {

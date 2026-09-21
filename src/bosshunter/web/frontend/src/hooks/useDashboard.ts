@@ -119,7 +119,13 @@ const emptyWorkbench: WorkbenchData = {
 
 type DashboardDataScope = 'workbench' | 'jobs' | 'monitor' | 'all'
 
-export function useDashboard(scope: DashboardDataScope = 'all', jobsStatus = 'all') {
+export function useDashboard(
+	scope: DashboardDataScope = 'all',
+	jobsStatus = 'all',
+	jobsCompany = '',
+	jobsPage = 1,
+	jobsPageSize = 50,
+) {
   const [workbench, setWorkbench] = useState<WorkbenchData>(emptyWorkbench)
   const [jobs, setJobs] = useState<Job[]>([])
   const [jobsTotal, setJobsTotal] = useState(0)
@@ -136,10 +142,15 @@ export function useDashboard(scope: DashboardDataScope = 'all', jobsStatus = 'al
     try {
       const needsWorkbench = scope === 'all' || scope === 'workbench' || scope === 'jobs'
       const needsJobs = scope === 'all' || scope === 'jobs'
-      const needsHistory = scope === 'all' || scope === 'monitor'
+      const needsHistory = scope === 'all' || scope === 'workbench' || scope === 'monitor'
       const fetchOptions = { cache: 'no-store' as const }
-      // 状态筛选交由后端按页返回；切换筛选会带 ?status= 重新请求。
-      const jobsQuery = jobsStatus && jobsStatus !== 'all' ? `?status=${encodeURIComponent(jobsStatus)}` : ''
+      // 状态与公司搜索交由后端处理，确保搜索覆盖整个岗位池而非仅当前页。
+      const jobsParams = new URLSearchParams()
+      if (jobsStatus && jobsStatus !== 'all') jobsParams.set('status', jobsStatus)
+      if (jobsCompany.trim()) jobsParams.set('company', jobsCompany.trim())
+	  jobsParams.set('limit', String(jobsPageSize))
+	  jobsParams.set('offset', String((jobsPage - 1) * jobsPageSize))
+	  const jobsQuery = `?${jobsParams.toString()}`
       const [workbenchRes, jobsRes, historyRes] = await Promise.all([
         needsWorkbench ? fetch('/api/workbench', fetchOptions) : Promise.resolve(null),
         needsJobs ? fetch(`/api/jobs${jobsQuery}`, fetchOptions) : Promise.resolve(null),
@@ -175,17 +186,21 @@ export function useDashboard(scope: DashboardDataScope = 'all', jobsStatus = 'al
       setLoading(false)
       if (showRefreshing) setRefreshing(false)
     }
-  }, [scope, jobsStatus])
+	}, [scope, jobsStatus, jobsCompany, jobsPage, jobsPageSize])
 
-  const startTask = async (mode: 'full' | 'collect' | 'score' | 'reenrich' | 'monitor' | 'deliver') => {
+  const startTask = async (
+    mode: 'full' | 'collect' | 'score' | 'reenrich' | 'monitor' | 'deliver',
+    options: { keywords?: string[]; cities?: string[]; limit?: number } = {},
+  ) => {
     const res = await fetch('/api/workbench/task', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ mode }),
+      body: JSON.stringify({ mode, ...options }),
     })
     const data = await res.json().catch(() => ({}))
     if (!res.ok) {
-      throw new Error(data.error || '启动失败')
+      const details = Array.isArray(data.messages) ? data.messages.join('；') : ''
+      throw new Error(details || data.error || '启动失败')
     }
     await fetchAll()
     return data as WorkbenchTask

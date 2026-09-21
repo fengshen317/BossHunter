@@ -86,9 +86,11 @@ class AnthropicCredentialTests(unittest.TestCase):
         ):
             credentials.resolve_anthropic_model("claude-sonnet-4-6", {"ai": {}})
 
+        # 探测失败不会写入缓存（负缓存已移除），因此缓存保持为空，
+        # 原始 token 也绝不会出现在任何缓存键里。
         cache_keys = list(credentials._MODEL_RESOLVE_CACHE)
-        self.assertEqual(len(cache_keys), 1)
-        self.assertNotIn("very-secret-token", cache_keys[0])
+        self.assertEqual(cache_keys, [])
+        self.assertNotIn("very-secret-token", cache_keys)
 
     def test_resolves_compatible_api_model_name_from_available_models(self):
         class ModelsResponse:
@@ -115,6 +117,8 @@ class AnthropicCredentialTests(unittest.TestCase):
         self.assertEqual(result, "Claude Sonnet 4.6")
 
     def test_caches_compatible_api_model_resolution_failures(self):
+        # 失败不应被缓存（负缓存）：一次瞬时网络抖动不应让进程生命周期内
+        # 都拿不到正确模型名，因此第二次调用会重新探测 /v1/models。
         with (
             patch.dict(
                 "os.environ",
@@ -131,7 +135,8 @@ class AnthropicCredentialTests(unittest.TestCase):
 
         self.assertEqual(first, "claude-sonnet-4-6")
         self.assertEqual(second, "claude-sonnet-4-6")
-        self.assertEqual(models_get.call_count, 1)
+        # 两次调用都触发了探测（失败不缓存）。
+        self.assertEqual(models_get.call_count, 2)
 
     def test_compatible_api_model_cache_is_separated_by_auth_token(self):
         class ModelsResponse:
@@ -196,6 +201,31 @@ class AnthropicCredentialTests(unittest.TestCase):
         self.assertEqual(calls["message"]["model"], "Claude Sonnet 4.6")
         self.assertEqual(calls["message"]["max_tokens"], 123)
 
+    def test_anthropic_uses_protocol_default_when_business_limit_is_omitted(self):
+        """业务层不传额度时，仅注入 Anthropic API 强制要求的统一默认值。"""
+        calls = {}
+
+        class Client:
+            def __init__(self, **kwargs):
+                self.messages = self
+
+            def create(self, **kwargs):
+                calls["message"] = kwargs
+                return SimpleNamespace(content=[SimpleNamespace(text="ok")])
+
+        with (
+            patch.dict("os.environ", {}, clear=True),
+            patch.object(credentials, "resolve_anthropic_model", return_value="claude-sonnet-4-6"),
+            patch.dict("sys.modules", {"anthropic": SimpleNamespace(Anthropic=Client)}),
+        ):
+            result = credentials.call_anthropic_text(
+                "prompt",
+                {"ai": {"model": "claude-sonnet-4-6", "api_key": "key"}},
+            )
+
+        self.assertEqual(result, "ok")
+        self.assertEqual(calls["message"]["max_tokens"], credentials.DEFAULT_ANTHROPIC_MAX_TOKENS)
+
     def test_openai_compatible_404_is_not_silently_swallowed(self):
         request = httpx.Request("POST", "https://api.example.com/chat/completions")
         response = httpx.Response(404, request=request)
@@ -238,6 +268,9 @@ class AnthropicCredentialTests(unittest.TestCase):
 
         # 未配置 request_timeout 时应回退到 DEFAULT_REQUEST_TIMEOUT（旧的 60s 太短）。
         self.assertEqual(posted.call_args.kwargs["timeout"], credentials.DEFAULT_REQUEST_TIMEOUT)
+        request_body = posted.call_args.kwargs["json"]
+        self.assertNotIn("max_tokens", request_body)
+        self.assertNotIn("max_completion_tokens", request_body)
 
     def test_openai_compatible_passes_configured_timeout_to_httpx(self):
         class OkResponse:
@@ -278,6 +311,71 @@ class AnthropicCredentialTests(unittest.TestCase):
             )
 
         self.assertEqual(posted.call_args.kwargs["timeout"], credentials.DEFAULT_REQUEST_TIMEOUT)
+
+    def test_openai_compatible_stream_yields_before_response_finishes(self):
+        """兼容接口收到正文增量后必须立即向上游转发，不能等整段结束。"""
+        progress = []
+
+        class StreamResponse:
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *args):
+                return False
+
+            def raise_for_status(self):
+                pass
+
+            def iter_lines(self):
+                progress.append("first")
+                yield 'data: {"choices":[{"delta":{"content":"你"},"finish_reason":null}]}'
+                progress.append("second")
+                yield 'data: {"choices":[{"delta":{"content":"好"},"finish_reason":null}]}'
+                yield "data: [DONE]"
+
+        with patch.dict("os.environ", {}, clear=True), patch("httpx.stream", return_value=StreamResponse()):
+            stream = credentials.stream_ai_text(
+                "prompt",
+                {"ai": {"provider": "openai_compatible", "api_key": "secret", "base_url": "https://api.example.com"}},
+            )
+
+            self.assertEqual(next(stream), "你")
+            self.assertEqual(progress, ["first"])
+            self.assertEqual("".join(stream), "好")
+
+    def test_openai_compatible_stream_does_not_retry_after_partial_output(self):
+        """已向用户输出部分正文后发生断流，不能整体重试并重复答案。"""
+        calls = 0
+
+        class StreamResponse:
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *args):
+                return False
+
+            def raise_for_status(self):
+                pass
+
+            def iter_lines(self):
+                yield 'data: {"choices":[{"delta":{"content":"部分"},"finish_reason":null}]}'
+                raise httpx.ReadError("connection lost")
+
+        def open_stream(*args, **kwargs):
+            nonlocal calls
+            calls += 1
+            return StreamResponse()
+
+        with patch.dict("os.environ", {}, clear=True), patch("httpx.stream", side_effect=open_stream):
+            stream = credentials.stream_ai_text(
+                "prompt",
+                {"ai": {"provider": "openai_compatible", "api_key": "secret", "base_url": "https://api.example.com"}},
+            )
+
+            self.assertEqual(next(stream), "部分")
+            with self.assertRaises(httpx.ReadError):
+                next(stream)
+            self.assertEqual(calls, 1)
 
     def test_build_anthropic_client_kwargs_includes_timeout_when_configured(self):
         with patch.dict("os.environ", {}, clear=True):

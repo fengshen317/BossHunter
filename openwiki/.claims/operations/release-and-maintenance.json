@@ -1,0 +1,200 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:9d5f2fea1f0ce93dabb04bd63857adbf12508681b42edea35b4ef2f9a2009760",
+  "claims": [
+    {
+      "id": "claim_4badf2a2035f4435bde23c495dc66a6b",
+      "statement": "A change is complete only when it satisfies the Definition of Done in the technical manual: acceptance criteria pass with no out-of-scope additions, focused and full tests pass with ruff check, any frontend change passes npm run build with dist/ synced, human confirmation/throttle/privacy/task mutual exclusion are not weakened, new config/commands/behavior are documented, logs and API responses do not leak sensitive data, and git diff is reviewed with no unrelated files, runtime data, or keys.",
+      "evidence": [
+        {
+          "resource": "repo://docs/%E6%8A%80%E6%9C%AF%E6%89%8B%E5%86%8C.md#L549-L559",
+          "version": "repo-lines-v1:sha256:acf02d3ad703160539bf751472062131a7fd10183861f481e248144936eb6232:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNmNGFmMTYxMzRmMTZmYTdlNDdkMDhiMjI1NWNjYzMwYThlOGM5ODU0NDkxMGRmY2M5YjgxN2JkOWI3YjdiZDMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVmM2U0ZjE1MDU4ODYwYTZiY2U4Mzg2N2I1OTAzYzMyOGEzMTZlZjdmNjFkYjdjNjJhYmYyYjRlNTg4MGU5MGEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg5NWY5MjIzODZmZTA5NzU0Y2FlNzQ2ZjAyZmQ1ZWQ5MzQxNDA1N2IyOTQ4MjAwZGE0NGQwMjRkY2UxZjIzMjIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdkOTViOGJlODI0MzYxYTAzZDQxMjNlMjYzN2YxODUwMmU3MjcyMGExMTFiZDg2MjljM2FjYzY2MTE1MjVjZGUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_4f1d2a95d401418ba68664b8baf277dd",
+      "statement": "Frontend npm run build runs `tsc && vite build` in one command, and dist/ is a committed release artifact: .gitignore re-includes src/bosshunter/web/frontend/dist/ after excluding dist/ generally, so any frontend source change must rebuild and commit the updated dist/ instead of leaving it untracked.",
+      "evidence": [
+        {
+          "resource": "repo://.gitignore#L6-L7",
+          "version": "repo-lines-v1:sha256:61aac3c4d720c39b9514e8e236aa5da9d900a2e324864000c6529ea56923f98d:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZWQxOWQzYzljOGE1ZTM0ZDAxNzllMGIxYTljMjkwN2QyZTY1NzczODczM2U0YTQzMmE4Y2Y4MWM3NmNlNTZmMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZWVlNzYyODdkY2E3YWY5MzRiZGZiMjBhYzVjN2Q0YjAwM2RlYWNhMzI2N2NmMGZlOTgyMDFlZmQwNzAxODkwZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODdmNjVhN2JlNDU0MjQ4NDE2NmEzMGMzYjcwNWIyZDhkNzMwYzk1YWY4NTI4NjhiNGY2NWI3ZmNmNGY3MjE0MyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiY2I5OTJiZGY4ZTdiYzQ3ZGYxOGEyM2VmZjFlMWQ5ZTY3ODRmM2IwYzM1ZDIyYmU2NmY5MTVjYzg0OWQxMjkzMSJ9"
+        },
+        {
+          "resource": "repo://AGENTS.md#L37-L37",
+          "version": "repo-lines-v1:sha256:7518b033694417f4e65118aa086dedb8460c3ccd5bb22f6633e1a2cf918a1bf1:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzUxOGIwMzM2OTQ0MTdmNGU2NTExOGFhMDg2ZGVkYjg0NjBjM2NjZDViYjIyZjY2MzNlMWEyY2Y5MThhMWJmMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNzUxOGIwMzM2OTQ0MTdmNGU2NTExOGFhMDg2ZGVkYjg0NjBjM2NjZDViYjIyZjY2MzNlMWEyY2Y5MThhMWJmMSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiN2Q5YzIxZjE3ZjFmYWRhMjcxMmE0ODdmMjkxN2ZiNTIzYTRhODVmYTI5OTkyZWJhZTlmNDQ5OWIxNThjMWMzYSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTMwM2VlYzhlNjU1MjZiMzI1MWUyNDRmNjljMGIwOTMwY2ZmNTFiZDhiODRkMzZhMzk1NzJlZDg3YjIyOWZkOSJ9"
+        },
+        {
+          "resource": "repo://docs/%E6%8A%80%E6%9C%AF%E6%89%8B%E5%86%8C.md#L499-L499",
+          "version": "repo-lines-v1:sha256:7ae09ef277a5642269505ad65db4ec94c690b3441bc574858b97c798052cf489:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiN2FlMDllZjI3N2E1NjQyMjY5NTA1YWQ2NWRiNGVjOTRjNjkwYjM0NDFiYzU3NDg1OGI5N2M3OTgwNTJjZjQ4OSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiN2FlMDllZjI3N2E1NjQyMjY5NTA1YWQ2NWRiNGVjOTRjNjkwYjM0NDFiYzU3NDg1OGI5N2M3OTgwNTJjZjQ4OSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzRjZDk4Y2Q2MGEwYjljOGNjNTFhNWY5MmY0OGJkOGE1NjJiYWU3ODQ2OTY1N2JhZjVjNmI0NzFlZDVkMDk1MiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzNiZjE0OThjMDlhMmZkZTYzYmZiYzliYzQ5ZDk4N2M4NjY5YTUwZWVjNTUxYzU0MmE1Zjg3YmZlZDUyYzBhNiJ9"
+        },
+        {
+          "resource": "repo://src/bosshunter/web/frontend/package.json#L7-L9",
+          "version": "repo-lines-v1:sha256:a717dc1b2209a1dba72cb460f153ac11b79f5c2c372ebfe4d296b0e404fe1fa1:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiN2JhNDM0ODUzMDIyZTBkZWRlMDhjYzRkYTVmNjZlNzNlZTJlNjg2NjM3ZmY0MzJlZGYyZjAyOGNmOWNkNDkyMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiM2FkYjc5Zjk3ZTU2Y2M3MTA4MDg2ZWYwY2Y1Y2MzOTNmNWRkNzBmYWI4Njg5ODE5ZDc1ZDNlMjE4ZWI1ODhmYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZWIwN2IwOWU2MjZkZDMyOWE1NTJiNWQ4MTdkMGY5YzBlNmZlNzEwZWEwMDQ1MWJjNjAyZjk1MTk2YTQ0ZDFlZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTk1MTg2ZTM5MmRhMzkxMGY1OTJkNTkzYjRlZDczMWQ5ZmZiYzcxOGE3YmU1ZDU1OWY2ZmMwNjI0YzJjYWI4OCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_305b145ee41c4843b30ceb6cd57a0274",
+      "statement": "The wheel must ship the browser runtime files src/bosshunter/browser/runtime/*.mjs and src/bosshunter/browser/runtime/site-patterns/*.md, declared as hatch build artifacts in pyproject.toml, and the release review verifies the wheel contains browser/runtime/*.mjs and site-patterns/*.md.",
+      "evidence": [
+        {
+          "resource": "repo://docs/%E6%8A%80%E6%9C%AF%E6%89%8B%E5%86%8C.md#L622-L622",
+          "version": "repo-lines-v1:sha256:61e9e9abdb372bfb69d4609c37fe738eda1f792a7624f0483e20724a44722726:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjFlOWU5YWJkYjM3MmJmYjY5ZDQ2MDljMzdmZTczOGVkYTFmNzkyYTc2MjRmMDQ4M2UyMDcyNGE0NDcyMjcyNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNjFlOWU5YWJkYjM3MmJmYjY5ZDQ2MDljMzdmZTczOGVkYTFmNzkyYTc2MjRmMDQ4M2UyMDcyNGE0NDcyMjcyNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNmQ2M2RlMWE5YzhlZjgwZmEyN2YyYTkwYWJmZTUxMjc1NTk0ZTE3YmFkMzg2MWI4MmQ0MGNkMzkyYjQ4MDVhYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZjBhY2MzOTViNDE0NmQyYTkxNmE1OGJkOTliNDI5ZTdlOGQwMjZjZjY3YjUwYjUwZDIyNGE5NWY0YjI0YjI5NiJ9"
+        },
+        {
+          "resource": "repo://pyproject.toml#L39-L44",
+          "version": "repo-lines-v1:sha256:8e1af00abbecb0a604b5a8cd5490ed93d0750eed085dc17098b7284c05d1e76f:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDNjMGU3MjM4ZjBiMThjYmU2YTQ2NjY0MWZkY2Q1OTQ4NTI0NDhkZGY3ZmY4OGQwYTlmNDk1MGVhZGVjMzkzZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjk0MTZlMDlmNzhiYTMxNmMwMzI1NjgyMTNiODU1ZWU3NTZlNDE1NjVkOTE4ZjA5NTE5YzgxZmQ2MjBmNDA2MCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjgyZDk3YWJlYmMxMDFmZDY3NzRkYjIxZDRmZjhjNTUwNGVjMjBiOGViMGE3NzM0YzA2NDcyZDEyYTlhNzM3OCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTcwMjE1YTM3ODk4YTYzYTI1OWZhZTA1NDY5NjIzMDk4MDU1YmE2NjM5MTkzNDg2YzNmNzY4NzRhMTIyZDIxYyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_66a574b6a5ed44bb94933027d9ed7e8c",
+      "statement": "The release manual review requires config.example.yaml to contain no real API key, personal resume, or internal domain, requires data/, config.yaml, resumes, and browser session data to be absent from the commit, requires README and the operation/technical manuals to match actual commands, and requires dashboard changes to attach screenshots or recordings with the PR listing verification commands; .gitignore enforces the data exclusions by ignoring config.yaml, .env, data/, and *.db.",
+      "evidence": [
+        {
+          "resource": "repo://.gitignore#L22-L32",
+          "version": "repo-lines-v1:sha256:85c0dd560066cdc025fddbad73f7727ab9f9628da666c03af1e28613078e040b:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk3NTE4YTQzZDMyMDIxMGRkNDhhOTBhMmI1ZWMzN2YzNmVjNzkxMDdlZWNjODZiMTMxMmY4OGZjYmFjMjU2YjEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBlMjJiZGU5MGM5YzhhMGZlM2NmY2E0NWYxMzA5N2RkNDk4ODI0Y2Q2ODBlYzQ4YWUyZjg5MTAzYWQxNTE0YzEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRjMDg4NTBjNTAwNWQ5OTFmZjRjMGVhZTFlNWQ3N2RkYWM0NTM2MjJmMmRkNDhmN2FkZGQwODQ2MTllOTU0YmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjEzNzk0NmI0Y2Y3M2M5ZTJhNzg5Y2Y0MDFjMjllOGE3ZTBjMmJhMzJmNWVkOGZlMDczOTA5YjM0YmYzNWEzNGIifQ"
+        },
+        {
+          "resource": "repo://docs/%E6%8A%80%E6%9C%AF%E6%89%8B%E5%86%8C.md#L622-L627",
+          "version": "repo-lines-v1:sha256:2ddae778b392a5e39dc82e99441759ae77614bf81f933ba8ccf672e1c40f7c8a:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjFlOWU5YWJkYjM3MmJmYjY5ZDQ2MDljMzdmZTczOGVkYTFmNzkyYTc2MjRmMDQ4M2UyMDcyNGE0NDcyMjcyNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOGExOGJkNThlZTVmYzBkZDgxYTdiMjJhMGE4NzdkNDAwOGRhYTU0ODNhZWY2YTdkZTZmMzVkZDIzNWE1OTgyNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNmQ2M2RlMWE5YzhlZjgwZmEyN2YyYTkwYWJmZTUxMjc1NTk0ZTE3YmFkMzg2MWI4MmQ0MGNkMzkyYjQ4MDVhYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzYxNzdjMWE4MzE2YTcyYWJkYzhkOGNkODI5OGM3MGU4MGQ2Yzc5OWYyOTVmNGMzZjI4YjAxMDQ4Nzc1MjJmZiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_776af581e1834375aff08e9555e103f7",
+      "statement": "The project license is LicenseRef-BossHunter-NonCommercial as declared in pyproject.toml and implemented by the BossHunter Non-Commercial License file, not MIT; a stray README reference still says MIT, so the release check requires writing the license as LicenseRef-BossHunter-NonCommercial and never reproducing the MIT wording.",
+      "evidence": [
+        {
+          "resource": "repo://AGENTS.md#L4-L4",
+          "version": "repo-lines-v1:sha256:942f06a6ccf3918b5288485f33d40e7f22f2e011c5569e6420ecd06c86305069:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOTQyZjA2YTZjY2YzOTE4YjUyODg0ODVmMzNkNDBlN2YyMmYyZTAxMWM1NTY5ZTY0MjBlY2QwNmM4NjMwNTA2OSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTQyZjA2YTZjY2YzOTE4YjUyODg0ODVmMzNkNDBlN2YyMmYyZTAxMWM1NTY5ZTY0MjBlY2QwNmM4NjMwNTA2OSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDZlNDkzYTJhMDNlYzVhYjgwZThkZmZiYzVmYjYzM2ZmZmEyYzgzZGFiZGNiYzI5YzI1NTI2OTAxYTZmNmU2NiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMmQ1ZDk4ZDMyNTIxNzM5OGEyYzA4Mzg5YzFlMjg1MDQyMTA2MDQ2OGUzYzI5ODdhODRiMDFjNDM0ZWU2ZDcyZiJ9"
+        },
+        {
+          "resource": "repo://LICENSE#L1-L5",
+          "version": "repo-lines-v1:sha256:975f7f233ed2d5db1138ec24b41f906e1f8497061eda5109053916415ee7370f:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOWU5Y2RlMjkyMDcxNTNkZjcxNDU1N2Y2OGI4ODc2NTdjOGZmOTI1NDRhMWRmODI1ZGNmNTdkZjM5OWMyODcyNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTYzZTE0NmFiN2NlN2JhNTc1YWExNWFhZmRkYjY4NzEyYjU2ODk1NDA0MmUxYjkxNzVmYmY2M2QwNzUxMjNmOCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMjAxMjA2NGJiMDk2MDhkZjU4M2JiZmQ2NzE4NTU3OTViNDQxNDBhOGEyMmNlYzI0MDIxOTk4MDQyNWUxMjMyZSJ9"
+        },
+        {
+          "resource": "repo://README.md#L376-L376",
+          "version": "repo-lines-v1:sha256:18d95536d061ca239ad8b4324081893e67fb1c3e9e8dfb464d7610678c1d4444:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMThkOTU1MzZkMDYxY2EyMzlhZDhiNDMyNDA4MTg5M2U2N2ZiMWMzZTllOGRmYjQ2NGQ3NjEwNjc4YzFkNDQ0NCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMThkOTU1MzZkMDYxY2EyMzlhZDhiNDMyNDA4MTg5M2U2N2ZiMWMzZTllOGRmYjQ2NGQ3NjEwNjc4YzFkNDQ0NCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDMwNDU1OGQ4YzMzZThjYWNlNTQxMDAwM2EwZjMxMTdkODQyMmE3ZDBhOWQ2OGFkZDY0OTBmMGM4ZWVkMWNhZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        },
+        {
+          "resource": "repo://pyproject.toml#L10-L10",
+          "version": "repo-lines-v1:sha256:e96746eacfb3a62708fd8e224dd49fdb36e9d661852b71c61122afd49565fa27:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZTk2NzQ2ZWFjZmIzYTYyNzA4ZmQ4ZTIyNGRkNDlmZGIzNmU5ZDY2MTg1MmI3MWM2MTEyMmFmZDQ5NTY1ZmEyNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTk2NzQ2ZWFjZmIzYTYyNzA4ZmQ4ZTIyNGRkNDlmZGIzNmU5ZDY2MTg1MmI3MWM2MTEyMmFmZDQ5NTY1ZmEyNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTk3NWRjZGVhYWY1NGZkMDAxMTliYjc1MjYwY2JkZGM1ZGMyODJiNmM2NDkwNmUzNDQyNGRhNjZkMTg4NzBmYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZWVmMGU1MjljYTBmZmJhMWE3ZThhNWI5Zjk0YTAyZTQ5ZDcyMDBkZWQwYjMzNDVlODBjNGIzYjliNWYyNmFmOCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_182a310976ac49388b7a1a7b5fb19ff3",
+      "statement": "Python formatting is pinned by pyproject.toml to line-length 120 with ruff format indent-style set to tab, so Python source uses tabs rather than four spaces, and formatting must be applied only to intentionally changed files.",
+      "evidence": [
+        {
+          "resource": "repo://AGENTS.md#L41-L41",
+          "version": "repo-lines-v1:sha256:703301736ca70b209e6969205e2dcf8369bb603275ca9579f4f5423e7f18d932:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzAzMzAxNzM2Y2E3MGIyMDllNjk2OTIwNWUyZGNmODM2OWJiNjAzMjc1Y2E5NTc5ZjRmNTQyM2U3ZjE4ZDkzMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNzAzMzAxNzM2Y2E3MGIyMDllNjk2OTIwNWUyZGNmODM2OWJiNjAzMjc1Y2E5NTc5ZjRmNTQyM2U3ZjE4ZDkzMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTMwM2VlYzhlNjU1MjZiMzI1MWUyNDRmNjljMGIwOTMwY2ZmNTFiZDhiODRkMzZhMzk1NzJlZDg3YjIyOWZkOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzgzMzJhOGM0OTEwZTIzZjYyYmZlZjZlYzdhZmMzOTllOTc3MmNkYTVkMjVhMjUzYjg5NGMwYjY0NTMwYjMxMiJ9"
+        },
+        {
+          "resource": "repo://docs/%E6%8A%80%E6%9C%AF%E6%89%8B%E5%86%8C.md#L501-L501",
+          "version": "repo-lines-v1:sha256:b69131da431c59a83f558b80cfe2e824b0dfcc11d590ac61812c4edee1e551bc:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjY5MTMxZGE0MzFjNTlhODNmNTU4YjgwY2ZlMmU4MjRiMGRmY2MxMWQ1OTBhYzYxODEyYzRlZGVlMWU1NTFiYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYjY5MTMxZGE0MzFjNTlhODNmNTU4YjgwY2ZlMmU4MjRiMGRmY2MxMWQ1OTBhYzYxODEyYzRlZGVlMWU1NTFiYyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiM2I0MTVjNjcwNWMwY2JjZTU2ODFhMDAyODJlMTQyOTRkNzQyY2Y1NTUzNzY5NTJmNTU5ZjhiZWUxM2QyMDk0YiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzFkODJkZmJhOThkZmRmYWU2MWJkMjJlOTJhNTM1YjJlNDBkYTNiMTFhNTczZWExNWUyMTJjYTBkOTRkNzNjNCJ9"
+        },
+        {
+          "resource": "repo://pyproject.toml#L50-L55",
+          "version": "repo-lines-v1:sha256:df99ac9e9ad974ab649f7f75de06c38acad45b11f8e9525f23b8c35476189812:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzc0NWZhYjg2YjEyMWRjODViNGY3ODY3MzM5YTEzZmVlODA0YzhhMDJmNDcxMDY1NzJmMmJmMDY2NGQ1OTUxZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNTgzZmMwNGUzMzkxMjYzNmZjZTgyM2Q4ZGZjMmI4MzRjYTM2ZGI2M2M5YmZlZmRmNzBlMzAzNGYzZDZjYmU0OCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMTdjODdjNzAzZmFkODQ0MjE1OTBhYTg3Y2Q1ZGY0NDRiMDVjZmJlZTkxZjFkZmRjMTU2MjdjOGZhNjM5MTE3OCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_74c34f9ca50c44159059453f540d0be3",
+      "statement": "Feature freeze is entered when the core loop completes once from both CLI and Web, key safety tests cover confirmation/daily limit/send windows/duplicate sends, install/configuration/stop/recovery are documented and reproducible, known P0/P1 defects are cleared with P2 defects dispositioned, and the release check is repeatable and stable; during freeze only serious bug fixes, security fixes, selector adaptations, and documentation updates are accepted.",
+      "evidence": [
+        {
+          "resource": "repo://docs/%E6%8A%80%E6%9C%AF%E6%89%8B%E5%86%8C.md#L565-L573",
+          "version": "repo-lines-v1:sha256:44a43e713b3be18563152b2cf1e6602be5014fc5c4f606669945c4788c8ac739:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOTdmZDkxMGFmMjgyNzk3ZGJkZjFjYWRiYzMyYTcwM2U2MDEwOTMyMTM2MGMyOTg2OTExNDA4MWU2MDI2ODFkNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNzY1YmFlNzI2NDRhYmMzMmEyMzE2MTZlOWI2ODUwOGZhMGFiZDFjMTIxODc3YzNhM2M4MzA0ZThiYzk3MzFjYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDFhYTRjMmVhZGE0NTI2YmRiYzU1NGU3YjdlYzNjYzBjYTkxN2UzZDYxY2I4MTNiYzExZTZiZDViOTE2M2QwMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDFiMTVjZjU5ODM0YmZhZDc0OGZkMTE3NTJmZTBlMjVhZjQwNzIzYWFkMzBlNWYzMzk5MzkxODZhZWYzN2E2ZCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_9a20e7b7a7f443febe68d6ee1df188bf",
+      "statement": "Maintenance priority is ordered as security/privacy issues, then data corruption or duplicate sends, then core-flow unavailability, then platform selector adaptation, then observability and documentation, then experience polish, and new features last.",
+      "evidence": [
+        {
+          "resource": "repo://docs/%E6%8A%80%E6%9C%AF%E6%89%8B%E5%86%8C.md#L575-L580",
+          "version": "repo-lines-v1:sha256:b65cff7e484431979d54a83846ce7fb218d2db40e872619c549195a34f5e6624:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDg5NDVhNGI4NjY0ZDc2MDY0ZWFmMzljYmQzYWZhNmY1M2Y3Nzg0M2JhMjhjYjcwMjNjZmNlNmJlNzA1MDU5NyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDdjMDZjNTYxZDVjMzI3MzQzNjg1MjY4YTQ2YjMzOTFmMzk5OGVlZTg5MGQyYmU1MWYwZDIxY2M0YTUzYWU2ZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOWE0Mzg5MmRiOGJhYmIzNGU4MTcyYmM1N2UwOTA4MDY4NjBlNDU2ZTJkODg2NmQwODIyNWJjMDE3YWQyYjZlOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZmQzZTMzMjQ0MDcwYmZkMzE5MjNmZDgxNDc5MzZiOTRlNzRiOWJjNzQwODJmZTU4Mzc0ODhiZTdkYWVlN2RlNSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_d51f90006d924ab08afffe7223630ba3",
+      "statement": "Work in progress is limited to one product feature at a time; a feature without completed tests and documentation blocks the next feature; new ideas go to Issue/Backlog rather than code; and experimental features with low usage and high maintenance cost for two consecutive versions are evaluated for deletion or freezing.",
+      "evidence": [
+        {
+          "resource": "repo://docs/%E6%8A%80%E6%9C%AF%E6%89%8B%E5%86%8C.md#L582-L587",
+          "version": "repo-lines-v1:sha256:03b9f4b52611693dc5bbdae92bd3c6b4e38449d0983319dd57b64c9ec27a24c0:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiN2FmYjMwYjI2N2E3YzYyNWQyMmQ4Y2MwZDMzMDI0YmE4NGQ0NTA1M2QwNzE0ZWFkNzBlZDA4OTEwYmFjODY2MCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNTdjNjkxYjgxYTUzNzYxN2I0NTJkMDMwM2JkYWUyNDc4MmM4ZTZhNDFlMGY2ZjgzMzU0NDcwZDlhZTEyYTA4ZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYWI4MzIwOTVkNDQ2MDhjODcxZWU0YWZiOWQ5M2JjN2M4Njg5MTdjNDE1Y2I4MTc2YjFlOWI0NTI0ZTE4ZjMyYSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzAwMDdhZmU4Yzg1NGI2Y2M3MDAwYmE0NjlhM2RhZWMwNDg0ZWRmZWM5YTllZjhiZDMyN2E5NWFlM2E2NzRhMiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_0f38ac5f05a64f62b4e27a72cafdc644",
+      "statement": "Development stops and re-enters review when a requirement changes product positioning or bypasses safety, one fix introduces multiple new services or long-term operational burden, acceptance criteria stay unclear while implementation is repeatedly adjusted, tests cannot stably reproduce the problem, or change benefit is smaller than account/privacy/compatibility/maintenance risk.",
+      "evidence": [
+        {
+          "resource": "repo://docs/%E6%8A%80%E6%9C%AF%E6%89%8B%E5%86%8C.md#L589-L597",
+          "version": "repo-lines-v1:sha256:c3902ce83864e88dd2b6b615e7b605da93ee4df13c8d2c9928308113f5cf8710:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDRhZGYxYTAxMGVhNWFhNTk2NTYxNGI3MzA5MDQzOGJhMzVkNmQwNmZkNDk5ZTMyZDlmNDk4ZGRiZWUyMzQyNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjFiN2MxMWEwODQ0MjdiYmEzMTkyMGE3YTI3YTgzOWYyOWU3N2RjYzIzMWZkMGUzODUyYjFkMDU2YjRkZWQxOSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOWJmYjRiZTQ0YTk3NGE5NmFiYzVjNjhiYjA3NDdlMzJjZTU5ZjBjMzFiOGIzNDc2YzNlZTU1ZTEyYzZlZmYxNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiM2UxZGFhMGRmZWVmZjJlZDk0ZGY0ODU1M2E5MDM5ZTdhN2VmZWYxZjE1MzRhMDY0Yzg5YmFjNDYyYTRhYTZkZiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_c5e4604a356a499dbfcbf2a6b4ceb56d",
+      "statement": "New requirements must pass a five-question admission gate (loop improvement, real user problem, config/docs/existing-capability sufficiency, risk expansion, and clear acceptance/test/maintainer) and are default-rejected when they bypass confirmation/platform controls/captcha, raise default frequency or concurrency only to increase volume, add generic platform features, lack testable acceptance criteria, introduce long-term infrastructure cost without a use case, or duplicate existing capability.",
+      "evidence": [
+        {
+          "resource": "repo://docs/%E6%8A%80%E6%9C%AF%E6%89%8B%E5%86%8C.md#L522-L539",
+          "version": "repo-lines-v1:sha256:1abff4ac5c758f2d0b94ecf1924267cc69a85ae7a0e1bbe5b15be9d6dbb75073:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkyZTQxNDRkOThhZDNmMTQ3ZGRlMTU3YjE0ZGMwOGNjYzIyZjNmZmUxNzk5MDA5OTU2OGQzYjA1NTQ2NmJjZTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBhNjAwYjU4ZjBkNjk3ZDc4ZTgzNTc5NTQ0NDQ4YjE1NzQ2MjYzMDhmMzkyMGZkYTBhYWI5Mzk3YjFmZjU1MjMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc3ZmM0OWU3ODY2MjE1NzFlZDQxYzM5MWM0ODQyMzQyZjhiMTc0ZTI3NDAzMDliYzY5NjQ2ZTJlOWFkMjcyOTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdkOGEzZDdiOWExZjFkOGY3ZTNiZjc5ZTdjZDRkZDZjNjAwOTBlYzFiMWJlZjEzNzhjMjcwYTVkOTY5Y2ExN2UifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_e2c25c6a3d7a4fcea0c2949feadc927a",
+      "statement": "Accepted PR types are bug fixes, selector adaptations, documentation improvements, and new features discussed in an issue first; rejected PR types are those that raise the default send frequency, bypass human confirmation, add platform-safety-evasion methods, or reduce anti-detection conservatism such as shortening intervals or widening send windows.",
+      "evidence": [
+        {
+          "resource": "repo://CONTRIBUTING.md#L18-L30",
+          "version": "repo-lines-v1:sha256:9c7860db1d96dc2eddad01bf5db12662529a9fa77f7c1cb6251428955a7300df:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEyN2FkOTkyM2NmMzZkMzQyYzc2NTdjYjAzOTM3M2IyYTcwNjY4NjdlZmNkMmFkYmJhMjY3YzgzZjQ3Mzg2NjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5NWFiMzJlOTRlZmI5MTA3OWYwNjNmMWVkMTY3ODQ5ZjRkYjRiYWFkOGJjMjY1Y2I2NTQwNDkxZmY1ZWE1YmEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ5NzY3N2ZjZGUwNDg1ZTk3ZTc1NzQ5Y2E2MWQzZWI3NWZjNDg3ZjMwOTdkNDdkMTBjNGM1MmJmYjZiNTBlNTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJiODJkMjQ0NzViMTUxY2QwMWU5YTk1MmEyMmJmZWZhZTAzMjYxNTdjMTdhNDExMThmZTg2NTZjOWU2ZjVlOGMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_ab9ac2dd44414b0eb1f91cabf79256f6",
+      "statement": "Failures are graded P0 through P3: P0 (key/resume leak, confirmation bypass, duplicate bulk send) requires stopping service, isolating data, revoking credentials, and fixing first; P1 (core flow unavailable, database corruption, wrong state risking mis-send) requires stopping the affected feature, preserving evidence, and releasing a regression-tested fix; P2 (single selector failure, partial AI-provider anomaly, PDF template problem) degrades or runs manually while a fix is scheduled; P3 (copy, styling, small UX) enters Backlog for a maintenance release; during any failure the database and browser config must not be deleted, and the response is stop, back up, record version and repro, then read-only diagnosis.",
+      "evidence": [
+        {
+          "resource": "repo://docs/%E6%8A%80%E6%9C%AF%E6%89%8B%E5%86%8C.md#L629-L638",
+          "version": "repo-lines-v1:sha256:9ece8582a26e953e69028974dda731faa18032a52fffc0f1508bc9e1d1836455:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE5ODg2MDZiYjY3ZTI0N2Y4ZTk0N2M4NjdhMTUxYzIxY2E0ZGRlMjFhYzUxNDkyZWNhMjFhNzYxZWQyZTdmMWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE2ZTNlZWRjYzRjYWEzMmE5ZTI5MjZjMTY0OTU1MzU2N2VmYTY3NmYwYTMyZjllOGQxOWJmMTlkM2EyM2VhMzEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU3YTY0NzMxN2M5MTAzZGNkNGVkNzRmOGU4MmViNjJmNWM0YWUzNmU4ZWFlMzVlNmQyZjAyNzcxNzRkMjJjYmUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk5M2IxMTdiN2Q2MTBhOGZiZWRlNWQyNTliNTc4ZjJiZWZiOTg2ZTQwNTA3MDI3YTYzOGFkNmE5YmE1ODk2Y2EifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_271699abcf264cf782fa07ce876f7110",
+      "statement": "Documentation ownership is split by surface: user command/operation changes update the operations manual and CLI help, architecture/state/config/release-process changes update the technical manual, product-intro changes update README, contribution-boundary changes update CONTRIBUTING, and security/interaction-behavior changes also review CLAUDE.md and SKILL.md; when docs and implementation conflict, the stricter safety boundary wins.",
+      "evidence": [
+        {
+          "resource": "repo://docs/%E6%8A%80%E6%9C%AF%E6%89%8B%E5%86%8C.md#L640-L648",
+          "version": "repo-lines-v1:sha256:9583212c13c9b107ea3813860f22846f7d5040545797eb968f73f47a76ec4921:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjdhODhlMDg2MDE3ZmZlNmM4NjdiZjdhMWFkOTcwZDdiNGMyYWEzNzM0NzVkZDliMjY0MmYxMjA2MWM0MDAzZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYjc2MzZhY2E5NTkzNzEwMGQ4YmQ1ZTAxMDNlZjFjYzMzNWZiYjA1Mzc5N2U1OTkwZDVlMDBiY2E5YzY5ZTIyMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiY2Y0YmI2NmIxNTNmMTFlNjg5MjFmNGUzNDIzYjQyNmI3YTcxMDM2NDgxMDg0YTYyMTQ0YjgxMGVmNGYwN2RmZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_9f9c41e6edb543f0a3de3080ed751ea4",
+      "statement": "CI runs entrypoint smoke checks on Python 3.11 and 3.12 that install the package and verify bosshunter --help, bosshunter --version, and importing bosshunter, while its ruff check step is marked continue-on-error and therefore does not hard-block CI.",
+      "evidence": [
+        {
+          "resource": "repo://.github/workflows/ci.yml#L9-L40",
+          "version": "repo-lines-v1:sha256:70d9258c7932378b9354e40ca6c121ed3703119eb66bed3a7566d34f9e4dbe62:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU5ZDgwMTU0ZWQ0MmZjNWM3NzliMTMzMTU3OGI1OGI4OWM4MDFlYWNlNzRmMjRjZDQ4ZWI0YTIzNTc5NDBhOTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRmNTUwYzliMzNjZjM4YWYyYzNiYzFhOTRkNGZhYTYxNjdlMTE2OTk2MTY4YmEyYjM3MGEwZjY0MTdkYmIzZjgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFlMmM3MjFiM2RjMjBmZjczNGQ5N2NmNWI5OWU1NWU4ZDRjNzJmOThiZWYzYjk5ZjkwM2NjMWYyYzRjZGM2ZGYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.5.2",
+    "at": "2026-09-16T06:31:53.644Z"
+  }
+}

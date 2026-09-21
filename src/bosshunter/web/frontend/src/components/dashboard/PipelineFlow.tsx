@@ -30,7 +30,7 @@ export function PipelineFlow() {
 				))}
 			</div>
 			<p className="text-xs text-text-tertiary mt-4">
-					每个步骤都可独立运行，也可 <code className="text-primary/80 text-[11px]">bosshunter run</code> 一键全流程执行
+					每个步骤都可独立运行，也可 <code className="text-primary/80 text-xs">bosshunter run</code> 一键全流程执行
 				</p>
 		</div>
 	)

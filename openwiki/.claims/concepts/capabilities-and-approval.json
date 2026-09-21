@@ -1,0 +1,188 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:18e1cd8b96fd60e9fb7abdf8d844a441b630f07fb318e6fc693f08d91214f271",
+  "claims": [
+    {
+      "id": "claim_fd5d8c7f3f154371b53e9c76a7b658f6",
+      "statement": "CAPABILITY_REGISTRY in src/bosshunter/assistant/capabilities.py is the single authority for agent capabilities; each entry is a CapabilitySpec carrying name, description, tool_name, intents, required_fields, risk_level, read_only, requires_approval, side_effect, tags, when_to_use, when_not_to_use, input_schema, output_schema, timeout_seconds, and cost_level.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/assistant/capabilities.py#L9-L160",
+          "version": "repo-lines-v1:sha256:00c0215043cc10b501ea4a9b8d827780e9249cf083e023d8bfdfaa9f3a5fa018:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUyLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI0NjJjYzFjNWY2NWJjN2Q0YWM3MTA0OGJlNDA1NTdlNDQ4MzBiYzg5ZThlZDYwNTdhZWEyYTc3NDQyMWU2MjQ5IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJmYWZiYTA1MjdjMzk1M2M0YjZlMGU1YjU3MzliYTgzNjEyZjgwNTNiY2RjOTQ2NjczMDE5M2NkMWQ1OTBiNDA4IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI5YWQzYmRkZGVlNTRmMDFmZTU1ZmFiY2ZhNmEyNTgzZmUwOTI0MzAyODhiOWE5NjFkNzliYzg3NDA2MDNjYzY4IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJkYjQwZDZkOGJmYzkzOGIxZWIyYzg3ODdlYTJiYmVjMzYxZTRiMzAxMWI0N2UwOTY2YTQ0YTAyNWUxOGRhMjNiIn0"
+        },
+        {
+          "resource": "repo://src/bosshunter/assistant/models.py#L176-L194",
+          "version": "repo-lines-v1:sha256:52bc661b776118b50468f28643b1725c5c9b55e23d1c6215056cd9f51d635ca4:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjViMmY5YmJiNjI5MjNhNTBkNGRhNGQwYzNjMzNjZDdjYzM0NDMwZDcxZDBiNGUwNTE4ZTY4ZTE2YTU2NTQ4YTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJmYmJjM2YyYmI4YTk5MWYyNTFjYjBhNTNkZmUyZjc0YzY2ZmViNzA2ZDQ4YTZmZDdjMDMzYTBjODQ1YmY2ZTAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg1MjA2YmU1YzU2MTE2MmM5N2IyZDdmMWM5MGYxMmJkZmI2YmU1YTg5NWJjYTUzYjM3OGFmMzhkMDFlNmM0NDUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjIzMWQ0YjA4NDllMjBhYjhkNGZlYTNhMzUwYjdkYzU4ZWExOGQzZjAyYjFkMDJhZDI2NWUzNGRjNjliY2U4ZmQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_7a20ecea84004984abecaacded00bf4a",
+      "statement": "Capability side effects are classified into none, local_reversible, local_persistent, and external; the external class includes greeting_send, reply_send, reply_monitor, and pipeline, while read-only capabilities have side_effect none.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/assistant/capabilities.py#L113-L124",
+          "version": "repo-lines-v1:sha256:513908795cf3406ce590b07c6d34b0903f1b76e325b406344099f377d4ed39c8:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM2NjY0Mzc1NjZiZGIxY2EwNGE3MDY3OTg3NDU3MjljZjY0OWE5NGFiODIyMWJlMDEzNDQwOWZlNGQ4ZTg3YmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRjYmU2ZDkzNmE1YWQ3ZGU4YzcxYjUwNGNiYWUzY2ZhNTFiMDc3N2YyNTU5M2VjZjQ5ZmVlZGJhZGEzMzFkODEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk1ZWY0YTUxZjJkOTg3ZTFiY2FhZjJkYjMyMzE1YTRkMTY4NWQzNzY3NGI4MGIzYjljNGI0MTk0MThiMTcyYmEifQ"
+        },
+        {
+          "resource": "repo://src/bosshunter/assistant/models.py#L42-L43",
+          "version": "repo-lines-v1:sha256:e7636f0feb33c229c07a22473ed408751d1021ad3cbc91d22a0d63a8fab11f5d:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZmQxNjg1NjZkNWEwNThjYmJkNzdkMWVmNmY1MmY2OTMxNjk0NTE0Zjg5ZDE3NDNhZjBiNDg3ZjhmYWVkMmNmNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTU5NmZjMWFiNGQ3ZTcyMTE2NGMyOWVkNDBjYTA2MTAxZDFiY2ZlYjExNjIzYTI2NDY0YTI3NmU0YzQ3Y2M1ZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTlhNzhjYmQxMTRjN2QyNTI5NTFkYjMwYjlmYTJjNzI1Njg4ZDcxMTA0MGQ0ZWRlZmU1MDNhOGI3N2ZiMTI1ZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYmExNjZiNGU0ODVlZTA0NmYyMzZjNTlmN2RjMGQxNjM3ZWExYzYzMGU2ZDMxZjE2NTMyOTkxNWNlZDdiZTdiMSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_3f99a43d34f04062a828c1631539f878",
+      "statement": "The legacy resolution path maps each IntentAction to a registered capability through ACTION_TO_CAPABILITY and freezes arguments for a match from the matching step arguments, non-policy constraints, and confirmed entities, with entities overriding conflicting step values.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/assistant/capabilities.py#L163-L185",
+          "version": "repo-lines-v1:sha256:d551d6d80e4cd1078308872cc8643a7d617408d38b7dc6f489b52fa21ca673ed:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVkNmY2Njc3Y2IwMTkwOTQyMWYwMGEzOTNhY2JhYjU5MjBhMTU4N2ViZjkwN2VhNWZiYjRmOGNmMWY0OWY2ODkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQwYTU2YjU0MDRmYjdlZWZhNjAyMDRmMDViZmNmNzZhZTRmYjRmZWQxYTc3ZTk2ZDBlODliZWU0ZmU3M2YwYTAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE5OGIwNjNkOWI0N2U2NTM3OTYyNTU3MmNjZTE5NzY2OWQ1NzY3ZTEyYzE4YmUwNzU2NTJiOGNkOTgxY2U4ZDUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVjODBkYzk4ODViZTlmMzFkZTdhYTY2NjZjYTc3OGNkZjdmYzBhMzljNjNmNjgxYTg0ODFlMmMyMGQxOTc1MDUifQ"
+        },
+        {
+          "resource": "repo://src/bosshunter/assistant/capabilities.py#L289-L312",
+          "version": "repo-lines-v1:sha256:91f0a4dc5ce8c325454a262f5e0396d2c99efb3b38e10882b53dfdcda742d336:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEyZWE3ODk0YjExMjA3MjU0MmVjNDgyODM1Y2M5NDZmNDMzODJkODY0YTg4YmMwZTczZTg4OWI5Mjg3NjE3OTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ3MGM0YzRjZTY5OWIzY2ZmYzFiZDNmZThjZmMyZWIwNTk2NWU0OTQyYTI5ZTQzYmI5OGNiZTY3ODI0OTQ4YjIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQxNjk3ODczZjcxMGUyZGJiZWFiOTQwNTU4NmEyNGNmZTMyOWNhNmQxYjEyMzZhZDY5NjczNmMwZTk5NWRmNmYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNiMjM2N2JkMGRmMGE2MmRmYzNkMTIxOTkxYjI5OGZlNGU5YzNkMzI2NzUyZTY5ODU1OTQzYjZjZjRiMjQ4M2QifQ"
+        },
+        {
+          "resource": "repo://src/bosshunter/assistant/policy.py#L8-L19",
+          "version": "repo-lines-v1:sha256:aafde7cd9ae01dd9bc259e967a9359a7285d45d722ed16835edf6d75e6c53178:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNlMmFjYWQ1N2Y1OTU3ZDg5NDk2OTA2MzFiYzNmMzE3YjQ5YzYwN2ZjZTg4YzRhZjhkNTFhYzNhZjEyODI0ODAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZiZjY4ZTc0ODBiZTA0MmQ2NzBkNDg3MmU4ZDY2NmZhOWNjMTI0MDU5MzAyNDQ0ZWU5ZjI0NWE5ZmQxOGRiZTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA1ZTViMzNhZDE4YmY5Y2RkNDhiY2UzN2ZkZWUyNWMxMGY1ZWJiM2NkZGE3NGFlNTBjMzVkNTlmNTE1ZjYzZjgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_6a99a9590e4f4644aa8f1b47e0e39fb9",
+      "statement": "retrieve_capabilities ranks the registry against goal_search_text using an auditable score over tags, when_to_use, and the capability name, defaults allow_side_effects to False so non-none side effects are dropped, and filters forbidden capabilities and web capabilities when web is disabled before returning the top limit.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/assistant/capability_retriever.py#L18-L66",
+          "version": "repo-lines-v1:sha256:458c9fb30904d80cf1388bab69d76049e8cce546200b180aef9f3d0733a5a4ff:eyJzZWxlY3RlZExpbmVDb3VudCI6NDksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFhNzM2NDQ4MmJjZGU2MDIyNWY0ODNmZTE2ZjZjNTI3MDQ1YzdhYTlkMGMyNzY3MzVlMWVjYTYzNmFiZWUxMDAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUzZjQxNjBkODY0Y2Q5Mjc2ZTUzMjUzNTU4MTdhMDUxODNiZjQyN2E2NTI5YjhjZTcwMDdhOWM5YjBlMWRiOGUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA5ZjkzMDgzYzE5NzEyMWI5ODI3MDBiYThhZmFiZDE3MjJjZjFkM2U3NDA0NTA5ZTgwZWZhMjcyNDdmNjJmMDciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRiYzZmYTUxODEwMzkzYmE4OTBhZjBmYWExZTQwNWI0MzM1NmRkNTkyYmJlYTM3ZTMwOGMxZGE5ZDU1OGQ4ODgifQ"
+        },
+        {
+          "resource": "repo://src/bosshunter/assistant/goal_understanding.py#L57-L62",
+          "version": "repo-lines-v1:sha256:4c6e34eddd92f4e8ee2a453fec2a6d3246e25eec59dd9fd32f62c7f1af9a5e1c:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzc3MmIwNmI4MmJiNmUyODcxOTk2MmEzNGE0YzgxZDI5MzVjZjg2MzZhMWU4NmZkNTkyYTY0ODZhZGVjNjYxMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjlhNTVjNzBiNTFjZGU4NDZlM2NhOWZmMTU5N2M0NTk2MWNjMWMyOTJlOTMzOTY0YmU4MWMzYTU5NmZlOWExYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOWFkZjQ5MjE5NDgzZjM2Mjk4NzU3MmViY2U4MDBkNjkwM2E0N2JlNzJjMTM1M2M3ODU5Yjg5ZWJmNDI1MmQ2ZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTI2NjcxNGU5MjVkMDExMmJjYjA0NGUzNDkyMGVhMmFiZDNkNjc5ZWEwYjg4MmZlOTE1Mjg3MTM3NTZhMjkxNSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_63a046b906c6451593b7d26298327ab0",
+      "statement": "Negative user constraints are enforced deterministically: extract_explicit_constraints parses terms such as '不要发送' into forbidden_actions and do_not_send, apply_intent_policy disables conflicting steps, enabled_steps excludes them, and tool_constraints strips policy-only fields from tool arguments.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/assistant/policy.py#L25-L106",
+          "version": "repo-lines-v1:sha256:f5e6c0b2aa237b97c24a1a50c2f1779a21584bef2db4d6aa5f625b70d65776fc:eyJzZWxlY3RlZExpbmVDb3VudCI6ODIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkxZTYxNGQ1NDYyN2Y5NTY1MDk0N2ZhN2MzYTE0MWNlMGIzYzE3NWVjMGZmYmI2N2M2MWIzMTZjYzdhYzlmZTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY3Y2RhODJkYTYwNjIzOGUwNWU2MjM5OTU2OWM1ZWUwMzk5MzQxOTY0OGFlNWQ0M2EyYmY4Y2Q2MzQ3ZjgyNjMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM0ZDBiYTM1ODBjZTY4ZGE0YjQ2MmQ2ZDMyY2Y3OTRkOGU5MWI0MDZkNDNlYzdkMTE5YzUyYzkwMGE5YjM0NjQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNiMjM2N2JkMGRmMGE2MmRmYzNkMTIxOTkxYjI5OGZlNGU5YzNkMzI2NzUyZTY5ODU1OTQzYjZjZjRiMjQ4M2QifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_98251c3a3c0f4cd48ebb4c7cf654af00",
+      "statement": "The do_not_send constraint is translated into the readable text '禁止发送或投递' by build_goal_state, and retrieve_capabilities deterministically removes every external side-effect capability when that text is present, in addition to exact name and tool_name matches.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/assistant/capability_retriever.py#L69-L73",
+          "version": "repo-lines-v1:sha256:4b8b76468cbb0d2cdef54ff994d7dc9faeb3e8eede8b63b392dbad2260ddf56a:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOGQ1ZGI3NDI2MzRjMjYyMTMzZTQ1Nzc4OTU2MWIyNDU3YWFiYzM4ODEwYTkwNTg2MjU3YTZhNTA3ZDQxOTI5NCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNWQ5MmRjMzJjZTAyZTdjNDk2YzVkYzhiYTg1MTljMzcyMGUwNWZkMTE5NjgxMzY3NTQ4ZDUwZjY1OGMyMWYwNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjlmM2FkYWE4ODJkYTZiNzU1YmNlNjViMjRlZWRlN2JkNWExMjg0Yjk5ZDBhY2ZkZWFkMWY4YmU5ZjUzZTdiNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZmZkYjg1YzA1OTJiMjMxZmFiNzJmMWU1MDc3YWUwYTZmNjBiMDM5OWYzNGYzYWU2NGRhZjU5MTY2NDE5NTZkYyJ9"
+        },
+        {
+          "resource": "repo://src/bosshunter/assistant/goal_understanding.py#L44-L54",
+          "version": "repo-lines-v1:sha256:2db1aba9fa76315ae58903106e0531331a4272d11869f684142f0523c413048b:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlhYjNmMWU0MzZjYzAxMWYxMjhjMmVlODQxNDQ1MDQzMjM4YWMxNTAwNTRhM2I2ZTU1NzI0ZGMwZjVlMjZkNTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY1MWJjZDZmODUyOWJlZDFjZjhkYzc5Zjk3YWI4NGI5NWViYmYyYWIzYjI5ZTgyODkwMWRkZWIwYjE5ZTg0MTQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY0NzU0OGEyMjlmNjk5Zjk3NWRkMjFhZmIyNDhhNGUxZDk1MDEwZmYxZDA3ODAxMGIxMTBhYzlhY2M2ZDM0ODkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjlkZmFhYmI3ZDFhOWQyNDY0MGE4MTM0ZjNhOTg2MjI1M2I2NGNiMzM3YzJiODBiYmFhMjA4M2JjZDExZDZiNWIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_82cc8255c7a645dca14eec6e43d19e42",
+      "statement": "_enforce_mode_capability_boundary restricts answer and cancel interaction modes to read_only capability matches, preventing a misclassified action intent from triggering a side effect during a consultation.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/assistant/graph.py#L419-L434",
+          "version": "repo-lines-v1:sha256:b4ebac6d48f1352ad9dac1f2f8454470a9b73f71b45829fc5c458af73065ac8e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVlYmI0MmYwNjFlNjlmNjJmZjgwMzNjNTAxNTgyMjM1ZmM0NzFjNWM1MzZiZjkyYjhmMjhmZDYxZDU3MzlmY2QiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM0ZGMyNGRiZjdhNzY3MzFjYjYwNGZlYjg1MTY1YWFlYzE2ZTA2ZWExODJlMTE0MmRmN2UyOTAzMjlhZmNmNmMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA5YzkzYzE4Y2MwMzM5ODBlYTJmODRjY2U1OTBhM2Y0NWE0YTFmYWMzYmYyODAwNjMzOTZjMzUxM2EzMjExNGUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg1OGY4YmM1YTJkYjU3Zjk4ZmVjYWY2OGFlNTI2NDczMTA2ZThkMzMxODIwYjQ2MmY2MGExYjM1YzczZDZkMjkifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_63e483c9688a4fde9ade19afed69ac02",
+      "statement": "_build_pending_action validates proposed tool calls against the business database and freezes each into an approval proposal with a fresh action_id, type, parameters, affected_items, and allowed_actions; the SQL path builds an execute_readonly_sql proposal carrying a sql_hash over validated SQL and parameters.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/assistant/graph.py#L451-L616",
+          "version": "repo-lines-v1:sha256:6c3893710264bdaacefbcc97443dc7534d9844aee4fc9a1ba0ec1fdc2f5502af:eyJzZWxlY3RlZExpbmVDb3VudCI6MTY2LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI2ZjExMjNiMGRiZTNiZjY5MTM2MGViOWYxZTA3MWViNTNiZThhYzgxNDI1Njg1MTIxNzI3N2RhMDQwYzE5MjI4IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJiZDAxMTMxZDQ0ODVhN2RhNDc5ZGRiM2RlNjE5YjIwYzZiZGE2ZTU3MWZmNmRlNTRjOTc2ZDRlNmVlNjU1NzQ2IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI1NzFkMjk3ZWVhMTlmNTRlYjczM2NlZDEwOTBhNWJjZWU1YzIzNmE4ZjU2ZDVlZDQ2YWY3NTdkZTA4YzM0ZWRhIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI1ODI2NmNhOTcxZjIwNmM3ZjhmNGVkM2EzM2E5ZTMxYjA2YzY2Mzg2ZjhkYjU1OWM3YWRjOWZkNTQ0NjM1NWJjIn0"
+        },
+        {
+          "resource": "repo://src/bosshunter/assistant/graph.py#L943-L983",
+          "version": "repo-lines-v1:sha256:173ac88c5235f5234732f26bf29390a62844a7a3740c9678409428741926a2e6:eyJzZWxlY3RlZExpbmVDb3VudCI6NDEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYxMDA1MDJjZGQ2ZGFjNGM2OWY3MjYzNzM1ZmI4NTJkNzVmZGFiNDI1OWI0Y2VkYTdiMGQzZWY5M2UzMWRhMTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY0ZWZjNDk0MThkMjZkY2YxMjliMjJhNmFhMjExMDhjZWVjMzc2NzdhMzJkMDhlOWQ1ZmVlMzVkZGE2NmJiOWQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY3NDY3OGVjYWE1NTkwNWYyMjRlMWFiYzZiOWQzMDE1ZmFlMTBlNTVhZDUzYmNiMGI1NTg0NzM2NjZjYTk4ZDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjIzZTdkYjNlZjE4MGQ1Y2UzM2RhNzM2ZTA3N2RlMzljYzNiNTc0NzFmNDRmNWU3ZGI3YjJhYjdjNGE0NTc3MTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_1999eafb8179414ab1069176fc3ddcec",
+      "statement": "On resume the approval node rejects a stale or missing action_id, re-runs validate_readonly_sql and recomputes the hash when SQL is edited and then re-interrupts for a second confirmation, and only executes approved read-only SQL after the client-supplied hash matches the current hash.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/assistant/graph.py#L1836-L1901",
+          "version": "repo-lines-v1:sha256:082d6e39afba8c7d7ebbedb6b2fdec68f5d508fccc355145a4e644d27b5d24b9:eyJzZWxlY3RlZExpbmVDb3VudCI6NjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVjYmU5MzU0MDVjMTFmYmNkMzk0NzA2ZmEwYmYxOGViNTAyNjE4NDZmMDZlYzI0ZDIwYWVkYTAwNzMwYjY0N2MiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2ODA2ZjE1NWM1YWMxYWUyNzIyY2EwNmYyYWM5Y2FkY2I4ODFiOTEyM2NiNjI0YTNjMTA0NzViNDQ0OWRjMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI2NmMyM2NhOTJiMDg1MDEwYTViMjk3MzlkYzA0ZWU3OWYwNDljNGZkZjlhZDA5MDJhY2QxYjg2ZWYyZTNlNDMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFmMzk2MzIxYWRiY2M3OGI1ZDM2NmViMThhN2Y4N2Q4ZGZjZWVjZjZlNDJhZmFkMGY5OGY1OTU3Y2ZjOTBiODUifQ"
+        },
+        {
+          "resource": "repo://src/bosshunter/assistant/sql_tool.py#L136-L138",
+          "version": "repo-lines-v1:sha256:1791468f0f2a71842f162febc744ae059e3dd06ed4e90b7178988ad648e43760:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZTViMjIwMTZlOWE4YjFjYTgwMmJiMjZhN2M2YmM4MWNmYjEzZjNiM2MzOTY0N2ZlYzYxNDdlMWNiMjVlZTA5NSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYjY3NTQyNzRhMTJkNjA2Mzk3YmYyY2I3MDcxOTI2OWY5YmI3Y2ExZDI4MTNlM2JjODRkZmQ5ZmM5NTY2Y2JjMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZmUwMDAzYTc3OWU1YjZjM2U5NTViYmM3YjAyYmNlNjMwMDNjMTgwYmMzZWRiNDdlMDFiZWU4Y2VjMDFiYjU5NiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYTkyOWI4ZDdjMDMwNDU3YmY0YzJhMzU0YTA4MTczMmEwYjM4NmFkZmFhZWZmOTE4YzQzOWM5ZWY3OTMxMmFlNiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_ed0ebd3bc7f24eac9958381a4f8a2d02",
+      "statement": "AssistantService persists a pending approval by detecting __interrupt__ in the result, calling create_proposal, and marking the run awaiting_approval; resume looks up the conversation's latest run and re-invokes the graph with Command(resume=decision) using the same thread_id.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/assistant/service.py#L205-L259",
+          "version": "repo-lines-v1:sha256:dbc749752eb3859fc9e184705236b0538ec7424f89747a17fbdee20766201d86:eyJzZWxlY3RlZExpbmVDb3VudCI6NTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc3MThmZDBkY2ZjZGFjZDU2YzlkZDk3MGI0NGE3MGFlOTJlZjNlNzEzNTUwZTIxMzM2ZWQyNTRmMWE4MTlhMzEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNjMWRhOTQyMzFjODRlYTNlYTBjN2RiNzg5ZmVkN2ViOGU4ZmM3Zjk0ZTJhYTAwNzcxYWVlNjE1YWI2OGQyZDMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI4MTVkNWY2MDFiN2ZiNTNkM2FmNjFkNGJiN2UyYTU0OGExZTEzMzU1ZGU3NGQ5MWE5YjBiNTU2YTE0NjkzYjEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjlkMzAxNGFlYzQwZjY2ZWM0MDVjMjE1YWI5ZDVkODU2MWU3NWJkN2NkMWM3NzdlNzNlMTdkZWJlNDk4ZWQyNGQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_5e402c19557a4409ab7ee93d1d4a9dc7",
+      "statement": "Dispatch is exactly once: _dispatch_action rejects empty or already-consumed action_ids, runs the dispatcher before consuming so a failed dispatch leaves the proposal pending, then calls consume_proposal, which atomically transitions a pending proposal to consumed and returns whether exactly one row changed; create_proposal is idempotent via INSERT OR IGNORE and ON CONFLICT DO NOTHING.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/assistant/service.py#L66-L79",
+          "version": "repo-lines-v1:sha256:58de2d69f02a8bdf1fbad91367310974ce0e75284de8147285a8da5681e41529:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ1NGJlMWE3ODhkZjRlNThkMThjNTkxYjkwZWFhMTZlZmVjZmIzMmQ2M2VhMjRjNzYxZWUzYjZjMjZiMWQ5YzYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc4Njk0NTQxNWNlZTJmZWU3ODQ5OTNlZWI5MWRhNDliZjAwMDM1MDI0MmY3Y2U5ZjI1ZTUxNmU1Y2IxNTA3MTAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhhMzcwNmQ1ZGI0ODczZDI2ODI1ZThlODIyNzJiNTM0YjQ0MDkyYjQ4NmEzM2U3NThjNzU5MjI3MTBlZTFmNTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRlMDBkNGFkNjdmZTlmYzJmMDljMDFhYjA2ZDNjMTQ5ZTE1MGY0NWRkOTdmZmY0Y2UwMTgwNDk5ZDMxMTUyYWEifQ"
+        },
+        {
+          "resource": "repo://src/bosshunter/infrastructure/runtime_store.py#L172-L194",
+          "version": "repo-lines-v1:sha256:350958df939fee4426c40b9c179a3ea201ec2874c99be0d8f4f2fe58531dce28:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIyYjA5NGNlMTlhMmYzNzJkOGRlOTdmN2ZkN2ZhMGJjYjUxOWE3ZDAzODY5ZWE4MmM3MjQ5MDZiOTVmNDZjZWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM2MWFmM2ZkNzRhODViMTZkY2Q4MTJkZDc1ZDE5Y2VmYmE5ZTcwMjdkMjgwMWRhNDI2MzVjZmVmN2NhYzNiZDgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhiMjQ5Y2ZiY2EyMWRkZWViZTA0OTVlNWI3MDM4ZjIzNDM5MTRlZjc2OGVkZDg4NmYyYzZmZjc5MGU1MzNmYzgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU0MGE1YWNkODdmYzdjMzk3OWYxZjI3ODc0MGM2YWM3ZmM5ZGQ1ZmYwODIyY2E1MDY1NTFhNjMzMjFhN2I3YzcifQ"
+        },
+        {
+          "resource": "repo://src/bosshunter/infrastructure/runtime_store.py#L295-L317",
+          "version": "repo-lines-v1:sha256:42426fd78a1641b566cd22f00a777e2539f4d405e14ead37cf3d5d7978d0b876:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIyYjA5NGNlMTlhMmYzNzJkOGRlOTdmN2ZkN2ZhMGJjYjUxOWE3ZDAzODY5ZWE4MmM3MjQ5MDZiOTVmNDZjZWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU0NDc0ZWU2Y2E2NTBlNjI5ODg2NTEyZTQzODRmNzk4NDYyMzhhNWMzNDY5ZTRkM2NmZTBkMGVlN2I2Njg0YTAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhiMjQ5Y2ZiY2EyMWRkZWViZTA0OTVlNWI3MDM4ZjIzNDM5MTRlZjc2OGVkZDg4NmYyYzZmZjc5MGU1MzNmYzgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVmNDFhM2Q3NGUyMTRjYjViYmM2ODdjYjFkZTU4NmFkYmEyNWUyZjhkZjdiMDNlZTUwMzVlMWQ2YjA5ZmQ0MjQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_d34684cda1ac4d95a65a221f2536d297",
+      "statement": "Autonomous executors cannot perform side effects: DagScheduler only marks requires_approval steps awaiting_approval without invoking the executor, the DAG step adapter raises PermissionError for non-none side-effect capabilities, and allowed_read_tools admits only read_only capabilities that do not require approval into the ReAct loop.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/assistant/dag_scheduler.py#L113-L118",
+          "version": "repo-lines-v1:sha256:d80edecdd13ab9bf40a85bd2aab5a9afbc69f843aba0c1cb8381cccdd82cbd94:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjExMzk1MjFmM2JmYzU5NWU3YzRkNzlhNmQyNjU3NDIxZDBjMjA1OGU2MzkzZDgyNGVlYzhjZjEyYTM0YmE1MSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNzNkMmE1N2RlNmUwMmE0M2Q4ODI0Yzg4MGZlMjQ0MjM5MWUxOTgxOWVlZmVlZTJjZWI2NzY3NzkxZThiMjBlYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOWYxYWQzYzllYzZkN2JmZmQxNzAyY2ZhNDM2ZGZhODA0NDhhMzgwZmNkZGM3MTFmMGNmNmYzMGY0MjdhNjEwNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMjBmODkyZDc1MmVjYTM3MTI2NjQ3OGI1MzZiNzFkMjY4ZDg5MjJhNWViMDc2OWEzMGMzZjljMWE0MTE3M2QxMiJ9"
+        },
+        {
+          "resource": "repo://src/bosshunter/assistant/graph.py#L1147-L1151",
+          "version": "repo-lines-v1:sha256:49b7fa6379930a6de133e88915f3e079ced13329b5b0cda40da34e1cd4905c67:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjcyYWY0NGE5MjYyOTQ4YmUzZWQyNjc5NmMzOWNhNGI0ZTk1OTY3MDE3ZWZlZTg0NmQ3NDEwYTE4MTZhNGFkMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDA0NmZiZWJjNmM5OWJiZGJmYmQyNGIwOTY5OTlhNGViNGI0MzNlZmI3NDgwZDliMWU5YzVjZjI3MjZlZjFiMSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNThhZWEyNDNlNmUxNzcwN2MyOThlMDBhNTk3NGM0ZDk5NTkwYzVkYjFjMmYzZjAwYmQwM2JkNWNiNDM4Mzk5ZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNmVjZjEyMDk5NGRiZDQyNjMwNzY3MTEzOWI2NDM1ZmU5NTMwNjY5M2QzNDcyY2QzZGZiOGMwNmY1MjVmYTBhOSJ9"
+        },
+        {
+          "resource": "repo://src/bosshunter/assistant/react.py#L25-L38",
+          "version": "repo-lines-v1:sha256:ef8b75b40da087861cadb83b1fd157162d49c4da9bf0f2ec75ca495e570de7bc:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg0NjZlMTlmZjVmMjM4ZWE2MGE5YTY4MDU5OTE2NzcxMjUyN2Q0ZmE1MmVkMjgyZjI4ZGNkYzNhMjY4NzE3OTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY3Y2RhODJkYTYwNjIzOGUwNWU2MjM5OTU2OWM1ZWUwMzk5MzQxOTY0OGFlNWQ0M2EyYmY4Y2Q2MzQ3ZjgyNjMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE5NTI4YTQwODFkODgyM2MwYzM5MzRiNTk0ZTNjOTcyNTVlMjY5NGQyNWUyODIyNjNlNWY2YjNlMTc2YjhmY2UiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYwYzhlZGJkYjcwMGUwOTA5MmM5NDg5YjE1YjU3ZWNmMjZiOGRlNjYyMTU4MWFlNTZhMzlkMjg3N2FlYWRjMjMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_4a9de002b9cc4571bd89522509569ab4",
+      "statement": "capability_matcher_node uses the legacy deterministic matches when any of them is non-read-only; otherwise it runs retrieve_capabilities, falls back to legacy matches when empty, intersects with the evidence-domain tool whitelist, and re-adds planned read-only registry capabilities.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/assistant/graph.py#L1071-L1113",
+          "version": "repo-lines-v1:sha256:0ce19ca1f88a8f6b0ce00d92e5efb9f59389a6c9775e4f6013f5bcf1c7ada69e:eyJzZWxlY3RlZExpbmVDb3VudCI6NDMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMzZmUzMGY0OWM3MzRjY2YyNTEwYmQyZGY0YzU3ODgxNGRhNmRiNGNiODljMzFmMGVhNWJlMGUzYmY5MDI2MDgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4ZWQ0M2Y0MzcwMmExMmNmOTAxNThlNjgyN2U4MGI4YTkzYjNmZmUzOGYzMDQ2Y2U4Nzg2MGFiMjIzZGUzZTYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhmZWFmMDEwNzBhOWZmOWRmYjQwNDg5YjNiN2IxNWI0MjhmMTAwMmZiZjE1MDk3MjA5NjcxNzI5ZjQxNTRlZjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZlODNmNzBhM2I5ZDA3MmQyNjc0ZmFmZjliMWY4ZGU0OWYyMjczNWE0Mjk1MDkyZGYyMmU3MWUxN2ZjMWFmZmEifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.5.2",
+    "at": "2026-09-16T06:31:53.644Z"
+  }
+}

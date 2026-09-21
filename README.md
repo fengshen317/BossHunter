@@ -145,6 +145,8 @@ chrome.exe --remote-debugging-port=9222
 
 ## 快速开始
 
+> 更完整的日常操作、停止恢复和排障流程见 [操作手册](docs/操作手册.md)；架构、测试、发布及功能冻结规则见 [技术手册](docs/技术手册.md)。
+
 ### 一、安装
 
 ```bash
@@ -180,13 +182,22 @@ bosshunter run
 
 ### Windows 一键启动
 
-双击项目根目录的 `start-bosshunter.cmd`（推荐）或 `启动BossHunter.bat`，也可以运行：
+双击项目根目录的 `start-bosshunter.cmd`（推荐）或 `启动BossHunter.bat`，等价于运行：
 
 ```bash
 bosshunter start
 ```
 
-该命令会自动查找 Chrome/Edge，以独立用户目录开启远程调试，并同时打开 BOSS 登录页和本地控制台。首次使用需要手动扫码或输入验证码；登录状态保存在 `data/browser-profile/`，后续启动会继续使用。
+它会：
+
+1. 自动查找 Chrome/Edge，用独立用户目录（`browser.user_data_dir`，默认 `data/browser-profile/`）开启远程调试端口；
+2. 启动本地控制台并自动打开 http://127.0.0.1:8686。
+
+它**不会**替你打开 BOSS 直聘页面：请在弹出的浏览器里自行打开 `www.zhipin.com` 并登录（首次需扫码或输入验证码）。登录状态保存在独立用户目录里，后续启动会继续使用。
+
+脚本启动前会检查 8686 端口。若该端口已被占用，脚本会直接退出并提示，而不是再起一个实例——因为在 Windows 上 `SO_REUSEADDR` 允许第二个实例绑定一个已被监听的端口，从而产生「控制台显示正在监听、但没有任何请求日志、页面也不响应」的僵尸实例。
+
+> 只想要后端 HTTP 服务、不打开浏览器：运行 `bosshunter-server`（等价于 `python -m bosshunter`），再自己访问控制台。
 
 ---
 

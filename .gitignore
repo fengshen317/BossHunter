@@ -21,6 +21,9 @@ env/
 
 # Config with secrets
 config.yaml
+.env
+.env.local
+!.env.example
 
 # Data (contains personal info, resumes, DB)
 data/

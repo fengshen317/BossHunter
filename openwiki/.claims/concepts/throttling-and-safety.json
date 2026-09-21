@@ -1,0 +1,196 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:a274b5d02000009d2196183188ce89a3864106d32fce3735542c2802178ee727",
+  "claims": [
+    {
+      "id": "claim_9e58b6c6015548a6b4eda93e487f8d5a",
+      "statement": "RequestThrottle spaces out sends with a Gaussian-distributed delay derived from delay_min and delay_max, injects a 5% chance of an extra 2-5 second human-hesitation pause, and adds a burst penalty when 3+ requests land within 15 seconds or 6+ within 45 seconds; mark() records each completed send for those burst calculations.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/throttle.py#L10-L56",
+          "version": "repo-lines-v1:sha256:a4aed57f3115ef901533ce07076f6cb274401a271862ec5172bd426edfef37f5:eyJzZWxlY3RlZExpbmVDb3VudCI6NDcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM1ZmI4NjIzYzYyYTQyMDBjODRhOTMyMTAxNDFjYWE4YjYxYTZlODQ4MGRiZWE3YjI3MDUxMDU0NTFmNmM0ODYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQyOTdkZjQ2NDA3YmUxZDk3YjY0MDgwNDAwOGZiMDZlZGM2YTE0OTIyM2UzNzdmYWViN2UxMTQ1MmJkYjE3YjQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjlkMDMwZjU3NTY4OGNhN2FkMjQ2MWFlYjVkYTg4MmEyZDg3NzRmZjE0NTAyODI5Y2FjYTJlMzViMmQyZjQzMDIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjYzNjcxY2U1NWYwOTAxZTNjNzhiMmY4OWUyZDExZDEzNjJmMjYzNzcwZmI4MGMyZWVkY2VkNGE5YzFjNzY2YTgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_3cd1ee80033342a19b47fc4dbf51990f",
+      "statement": "PageThrottle is a lighter, uniform-random sleep used for page navigation during scraping and enrichment, separate from RequestThrottle, and the scrape and re-enrich call sites hard-code it at 2.0-5.0 seconds per page.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/scraper/jobs.py#L228-L228",
+          "version": "repo-lines-v1:sha256:8e3785867fe547d5697c8d72387aa41c2461abf1f762cb9f7d1d34fd70df3bda:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOGUzNzg1ODY3ZmU1NDdkNTY5N2M4ZDcyMzg3YWE0MWMyNDYxYWJmMWY3NjJjYjlmN2QxZDM0ZmQ3MGRmM2JkYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOGUzNzg1ODY3ZmU1NDdkNTY5N2M4ZDcyMzg3YWE0MWMyNDYxYWJmMWY3NjJjYjlmN2QxZDM0ZmQ3MGRmM2JkYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNGZmN2Q0N2U1YjFkZjc2MmZlMzc1ZTNiYWRlMGNiZWI1NjJiYjhhMWExNjkxMjIwZjA4M2QzN2IzYjhhMzk3YSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNGJlMzNlOWRhNDRlOTNkOGM2ZGYwY2E3Njk4MmViZGNmOTkxYWNiNjk2N2I4ZTM2ODBkNGYwYjcxYTZmMTZhNiJ9"
+        },
+        {
+          "resource": "repo://src/bosshunter/scraper/jobs.py#L460-L460",
+          "version": "repo-lines-v1:sha256:93a9c7c6f8c5732bcb80aec7389b1f813f663c82f2508828f5184b32d08ad3ad:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOTNhOWM3YzZmOGM1NzMyYmNiODBhZWM3Mzg5YjFmODEzZjY2M2M4MmYyNTA4ODI4ZjUxODRiMzJkMDhhZDNhZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTNhOWM3YzZmOGM1NzMyYmNiODBhZWM3Mzg5YjFmODEzZjY2M2M4MmYyNTA4ODI4ZjUxODRiMzJkMDhhZDNhZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzNmNzMxMTYzNTlmMDYyNzI5Mjg2ZmFhYmIxMzUyZjc3ODJlODAzMjE5YTg0M2U2NjE3YmIyNjYxZGNhNDIyYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzk3MGY1NDI1ZDJhOTM2OTZmNDg5MGM2NWU3MTgzYWFjNGZjMTMxOTYzNjc4MWNmMDViZjgwNDExNTU2YjZhZCJ9"
+        },
+        {
+          "resource": "repo://src/bosshunter/throttle.py#L59-L68",
+          "version": "repo-lines-v1:sha256:7fb5f8b0eccd2a1c8a0305f9390bb67eb6f03d54e65cb9ef0f961f0ca65c9dd5:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQxYmFlYmI2OGY4ODA3YTg4MjhkODNkNzYxYmVhMWQ4MzVlMDg3ZjdlMzU5YjE1YTk3MGE0ZDVlNjYxN2M2ODciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNiNmY1NDg5ZDdkNzE2OThhM2UzMmI2Y2E2ODVhNDA1ZjRlODNiNjBhMTM4ZDExYTg5NmE3Y2ExMmRmNmEyM2EiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjViNGVjMTE3M2Q3YjVmNTYyYTM0ODJiZTVhMTU5MjgxN2QzOGNhMzJjNjRhZTY2ZjUwNzU1ZGJiMGZmOTkxMWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI4OGQ0ZTA1MDJkYmY2MjFiYTk3MzI0OGU3YWQ3MDU0YmQ4YzRhNWNlYjJiMjJiN2E3MzAyZjVlNWU0MjllNjcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_21371a7e6c5d4b428f3c7955cd7bfb81",
+      "statement": "SendWindowChecker parses HH:MM-HH:MM windows, treats the absence of configured windows as always active, returns true from is_active() only when local time falls inside a configured window, and exposes latest_end_datetime() for the workbench send-task auto-stop deadline.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/throttle.py#L71-L150",
+          "version": "repo-lines-v1:sha256:20b8dbd51e99f37d42b0de865a72a7e6ef269ce111f32c7bd2780b5e940fce5f:eyJzZWxlY3RlZExpbmVDb3VudCI6ODAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhM2U4NGUwYmRkMmRhY2ZkNWFlYzdjZDMwZGU5MDAzOTU4ZTQ4MmQxY2MwYmUyM2Q2NmZlNzQwMmNlYzg5NmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNiNzI5ODE2OTIxZjA1NGYyNzhiOTEwMTg1NTRkNTc0Y2I1MjIxODhiMWU0MWQzNDU2MTEzYzQ0NzcwZGYzYjgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjljYzg1ZTE5MjlmMWU1Mjg5OWFmMDcxM2M5ODM1OTVjN2RjMjhkMzdkZjQ5YmU2NGYzMDhkM2I0YjFkOTY0MTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImIyODBiOTVlOTkzN2E3NmVmYWI1YTk5Yzc2MjhjMDU3NzkyOWIxYzc3OThlODNkYzZhM2E2Y2U0NjQ5ZDU4ZjUifQ"
+        },
+        {
+          "resource": "repo://src/bosshunter/web/tasks.py#L247-L255",
+          "version": "repo-lines-v1:sha256:bd1029a6ac09772d14949dce6cdc51d7031cd54ddc4cbad591c4eab99db803ae:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZTkyY2E3MTQ1OTY0Y2Y5MDc1NGVlY2MwZjc0ODFhZTQ2NzRkNGE1MGNiNTZiYmU3M2I3N2FiNjAwZGJjYWZkZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYjNjN2M3NzQ3Y2YxOWFiNzc1OTZiZmZlMTQ1ODNmZDRjOGY2ZmIzNjZiNDAwNDdlNGI4N2Q3Y2Q4OWFiMjY3OCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMmIxYzY0NmMwZDgxOGUyNWVmZGI2YjAwMzY2OTdkZmEzMWIwN2MyNDkzNDdiOTRiYjI0YmFjZGUwYTIxYTM1ZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_d78981c0dd454c5e97acd2a4eeb8b0c4",
+      "statement": "ProgressiveBackoff escalates consecutive send errors to 60-second, 120-second, then 30-minute pauses at 3+ errors, resets its counter on success, and exposes should_pause_long at the three-error threshold.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/throttle.py#L153-L176",
+          "version": "repo-lines-v1:sha256:7f30c5f52b183fa6583467c10dafb9bd9ee7530e7940a4b3eee369238d4b0f68:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxZTI3NjM2NzJmM2FmNzA2ZGUyNmIyYzMwMjk3YmU1MDhlNWQyMzhmY2I4ZTNkOTAzMTMwMTI0MDQ1NWU0MzciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJiN2VjMzM4MWY4Y2IzZDYyMmZkMjVjMDBlNWFhMzJkZTA2ZThjM2RmOGI5YTcxMzAxOGIwMTM5ZjM1ODg1ZWMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImVmOWJiMWJmODk0ZWQ0ZGFhYjY4M2U1YmE1NDIxNGZiMDAxNDM3MzVlNmZhZWY0MWI3MTAxZDgzOTI5NTVkNzciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE2N2JmOTA1Y2ViNWVhOGExNjU2ODUxNDY1YWZiODlhODU2ODIwZWFjNjMxMjNiYTY2NGU3ZjdhNjJhMDk5Y2QifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_298b58e3327e411abc0828a418f113ca",
+      "statement": "should_take_day_off is a random whole-day skip with a 5% default probability; send_greetings honors it unless force=True and, when it triggers, logs a day_off risk event and sends nothing.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/executor/sender.py#L718-L724",
+          "version": "repo-lines-v1:sha256:0a8d560be35ca0799c1106bb0a087971477226ff5a4c345c862fbf213b1ffbfe:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMWNiYzAyOTUwY2I3MWY4NDAxNjRmNDA1ZTIyY2ZiMjc3YTQ2OGU3ZDc5YmEyNGU3YzRlZDRiZjhjY2IzMjMyMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNWExNjgwOWMwNzVkYjMwOWUwOWJiYzlhYjdlZmVlNjllZmI1ZjQxOWJkNGQ4OTMwZDAzODA2NjAyZGQwMmZkNCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzkzZTgxYjg5NmE4OWNiODMwODBmMmI3ZDYzNzEzNGRiOTFmZDc1MmQ1YzE0OTI3MTk4NGRlMTM4YzQ2NDI3MiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTU2MDk2NjNjYzgwNjU2MmRiYzc4NjE1ZGYwYzNlYjhhNWRkNDlkM2JmYzk0OThkMDExZjFkYzUwNmI5MDNiZSJ9"
+        },
+        {
+          "resource": "repo://src/bosshunter/throttle.py#L179-L181",
+          "version": "repo-lines-v1:sha256:984245d7c105942b9c5733aa59f3c0d0323dea1eb878ad65ad0f844f5a93b084:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZWJhYWJhNzA4OWYwZDQ1ZWEzYjllZGI1ODQyYjI1MDYyY2ZiZDQzNTgyYmNlOTJmZDZmODc1ZDU3YTRjMTBiOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYzQ4NGNkODc0NWM0ZGY1ZmZkOWRhMDk2ODg2ZjkwMWRmNDdhZTY4NjRlNTQwZjc2OTBkNzQwYWUzZTU3OWI1YyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYzIyNjljMTFhOTEwNzMwNjJiY2JlNTVjMTA0ZDAxMzAzODA4ZmI2MmJlY2M5NWMxOTdjNzdlY2EyNzZiYWRjMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_7eca94e6d5f04a63a4f6fe14aeba3c00",
+      "statement": "send_greetings enforces daily_limit by counting today's history rows where action='sent' and slicing the ready queue to the remaining quota, so the cap is computed against actual recorded sends.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/executor/sender.py#L760-L782",
+          "version": "repo-lines-v1:sha256:b0eaae9764cdf0451b9d83dfae7d4f5599c762dd30cfa413eceb1ca6387fc14a:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY3Mzg1YjU1NGJjMTRlZGMzMzE1OTVjYzMxNzRmMTY1MWExNDdiYWViMzY4MzFiYzE1MjAwMmIwNGE3NTA2MWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ2OWMxN2Y1YmZiOTZmYmNkMmRiZGExNDZkNjc5ZTE5MDYxNTI4N2I1MTQ3NjRiYjUwYTczNDhjYTk1NzMxOWUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM0NDVhZWZiZWY0NTI4ODUxY2QwYTgyNzE1NmQ0ZDEyNTkwYWRjNDZhYTkxNTAwYmJiMmE1ZWE1NzI4ZGRhMzYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJlYzIwYjFmZDNmNTQzOThkMGNkYmUxMGU1NDY5Y2QxMTE5ZGZjMmVjMTFkMTIwZDJjMDM1MTA2MzE2NDdmNjAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_744f7d50b41b4c4c8c65aba9f1e29394",
+      "statement": "send_greetings gates each batch behind the random day-off check and SendWindowChecker before the daily-limit check; the --force CLI flag bypasses only the day-off and window gates, not the daily quota and not the approved-only confirmation requirement.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/executor/sender.py#L718-L782",
+          "version": "repo-lines-v1:sha256:5ddc76dd052b4564012e26f4a6999ebc3668bd8378c8bf83e12e87a16f84a0db:eyJzZWxlY3RlZExpbmVDb3VudCI6NjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFjYmMwMjk1MGNiNzFmODQwMTY0ZjQwNWUyMmNmYjI3N2E0NjhlN2Q3OWJhMjRlN2M0ZWQ0YmY4Y2NiMzIzMjAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ2OWMxN2Y1YmZiOTZmYmNkMmRiZGExNDZkNjc5ZTE5MDYxNTI4N2I1MTQ3NjRiYjUwYTczNDhjYTk1NzMxOWUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM5M2U4MWI4OTZhODljYjgzMDgwZjJiN2Q2MzcxMzRkYjkxZmQ3NTJkNWMxNDkyNzE5ODRkZTEzOGM0NjQyNzIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJlYzIwYjFmZDNmNTQzOThkMGNkYmUxMGU1NDY5Y2QxMTE5ZGZjMmVjMTFkMTIwZDJjMDM1MTA2MzE2NDdmNjAifQ"
+        },
+        {
+          "resource": "repo://src/bosshunter/main.py#L207-L216",
+          "version": "repo-lines-v1:sha256:94f0267636800cc80fd4b16c0a292f45197bd42f9ef5ca36d71a53319ea75e1a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRkNDdiNmZhZTYwYTUzMDYyNDE1NTVlOTY4MTcwY2ZlMTQwZmZlYzMyYjkyMjlkNzYzNWUyZWM3MWMyZDVkMDciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJlNDYxNWE2YWMzNjk3YzllMWEwOWI3YzQ3OWVhMTU1ODdlZGRmYTVjMjk3MTZjMjlkNGNlNzkxNjIxNDk5MTYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZjZWIwZjU0NDk1Y2Y0MTJjNzE5MTVlZjg1MGRiMjJlNDhkZDI4NDdmZWEzYTRhODE1NjkzYjgxMWU5OTZhZDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY4YjgzZGEyZDFlNTgwNTU2ZTc0MDhiYjc4MWM5MWJhZWU4MjMwYmM1NWZiYWQ5NWRlZTFmMWNiYjAyMDhlNjEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_ef14a05b65324ad1a31f741ae06c0bd5",
+      "statement": "Inside _send_greeting_once, browse_before_greet waits a uniform random browse_duration before interacting with the job page, and only_send_when_hr_online skips with preserve_status when the page does not show the HR as 在线 or 刚刚活跃.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/executor/sender.py#L426-L500",
+          "version": "repo-lines-v1:sha256:b6fabf5e36d594cddfeea6996700112e51635c6761fc442ebc932fd92adb2461:eyJzZWxlY3RlZExpbmVDb3VudCI6NzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJiYmM4YzAwZTEzMzRlODM0NjgyMjk2ZGFiMTIxZmQ5MTY5MGJmNjE4MTcyOWEzODI4OGQ1NWM1YjVjZjNkNDQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMxZTUzMzAyMzRmN2Y3N2M3OGY3MTkxZjQ0NzAwNmQ1NDVlNjYyZmZlZDRhMjYwN2U4MWZhODQ5MWY2MTgwNGEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjlkY2JmM2ZjN2RlOTY0ZGIwN2IzNTQ0MTBmODYzYjU3YmVjODk2YTdiMGVmMTQwMTU4Y2YwMDI3YWY1MzkxY2EiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc4ZGJiOTc3NjFiMmNhNzZlNTM0YjIxNDZmOWM4ZTcyYWU4YzQ2YTQzMjQxODYxYjNkMDAwYjkwZDZjZjFkYTYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_8b0fdb444af147069ab4fb4d5437c8dc",
+      "statement": "A job that already has a conversation_id is treated as already sent and skipped before any page is opened, closing the crash window where a send succeeded but its accounting did not finish.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/executor/sender.py#L405-L416",
+          "version": "repo-lines-v1:sha256:ec2bd04b2d4f9f6ee7d456282bf5cf101bd57617f2fc90c17e83340c186ca2c9:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE5NDEzYjc0NzcyMjNjZTIzNTg1MGJmMTU4Zjg3ZDE1NzEzY2RkMWJiOTMwMWM4MDQ1MGIzMjI0OTM5YjM2YTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMxZTUzMzAyMzRmN2Y3N2M3OGY3MTkxZjQ0NzAwNmQ1NDVlNjYyZmZlZDRhMjYwN2U4MWZhODQ5MWY2MTgwNGEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI1OWE3YzcyZjNlNGFlMTUxNWY3ZWMxZTE3M2UwMmFhNzJhNzViYzg2NGYyZmMzMGEzMTg0NjU3YmUzZGVlYzYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM2ZWI2YWZkMjg1NTlhZmZkMzI4MzQ4ZGIyYzVhNTU5ODZiYzgwNzhlN2Y1NzYyZDQyMGQzMGExZTMwNDEzMTgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_27012b3f3a004f80aef05ed377cc9cd1",
+      "statement": "Send errors are classified as retryable or permanent; _send_greeting_with_retry retries only transient errors up to send_max_retries with a random backoff, while permanent errors including captcha, rate_limit, blocked, and send_verify_failed short-circuit immediately.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/executor/sender.py#L146-L182",
+          "version": "repo-lines-v1:sha256:e02a85af2b9c806f5f5ec5237a2c637c50e2ee62b87c001a2b66bc0439a34260:eyJzZWxlY3RlZExpbmVDb3VudCI6MzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYzMjQ0NDg4ODg2N2E3NzJmY2RhMWMzYmIxOGQ2ZjFhZjgxZjhjNTFlMjFmODkwNGRkZTY0ZmY2Nzc3YTBjZjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE2YmQ0OTk2YjJlODM2OGRlNTEwNWYyNTYwMGNmYmFkNzBjZWNlYWRjY2VmOGE1Nzk1Yjg1MzBiZDVjNzQwNDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFjOGYzNjZkYTI1OWU5Zjk2ZWFhZDhjYzA0ZjdkZTU4OTlmYzg2YTdjMzJmOWZkNTY3ZDZkOWE3NTg2MWMwNmQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhmNmYxYWE0NWUxMzQyZDhmNDI1YjEyODdjYzBlNDI4YzBmMmVkZjYzMzMyNzhlYTA0N2E4MTA3NjY3ZTUzMDUifQ"
+        },
+        {
+          "resource": "repo://src/bosshunter/executor/sender.py#L669-L706",
+          "version": "repo-lines-v1:sha256:b9381ec0b4e318267ad4f91ab3f23dd8036d1676ea41b0541e94356dd5c40f23:eyJzZWxlY3RlZExpbmVDb3VudCI6MzgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJjMzVhYjA5YjIyZTQ1MGRhMWRlYjBiZWNkNjg3OWRhMTQwOTdhMGE3NDUxNTRmMTk1NWI0MGI1ZGY3MGYzYWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM2NjI3YzlkNzdiOTdjOGQ3YTU5MDBiZTIxM2MzYzRiZGE3MzhmMDIwZTdkZGJlYzEwODVhZWE1MGI0MGQwNjQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY0MWVlZTcxZjIyMjBhMGRhOTIwMzQ4MTY1YTU3ZDg1NTAyMGFmNzM5ZTA3MWMxMGU5ODFiYzkxNDJlYzY3MjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA5NjFmODIyZTNjODk3OGE2YTA4YTIyZmMxMjA0MzgzM2FkMWM5ZWVjMjVlZTE5ODM4NTg3ODU3NGNhMDY4NTAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_9dfada9eaa614377b272f73e3f801da1",
+      "statement": "In the batch loop, captcha/rate_limit/blocked errors stop the entire run immediately, three or more consecutive errors trigger a 30-minute pause, and runtime_not_ready/no_response errors are excluded from the progressive-backoff counter.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/executor/sender.py#L874-L906",
+          "version": "repo-lines-v1:sha256:e89aed3003e707f5eda7c85ae17fad193b64edb3f56ee1fc4b685a78788769d8:eyJzZWxlY3RlZExpbmVDb3VudCI6MzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkyZDY1OTg0OGRiOGY2Mzg5ZjFlZDEyZmRlMzJiYjMxZTNhYTc5ODBjNjY3MTE5ZWVkZmFlN2YxOTM4MmViMjEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVkNjllNWM0Yzk4YmFkYjI5ZTYxOGM5OWVjNmFhZGQ2Njg3NDhkNTJkY2Y4NTFlYTJmMTY1N2Q2NjFhNTU3Y2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZmMDYzZDU3YjE5YmYzZGI3MjNjY2NjZjZiM2E3ZGVjYzRiMTZkNDFlNTBhYzUyNDYwM2FmZWY1MTE2NTQ1MzAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImIzMTBiNWQ0MDlhODk3NmI5M2UzYjQ4NmEzNTFkYzllYTY1YzJjYzcxNzMyYmFkODk3NjA5MTk1NGViMWJmYzIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_d2fd09c5a45c41ad928149004adaab25",
+      "statement": "The send queue selects only approved jobs via get_jobs_ready_to_send, so a ready job with a greeting can never be sent without confirmation; the confirmation UI's per-job prompt defaults to 'n', meaning empty or scripted input never approves a send.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/db.py#L512-L535",
+          "version": "repo-lines-v1:sha256:e649668e0936f071c9e4d1033312c2c6c38b563738b07f05a028831eacbc7052:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhmN2Q3OTg1NjM0MGQ1MTI5ZWRkYzQzYzY0NTg3OGZjYmU3NjNlM2YxZjBlZmNkZGMxN2FkMmYxN2JlYjBmMTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2NmEwZTBjYjE4MWM0Y2VkNGQ1NDczNTBkOTg4YzRhODkzOGIyNDA4MWI4ZTU4Y2M1Y2UxYjgxMGRkYzVlZWIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIyMTNkYjQxMWEzZjQwM2QyMWRhMDcwNDQxNDQ5M2YyMGQ1NTA3MDg0Mzg4MTM5YjY4MTFjMTJjNTliYmVkM2IiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRlMDQ5ZGM5Njg5ZTA3ZDY0MzYwOGVlZjYxMTIyMzU1YTUyMjM3NmY2YjM5ZjUxOGIzNmVkZDFiMzgxZWU2NGQifQ"
+        },
+        {
+          "resource": "repo://src/bosshunter/ui/confirm.py#L92-L145",
+          "version": "repo-lines-v1:sha256:a35343d9a706e735ec2867575e69be11f3bda5b2813144653f982619833a1eb2:eyJzZWxlY3RlZExpbmVDb3VudCI6NTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU3NWMyZGRhMjExNDZlNzQ0ZTgxZGU0MjJjNWU3Yzk1OWQzMWU0ZTNkYzczN2NlNGMyN2MzZjEyZjJiODEzMzciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRlMjNkYzdkZWE0OGI4ZjM1MTBkNWNhYzU0YTYzM2YzMWE0NTU2OTE4OWE1MDMxMGU0NzIwMzJjMjMzNDczZmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBmMmYyMjNlOGVlODA1MzQxMjRkYTVhZDY4YTY4OTg0OTc4YWVhY2RkNjI4MjFiYWNjZWYyNjk4NmU0YWFkMDAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg5MGU0NTc1YWM5MDM0ZTNlM2FkZmIzNDYxZTVmZjUzZGM0OWVmZjQwZTU5NGIzZTY3ZjU2ODYzMDAyYjJjZTYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_533f7e9cd59444cd86d076462ba3bb5b",
+      "statement": "On a verified send, the sender writes history(action='sent') before updating job status and conversation_id, narrowing the crash window that could otherwise under-count the daily quota or allow a duplicate greeting.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/executor/sender.py#L825-L845",
+          "version": "repo-lines-v1:sha256:5774c6ac9b1b7ba7493a519e6a0a843bbeb597dba4b4a84767fd1b1e2d734b93:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk3Nzg5NTU0MjY4NDI2ODkxNGY0NjU4MzYyY2IzMDA4YTBmZTJkZmVmYjcwYzRiNjQxYmRkOWZmYWYyY2MwYjEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIwNTYxOTJhOTBhMWVjMmFiNThiODk2NmE1ZWQxYjc0MDFlMzRjNDNmM2RjYjFhZjNiNGRjYjZiZTcwY2U2ODEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZiZDFhZDM1NDBlMThjMDNmZmNlNGNjNzZiMWE0ZWNmMzBjMzQxZTg2NGMzNGQzODY0NDI2YWQ2MTVhY2NmOGQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjlkNzM0MDNjYjk4ZDQ2NGY3ZWVhOTEzMzQ5MTQ1OGIwZjk0N2E5Yjg5ZjZiYzUxMDllYzIzZjc3MzEzYzAyYjYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_7f5a60df4fdd4042943fbe2408feef5b",
+      "statement": "The monitor's reply and follow-up cycles reuse SendWindowChecker and RequestThrottle with the workbench stop event, and follow-ups skip jobs that had an HR reply this cycle and skip weekends when configured.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/executor/monitor.py#L1518-L1605",
+          "version": "repo-lines-v1:sha256:97d2d330e198d3f12f58d3fc07b74b5982f02335fd1d33251f8b27879ca17c14:eyJzZWxlY3RlZExpbmVDb3VudCI6ODgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgzNzZiNTAwZTdhMmQ0N2RkMDFiYTk0OWYzZjJkMDU1N2M3Mzc1N2RmYzM5YjhkMGU1ZmYwMDE2MmQxMDg3MmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhjM2RiZjY1NmQ0MmFhOTM2ZGVkZDU1NDFjY2Q4MDgxZmFiNTdmNDY0N2NiNzZkN2Y3NWVmZTg5NWJlZjQ1OTYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY2MTZiNDU2ZmE0YzdlYTA5NTMxNmRlZWU0NDkwODljMzYxMDMxMGUwMDVmNTQ0NTc1YjhmM2Q2MzkxY2UxOWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImIxZTJiZmQ5OGU2YTQ0MzVmZWU0OWIwZTc1NDA1NDQ0MWJhYzM0ZjY0YjNlMTBmMTc0YzVjYzA1YmU2ZmU2OTEifQ"
+        },
+        {
+          "resource": "repo://src/bosshunter/executor/monitor.py#L1629-L1746",
+          "version": "repo-lines-v1:sha256:c346084de3771dbca14b48b124715e61ebba1eba48904c1cac523fe5abfeb816:eyJzZWxlY3RlZExpbmVDb3VudCI6MTE4LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI3ZGQ4OTI2ZDc5YjlhMTU3NGJlN2QyZGRkZWE2YWU2MDgxOWQ0Y2I5OTFlNjkxNTBlOGEyZTYxMjdmYzUzYjlkIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI1YjkyNTAwMWY0OTgxNThkYTFiODNlZjJjZjJiOGQwNzZkMjM1ZGZkNmY2M2ZhNzQ1YjAzZjIxMzQ3NzIxOTA3IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIxYzA2Y2U4NmU1OTYyYWUwOTY1NzYxYjEyZmRjN2VhYzdmMDQ5YzAxN2ZjZmQ2Mjk5ZjNmZDc0NzNlNDM5NWU0IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MCwiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1In0"
+        }
+      ]
+    },
+    {
+      "id": "claim_eb066d78b8a04d9b9e52a997a238118c",
+      "statement": "The workbench deliver task invokes send_greetings with force=True, but send-mode tasks compute an automatic stop deadline from SendWindowChecker.latest_end_datetime(), keeping the send window as a scheduling boundary even when the in-batch gate is bypassed.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/web/server.py#L532-L549",
+          "version": "repo-lines-v1:sha256:29279ca208e59ec0e24c37ff0d7a90139911968bfae1d247a7c1bee565bee55b:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNlZjRkODI4NzhlZDAxYzMyMDZhOWIxMDM4NTY4YjY1NmZiZWY4ZjE0YmM3MjhlMjdmODUyNjA5OTE0Y2U0NmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2NTdjMzZlMmVkOTE0MGNjMmI1ZTIwYmMxY2IzMGY5YWZlNGQ3MmQ3MWU3NDRlZTRiMjYyOWQxNGQxODFmMGUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjExZTBkZDViNzNmNWRhODViOTVkYjczZGNjODE1OWMwYWIzMTZhNGFlNmFlMTViZWJmMWMyNTAxOWViNjAxY2QiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNjM2U5ZTgxN2Y0YjJkODhmYjU0MTI0YmFiMmU5OWI3Mzk0NjJmM2E5YTYwNWIyOTc4OTUzZDhkMzQ1Mjg4NzQifQ"
+        },
+        {
+          "resource": "repo://src/bosshunter/web/tasks.py#L247-L255",
+          "version": "repo-lines-v1:sha256:bd1029a6ac09772d14949dce6cdc51d7031cd54ddc4cbad591c4eab99db803ae:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZTkyY2E3MTQ1OTY0Y2Y5MDc1NGVlY2MwZjc0ODFhZTQ2NzRkNGE1MGNiNTZiYmU3M2I3N2FiNjAwZGJjYWZkZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYjNjN2M3NzQ3Y2YxOWFiNzc1OTZiZmZlMTQ1ODNmZDRjOGY2ZmIzNjZiNDAwNDdlNGI4N2Q3Y2Q4OWFiMjY3OCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMmIxYzY0NmMwZDgxOGUyNWVmZGI2YjAwMzY2OTdkZmEzMWIwN2MyNDkzNDdiOTRiYjI0YmFjZGUwYTIxYTM1ZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.5.2",
+    "at": "2026-09-16T06:31:53.644Z"
+  }
+}

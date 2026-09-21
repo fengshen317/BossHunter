@@ -162,7 +162,7 @@ def _call_claude(prompt: str, config: dict) -> str | None:
 		return None
 
 	try:
-		return call_anthropic_text(prompt, config, 256)
+		return call_anthropic_text(prompt, config)
 	except httpx.HTTPStatusError as e:
 		provider = config.get("ai", {}).get("provider", "anthropic")
 		if e.response.status_code == 404:

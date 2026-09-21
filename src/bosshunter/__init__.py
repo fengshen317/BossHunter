@@ -3,6 +3,12 @@
 import os
 import sys
 
+from bosshunter.environment import load_local_environment
+
+
+# LangGraph/LangSmith 在导入时读取追踪环境变量，因此必须早于其它业务模块加载。
+load_local_environment()
+
 # Windows: force UTF-8 for console output
 if sys.platform == "win32":
     os.environ.setdefault("PYTHONUTF8", "1")

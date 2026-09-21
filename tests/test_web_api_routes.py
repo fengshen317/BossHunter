@@ -180,6 +180,33 @@ class WebApiRouteTests(unittest.TestCase):
         self.assertFalse(payload["ok"])
         self.assertIn("请先在配置页填写 AI API Key，或设置 ANTHROPIC_API_KEY 环境变量。", payload["messages"])
 
+    def test_web_api_workbench_preflight_accepts_one_time_collection_keywords(self):
+        """工作台临时关键词应参与预检，但不要求先写入配置文件。"""
+        with tempfile.TemporaryDirectory() as tmp:
+            base_dir = Path(tmp)
+            resume_path = base_dir / "resume.md"
+            resume_path.write_text("# Resume", encoding="utf-8")
+            (base_dir / "config.yaml").write_text(
+                yaml.dump(
+                    {
+                        "profile": {"resume_path": str(resume_path)},
+                        "search": {"keywords": []},
+                        "ai": {"api_key": "test-api-key"},
+                    },
+                    allow_unicode=True,
+                    sort_keys=False,
+                ),
+                encoding="utf-8",
+            )
+            server.set_base_dir(base_dir)
+
+            status, _, body = self._request(
+                "/api/workbench/preflight?mode=full&keywords=AI%E4%BA%A7%E5%93%81%E7%BB%8F%E7%90%86&cities=%E6%B7%B1%E5%9C%B3"
+            )
+
+        self.assertTrue(status.startswith("200"))
+        self.assertEqual(json.loads(body), {"ok": True, "messages": []})
+
     def test_web_api_activity_returns_json_without_runtime_name_error(self):
         # Arrange
         with tempfile.TemporaryDirectory() as tmp:
@@ -214,6 +241,24 @@ class WebApiRouteTests(unittest.TestCase):
         self.assertTrue(status.startswith("200"))
         self.assertIn("application/json", headers["Content-Type"])
         self.assertEqual([job["id"] for job in payload["pending_confirmation"]], ["ready-job"])
+
+    def test_web_api_workbench_pending_confirmation_includes_unscored_imported_job(self):
+        """定向采集岗位未经过评分，也必须进入人工确认队列。"""
+        with tempfile.TemporaryDirectory() as tmp:
+            base_dir = Path(tmp)
+            db = get_db(base_dir / "data" / "bosshunter.db")
+            try:
+                insert_job(db, _job("imported-job"))
+                update_job_status(db, "imported-job", "ready")
+            finally:
+                db.close()
+            server.set_base_dir(base_dir)
+
+            status, _, body = self._request("/api/workbench")
+
+        payload = json.loads(body)
+        self.assertTrue(status.startswith("200"))
+        self.assertEqual([job["id"] for job in payload["pending_confirmation"]], ["imported-job"])
 
     def test_web_api_full_task_stays_running_while_waiting_for_frontend_confirmation(self):
         # Arrange
@@ -621,7 +666,7 @@ class WebApiRouteTests(unittest.TestCase):
 
                 insert_job(db, _job("reject-b"))
                 update_job_score(db, "reject-b", 72, "ok match")
-                update_job_status(db, "reject-b", "ready")
+                update_job_status(db, "reject-b", "approved")
             finally:
                 db.close()
             server.set_base_dir(base_dir)
@@ -684,6 +729,66 @@ class WebApiRouteTests(unittest.TestCase):
                 {"job_id": "reject-b", "action": "rejected", "detail": "Web Dashboard 放弃投递"},
             ],
         )
+
+    def test_web_api_workbench_reject_blocks_jobs_that_were_already_sent(self):
+        # Arrange
+        with tempfile.TemporaryDirectory() as tmp:
+            base_dir = Path(tmp)
+            db = get_db(base_dir / "data" / "bosshunter.db")
+            try:
+                insert_job(db, _job("reject-sent"))
+                update_job_status(db, "reject-sent", "sent")
+            finally:
+                db.close()
+            server.set_base_dir(base_dir)
+
+            body = json.dumps({"job_ids": ["reject-sent"]}).encode("utf-8")
+            status_headers = {}
+
+            def start_response(status, headers, exc_info=None):
+                status_headers["status"] = status
+                status_headers["headers"] = dict(headers)
+
+            environ = {
+                "REQUEST_METHOD": "POST",
+                "PATH_INFO": "/api/workbench/reject",
+                "QUERY_STRING": "",
+                "CONTENT_LENGTH": str(len(body)),
+                "CONTENT_TYPE": "application/json",
+                "SERVER_NAME": "127.0.0.1",
+                "SERVER_PORT": "8686",
+                "wsgi.version": (1, 0),
+                "wsgi.url_scheme": "http",
+                "wsgi.input": io.BytesIO(body),
+                "wsgi.errors": io.StringIO(),
+                "wsgi.multithread": False,
+                "wsgi.multiprocess": False,
+                "wsgi.run_once": False,
+            }
+
+            # Act
+            response_body = b"".join(
+                chunk if isinstance(chunk, bytes) else chunk.encode("utf-8")
+                for chunk in server.app(environ, start_response)
+            ).decode("utf-8")
+
+            verify_db = get_db(base_dir / "data" / "bosshunter.db")
+            try:
+                job_status = verify_db.execute(
+                    "SELECT status FROM jobs WHERE id = ?", ("reject-sent",)
+                ).fetchone()["status"]
+                rejected_history_count = verify_db.execute(
+                    "SELECT COUNT(*) AS count FROM history WHERE job_id = ? AND action = 'rejected'",
+                    ("reject-sent",),
+                ).fetchone()["count"]
+            finally:
+                verify_db.close()
+
+        # Assert
+        self.assertTrue(status_headers["status"].startswith("409"), response_body)
+        self.assertIn("不能放弃", json.loads(response_body)["error"])
+        self.assertEqual(job_status, "sent")
+        self.assertEqual(rejected_history_count, 0)
 
     def test_web_api_workbench_reject_removes_jobs_from_pending_confirmation(self):
         # Arrange
@@ -1295,6 +1400,7 @@ class WebApiRouteTests(unittest.TestCase):
 
             # Act：limit=10 应只返回 10 条，但 total 反映全部 12 条。
             status, headers, body = self._request("/api/jobs?limit=10")
+            second_status, _second_headers, second_body = self._request("/api/jobs?limit=10&offset=10")
 
         # Assert
         self.assertTrue(status.startswith("200"), body)
@@ -1314,6 +1420,10 @@ class WebApiRouteTests(unittest.TestCase):
         self.assertEqual(payload["pending_count"], 11)
         # 11 条 pending 缺企业信息，scored-0 已补全 → 缺失 11 条
         self.assertEqual(payload["missing_company_info_count"], 11)
+        self.assertTrue(second_status.startswith("200"), second_body)
+        second_page = json.loads(second_body)
+        self.assertEqual(len(second_page["items"]), 2)
+        self.assertEqual(second_page["total"], 12)
 
     def test_api_jobs_status_filter_returns_filtered_total(self):
         """带 ?status=scored 时 total 只计 scored 岗位，status_counts 仍是全量。"""
@@ -1341,6 +1451,27 @@ class WebApiRouteTests(unittest.TestCase):
         self.assertEqual([job["id"] for job in payload["items"]], ["b"])
         # status_counts 不受筛选影响，仍是全量
         self.assertEqual(payload["status_counts"], {"pending": 1, "scored": 1})
+
+    def test_api_jobs_company_filter_searches_all_jobs_and_combines_with_status(self):
+        """公司搜索应覆盖全量岗位，并可与状态筛选组合。"""
+        with tempfile.TemporaryDirectory() as tmp:
+            base_dir = Path(tmp)
+            db = get_db(base_dir / "data" / "bosshunter.db")
+            try:
+                insert_job(db, {**_job("target-pending"), "company": "示例科技有限公司"})
+                insert_job(db, {**_job("target-scored"), "company": "示例科技"})
+                update_job_status(db, "target-scored", "scored")
+                insert_job(db, {**_job("other"), "company": "其他公司"})
+            finally:
+                db.close()
+            server.set_base_dir(base_dir)
+
+            status, _headers, body = self._request("/api/jobs?company=%E7%A4%BA%E4%BE%8B&status=scored")
+
+        self.assertTrue(status.startswith("200"), body)
+        payload = json.loads(body)
+        self.assertEqual(payload["total"], 1)
+        self.assertEqual([item["id"] for item in payload["items"]], ["target-scored"])
 
 
 if __name__ == "__main__":

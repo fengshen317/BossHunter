@@ -22,12 +22,12 @@ export function TopCompanies({ data }: TopCompaniesProps) {
 			<div className="space-y-3">
 				{data.map((company, i) => (
 					<div key={i} className="flex items-center gap-3">
-						<span className="text-[11px] text-text-tertiary w-3">{i + 1}</span>
+						<span className="text-xs text-text-tertiary w-3">{i + 1}</span>
 						<div className="flex-1">
 							<div className="flex items-center justify-between mb-1">
 								<span className="text-xs text-foreground truncate max-w-[140px]">{company.company}</span>
 								<div className="flex items-center gap-2">
-									<span className="text-[11px] text-text-tertiary">{company.job_count}岗</span>
+									<span className="text-xs text-text-tertiary">{company.job_count}岗</span>
 									<span className="text-xs text-info data-value">{company.avg_score}</span>
 								</div>
 							</div>

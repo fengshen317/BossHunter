@@ -6,6 +6,7 @@ import os
 import socket
 import subprocess
 import sys
+import threading
 import time
 from importlib.resources import files
 from pathlib import Path
@@ -17,6 +18,9 @@ from bosshunter.config import DEFAULTS
 
 _browser_config: dict[str, Any] | None = None
 _runtime_process: subprocess.Popen | None = None
+# 保护 start_runtime/ensure_runtime 并发：多个线程同时触发自动拉起时，
+# 未加锁会各自 spawn 一个 Node 代理，后写者覆盖全局句柄、前者成为孤儿进程。
+_runtime_lock = threading.Lock()
 
 
 def _default_browser_config() -> dict[str, Any]:
@@ -192,14 +196,16 @@ def ensure_runtime(config: dict[str, Any] | None = None, wait_seconds: float = 1
             return False
         _switch_runtime_port(config, browser, fallback_port)
 
-    start_runtime(browser)
-    deadline = time.time() + wait_seconds
-    while time.time() < deadline:
-        if runtime_targets(browser) is not None:
-            set_browser_config(browser)
-            return True
-        time.sleep(0.5)
-    return False
+    # 并发保护：串行化"拉起→就绪轮询"整段，防止并发任务重复拉起代理。
+    with _runtime_lock:
+        start_runtime(browser)
+        deadline = time.time() + wait_seconds
+        while time.time() < deadline:
+            if runtime_targets(browser) is not None:
+                set_browser_config(browser)
+                return True
+            time.sleep(0.5)
+        return False
 
 
 __all__ = [

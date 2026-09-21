@@ -2,6 +2,55 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer components {
+  .workbench-input {
+    @apply h-10 w-full rounded-lg border border-card-border-strong bg-background px-3 text-sm text-foreground outline-none transition-colors placeholder:text-text-tertiary focus:border-primary focus:bg-surface focus:ring-2 focus:ring-primary/15 disabled:cursor-not-allowed disabled:opacity-60;
+  }
+
+  .assistant-stage-list {
+    position: relative;
+  }
+
+  .assistant-stage-item {
+    position: relative;
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  .assistant-stage-icon {
+    position: relative;
+    display: grid;
+    width: 1rem;
+    height: 1rem;
+    flex: none;
+    place-items: center;
+    border-width: 1px;
+    border-radius: 9999px;
+    margin-top: 0.125rem;
+  }
+
+  .assistant-stage-summary {
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+
+  .assistant-technical-details > summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .assistant-technical-details[open] .assistant-technical-chevron {
+    transform: rotate(180deg);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .assistant-technical-chevron {
+      transition: none;
+    }
+  }
+}
+
 /* ============================================================
    BossHunter 工作台 · 克制亮色主题
    近白底 + 单一 teal 强调 + 高对比墨色文字。
@@ -12,19 +61,22 @@
 	--background: #F6F7F9;
 	--foreground: #0F172A;
 	--surface: #FFFFFF;
-	--primary: #0F766E;
-	--border: #E4E8EF;
+	--primary: #0E7C73;
+	--border: #DEE4EA;
 	--radius: 8px;
 	--color-background: 246 247 249;
 	--color-foreground: 15 23 42;
 	--color-surface: 255 255 255;
-	--color-surface-raised: 252 252 253;
+	--color-surface-raised: 248 250 251;
 	--color-surface-overlay: 255 255 255;
-	--color-card-border: 228 232 239;
-	--color-card-border-strong: 203 210 220;
-	--color-primary: 15 118 110;
+	--color-card-border: 222 228 234;
+	--color-card-border-strong: 198 208 218;
+	--color-primary: 14 124 115;
 	--color-primary-dim: 17 94 89;
 	--color-primary-bright: 13 148 136;
+	--color-primary-soft: 228 241 239;
+	--color-primary-softer: 243 249 248;
+	--color-primary-border: 187 218 213;
 	--color-success: 22 163 74;
 	--color-warning: 217 119 6;
 	--color-danger: 220 38 38;
@@ -51,6 +103,9 @@
 	--color-primary: 45 212 191;
 	--color-primary-dim: 20 184 166;
 	--color-primary-bright: 94 234 212;
+	--color-primary-soft: 20 52 53;
+	--color-primary-softer: 15 37 40;
+	--color-primary-border: 43 105 100;
 	--color-success: 74 222 128;
 	--color-warning: 251 191 36;
 	--color-danger: 248 113 113;
@@ -79,6 +134,13 @@ body {
 	-webkit-font-smoothing: antialiased;
 	-moz-osx-font-smoothing: grayscale;
 	text-rendering: optimizeLegibility;
+	font-kerning: normal;
+}
+
+input::placeholder,
+textarea::placeholder {
+	color: rgb(var(--color-text-tertiary));
+	opacity: 1;
 }
 
 /* Scrollbar — 克制的中性灰，不抢视觉 */
@@ -270,29 +332,6 @@ a.assistant-citation:focus-visible {
 	transform: rotate(180deg);
 }
 
-.assistant-execution > summary::-webkit-details-marker {
-	display: none;
-}
-
-.assistant-execution-chevron {
-	transition: transform 180ms cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.assistant-execution[open] .assistant-execution-chevron {
-	transform: rotate(180deg);
-}
-
-.assistant-tool-trace {
-	display: inline-flex;
-	align-items: center;
-	gap: 0.35rem;
-	border: 1px solid;
-	border-radius: 999px;
-	padding: 0.3rem 0.55rem;
-	font-size: 0.5625rem;
-	line-height: 1rem;
-}
-
 .assistant-markdown p + p,
 .assistant-markdown p + ul,
 .assistant-markdown p + ol,
@@ -326,6 +365,30 @@ a.assistant-citation:focus-visible {
 .assistant-markdown h3 { margin: 1.2rem 0 0.5rem; font-size: 1rem; }
 .assistant-markdown > :first-child { margin-top: 0; }
 .assistant-markdown > :last-child { margin-bottom: 0; }
+
+/* 流式光标附着在最后一个正文块末尾，避免单独占行引发布局跳动。 */
+.assistant-markdown--streaming > :last-child::after {
+	display: inline-block;
+	width: 0.12rem;
+	height: 1em;
+	margin-left: 0.18rem;
+	border-radius: 999px;
+	background: rgb(var(--color-primary));
+	content: '';
+	vertical-align: -0.12em;
+	animation: assistant-stream-caret 0.9s steps(1, end) infinite;
+}
+
+@keyframes assistant-stream-caret {
+	0%, 52% { opacity: 1; }
+	53%, 100% { opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.assistant-markdown--streaming > :last-child::after {
+		animation: none;
+	}
+}
 
 .assistant-markdown blockquote {
 	margin: 0.9rem 0;
@@ -406,4 +469,22 @@ a.assistant-citation:focus-visible {
 	border-radius: 8px;
 	padding: 12px;
 	color: #1E293B;
+}
+
+/* ============================================================
+   键盘焦点：统一走设计系统的 teal focus ring
+   ------------------------------------------------------------
+   侧栏导航与多处自造按钮（模式卡、筛选 chip、折叠标题）没有显式焦点样式，
+   只能依赖浏览器默认 outline（黑/蓝 2px），与设计系统不一致。
+   实测五条路由共约 183 个可聚焦元素属于这种情况。
+
+   这里给交互元素一个统一兜底。用 :where() 把特异度压到 0，因此
+   `.outline-none`（特异度相同但位于 utilities 层，顺序在后）以及
+   `focus-visible:ring-*`（特异度更高）仍然可以覆盖它，组件自己的样式优先。
+   ============================================================ */
+@layer base {
+	:where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+		outline: 2px solid rgb(var(--color-primary) / 0.55);
+		outline-offset: 2px;
+	}
 }

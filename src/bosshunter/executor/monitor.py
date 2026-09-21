@@ -298,7 +298,7 @@ JS_CHAT_SEND_VERIFY = r"""
 def _call_claude(prompt: str, config: dict) -> str | None:
     """Call Claude API and return response text."""
     try:
-        return call_anthropic_text(prompt, config, 500)
+        return call_anthropic_text(prompt, config)
     except Exception as e:
         console.print(f"[red]API 调用失败: {e}[/red]")
         return None

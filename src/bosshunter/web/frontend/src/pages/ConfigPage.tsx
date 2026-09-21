@@ -193,7 +193,7 @@ export default function ConfigPage() {
 											<div className={`h-1 w-1/3 rounded ${item.key === 'ats' ? 'bg-text-tertiary/60' : 'bg-primary/60'}`} />
 										</div>
 										<div className="text-xs font-semibold text-foreground">{item.name}</div>
-										<div className="mt-1 text-[10px] leading-4 text-text-tertiary">{item.note}</div>
+										<div className="mt-1 text-xs leading-4 text-text-tertiary">{item.note}</div>
 									</button>
 								)
 							})}

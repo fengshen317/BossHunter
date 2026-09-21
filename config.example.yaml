@@ -75,6 +75,25 @@ ai:
   # api_key: "your-api-key"
   # base_url: "https://api.anthropic.com"
 
+# AI 助手上下文与长期记忆。Token 预算优先，轮数仅用于限制碎片噪声。
+assistant:
+  context:
+    default_context_window_tokens: 32768
+    output_reserve_tokens: 4096
+    safety_margin_ratio: 0.15
+    recent_history_ratio: 0.35
+    recent_turn_min: 2
+    recent_turn_max: 12
+    summary_max_tokens: 2048
+    pending_digest_max_tokens: 1024
+    compaction_batch_tokens: 8192
+    compaction_batch_turns: 8
+  memory:
+    capture_mode: "automatic"
+    min_confidence: 0.85
+    retrieval_max_items: 8
+    retrieval_max_tokens: 2048
+
 # 简历视觉模板：modern（现代编辑风）、executive（稳重商务）或 ats（纯单栏）
 resume:
   template: "modern"
@@ -108,3 +127,23 @@ browser:
   auto_start_proxy: true
   enable_port_guard: true
   site_patterns: true
+
+# 生产基础设施。PostgreSQL 为业务数据与 Agent 运行时的唯一数据库。
+database:
+  # PostgreSQL 示例：postgresql+psycopg://user:password@127.0.0.1:5432/bosshunter
+  # 必填；未配置时应用会拒绝启动，不会创建本地数据库文件。
+  url: "postgresql+psycopg://user:password@127.0.0.1:5432/bosshunter"
+
+runtime:
+  # 单进程桌面版无需 Redis；多实例部署时填写 URL 并设为 true。
+  redis_url: ""
+  redis_required: false
+  worker_enabled: false
+  max_concurrency: 4
+
+artifacts:
+  backend: "local"  # local 或 s3
+  local_path: "./data/artifacts"
+  # S3/MinIO 配置通过环境变量提供，避免把密钥写入配置文件。
+  bucket: ""
+  endpoint_url: ""

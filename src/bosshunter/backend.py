@@ -7,6 +7,7 @@ from pathlib import Path
 
 from bosshunter.browser import configure
 from bosshunter.config import load_config
+from bosshunter.environment import load_local_environment
 
 DEFAULT_HOST = "127.0.0.1"
 DEFAULT_PORT = 8686
@@ -46,9 +47,11 @@ def run_backend(
 		base_dir: ``config.yaml`` 和 ``data`` 所在目录。
 		open_browser: 启动后是否打开管理界面。
 	"""
+	runtime_dir = resolve_base_dir(str(base_dir) if base_dir is not None else None)
+	# 显式 base_dir 启动时也要在导入 LangGraph 服务前加载该实例的 LangSmith 配置。
+	load_local_environment(runtime_dir / ".env")
 	from bosshunter.web.server import run_server, set_base_dir
 
-	runtime_dir = resolve_base_dir(str(base_dir) if base_dir is not None else None)
 	config_path = runtime_dir / "config.yaml"
 	set_base_dir(runtime_dir)
 	# 浏览器运行时与 Web API 必须读取同一份配置，避免不同入口产生行为差异。

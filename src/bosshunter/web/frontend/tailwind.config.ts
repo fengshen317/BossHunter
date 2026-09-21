@@ -1,3 +1,5 @@
+import animate from 'tailwindcss-animate'
+
 /** @type {import('tailwindcss').Config} */
 export default {
 	content: [
@@ -19,13 +21,48 @@ export default {
 				primary: 'rgb(var(--color-primary) / <alpha-value>)',
 				'primary-dim': 'rgb(var(--color-primary-dim) / <alpha-value>)',
 				'primary-bright': 'rgb(var(--color-primary-bright) / <alpha-value>)',
+				'primary-soft': 'rgb(var(--color-primary-soft) / <alpha-value>)',
+				'primary-softer': 'rgb(var(--color-primary-softer) / <alpha-value>)',
+				'primary-border': 'rgb(var(--color-primary-border) / <alpha-value>)',
 				success: 'rgb(var(--color-success) / <alpha-value>)',
 				warning: 'rgb(var(--color-warning) / <alpha-value>)',
 				danger: 'rgb(var(--color-danger) / <alpha-value>)',
 				info: 'rgb(var(--color-info) / <alpha-value>)',
-				muted: 'rgb(var(--color-muted) / <alpha-value>)',
+				/* 既有 --color-muted 是「弱化文字色」。为对齐 shadcn 语义：muted 改为
+				   「弱化表面」，弱化文字移到 muted-foreground。两者同值，因此
+				   text-muted-foreground 与旧 text-muted 的渲染完全一致。 */
+				muted: {
+					DEFAULT: 'rgb(var(--color-surface-raised) / <alpha-value>)',
+					foreground: 'rgb(var(--color-text-tertiary) / <alpha-value>)',
+				},
 				'text-secondary': 'rgb(var(--color-text-secondary) / <alpha-value>)',
 				'text-tertiary': 'rgb(var(--color-text-tertiary) / <alpha-value>)',
+				/* shadcn 语义层：全部别名到既有 CSS 变量，不引入任何新颜色数值。
+				   暗色主题只需改 globals.css 里既有的 --color-*，新组件自动跟随。 */
+				card: {
+					DEFAULT: 'rgb(var(--color-surface) / <alpha-value>)',
+					foreground: 'rgb(var(--color-foreground) / <alpha-value>)',
+				},
+				popover: {
+					DEFAULT: 'rgb(var(--color-surface-overlay) / <alpha-value>)',
+					foreground: 'rgb(var(--color-foreground) / <alpha-value>)',
+				},
+				'primary-foreground': 'rgb(255 255 255 / <alpha-value>)',
+				secondary: {
+					DEFAULT: 'rgb(var(--color-surface-raised) / <alpha-value>)',
+					foreground: 'rgb(var(--color-foreground) / <alpha-value>)',
+				},
+				accent: {
+					DEFAULT: 'rgb(var(--color-background) / <alpha-value>)',
+					foreground: 'rgb(var(--color-foreground) / <alpha-value>)',
+				},
+				destructive: {
+					DEFAULT: 'rgb(var(--color-danger) / <alpha-value>)',
+					foreground: 'rgb(255 255 255 / <alpha-value>)',
+				},
+				border: 'rgb(var(--color-card-border) / <alpha-value>)',
+				input: 'rgb(var(--color-card-border) / <alpha-value>)',
+				ring: 'rgb(var(--color-primary) / <alpha-value>)',
 			},
 			fontFamily: {
 				mono: ['JetBrains Mono', 'Fira Code', 'Consolas', 'monospace'],
@@ -56,5 +93,5 @@ export default {
 			},
 		},
 	},
-	plugins: [],
+	plugins: [animate],
 }

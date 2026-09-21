@@ -254,7 +254,9 @@ class JobSelectionTests(unittest.TestCase):
             db = get_db(db_path)
             try:
                 insert_job(db, job)
-                update_job_status(db, job["id"], "ready")
+                # 发送队列只接受已确认岗位；重试测试直接以 approved 种子，
+                # 与"人工确认后发送"的新规则保持一致。
+                update_job_status(db, job["id"], "approved")
                 update_job_greeting(db, job["id"], job["greeting"])
             finally:
                 db.close()
@@ -342,6 +344,11 @@ class JobSelectionTests(unittest.TestCase):
         self.assertEqual([job["id"] for job in jobs], ["sendable", "scored"])
 
     def test_ready_to_send_requires_a_non_empty_greeting(self):
+        """发送队列只接受已人工确认(approved)且招呼语非空的岗位。
+
+        ready（已评分未确认）岗位即使有招呼语也不可发送——这是"发送前必须
+        人工确认"的强制点；error 岗位仅在显式手动重试时纳入。
+        """
         with tempfile.TemporaryDirectory() as tmp:
             db = get_db(Path(tmp) / "bosshunter.db")
             try:
@@ -349,22 +356,23 @@ class JobSelectionTests(unittest.TestCase):
                 update_job_status(db, "no-greeting", "ready")
 
                 insert_job(db, _job("blank-greeting"))
-                update_job_status(db, "blank-greeting", "ready")
+                update_job_status(db, "blank-greeting", "approved")
                 update_job_greeting(db, "blank-greeting", "   ")
 
-                insert_job(db, _job("sendable"))
-                update_job_status(db, "sendable", "ready")
-                update_job_greeting(db, "sendable", "Hi, this role looks like a strong fit.")
+                insert_job(db, _job("ready-with-greeting"))
+                update_job_status(db, "ready-with-greeting", "ready")
+                update_job_greeting(db, "ready-with-greeting", "Hi, not confirmed yet.")
 
                 insert_job(db, _job("approved"))
                 update_job_status(db, "approved", "approved")
-                update_job_greeting(db, "approved", "Not ready for send status yet.")
+                update_job_greeting(db, "approved", "Confirmed, ready to send.")
 
                 jobs = get_jobs_ready_to_send(db)
             finally:
                 db.close()
 
-        self.assertCountEqual([job["id"] for job in jobs], ["approved", "sendable"])
+        # ready 岗位（无论有无招呼语）都不应出现在发送队列
+        self.assertCountEqual([job["id"] for job in jobs], ["approved"])
 
     def test_approved_to_send_excludes_ready_and_overlaps_no_confirmation(self):
         """「待发招呼语」只含 approved 岗位，与「今日待确定」(ready) 不重叠。"""
@@ -493,7 +501,9 @@ class JobSelectionTests(unittest.TestCase):
             db = get_db(db_path)
             try:
                 insert_job(db, _job("sendable"))
-                update_job_status(db, "sendable", "ready")
+                # 发送前必须人工确认（approved）；force 只绕过窗口/休息日，
+                # 不绕过确认规则。
+                update_job_status(db, "sendable", "approved")
                 update_job_greeting(db, "sendable", "Ready to send.")
             finally:
                 db.close()
@@ -528,6 +538,63 @@ class JobSelectionTests(unittest.TestCase):
         self.assertEqual(sent, 1)
         self.assertEqual(status, "sent")
         self.assertEqual(outside_window_events, 0)
+
+
+    def test_send_greeting_skips_job_with_existing_conversation(self):
+        """已建立会话（conversation_id）的岗位绝不重发，防止同一 HR 收到重复招呼。
+
+        这是"发送成功但记账未完成即崩溃"窗口的幂等兜底：即使岗位状态仍是
+        approved，只要已有会话记录就跳过发送。
+        """
+        job = {
+            "id": "already-chatted",
+            "url": "https://www.zhipin.com/job_detail/already-chatted.html",
+            "conversation_id": "hr-session-1",
+        }
+        with patch("bosshunter.executor.sender.new_tab") as new_tab, \
+             patch("bosshunter.executor.sender._send_greeting_once") as send_once:
+            result, _ = _send_greeting_once(job, "您好", {"browse_before_greet": False})
+
+        self.assertFalse(result["success"])
+        self.assertEqual(result["error"], "already_sent")
+        new_tab.assert_not_called()
+        send_once.assert_not_called()
+
+    def test_ready_to_send_excludes_unconfirmed_ready_jobs(self):
+        """发送队列只接受 approved：ready（未确认）岗位即使有招呼语也不可发。"""
+        with tempfile.TemporaryDirectory() as tmp:
+            db = get_db(Path(tmp) / "bosshunter.db")
+            try:
+                insert_job(db, _job("ready-no-confirm"))
+                update_job_status(db, "ready-no-confirm", "ready")
+                update_job_greeting(db, "ready-no-confirm", "Hi, not confirmed yet.")
+
+                insert_job(db, _job("approved-confirmed"))
+                update_job_status(db, "approved-confirmed", "approved")
+                update_job_greeting(db, "approved-confirmed", "Hi, confirmed.")
+
+                jobs = get_jobs_ready_to_send(db)
+            finally:
+                db.close()
+
+        self.assertCountEqual([job["id"] for job in jobs], ["approved-confirmed"])
+
+    def test_include_send_errors_keeps_manual_retry_for_error_jobs(self):
+        """显式手动重试（include_send_errors）仍可选中 error 岗位，常规发送不可。"""
+        with tempfile.TemporaryDirectory() as tmp:
+            db = get_db(Path(tmp) / "bosshunter.db")
+            try:
+                insert_job(db, _job("failed-once"))
+                update_job_status(db, "failed-once", "error")
+                update_job_greeting(db, "failed-once", "Retry this.")
+
+                normal = get_jobs_ready_to_send(db)
+                manual = get_jobs_ready_to_send(db, include_send_errors=True)
+            finally:
+                db.close()
+
+        self.assertEqual([job["id"] for job in normal], [])
+        self.assertEqual([job["id"] for job in manual], ["failed-once"])
 
 
 if __name__ == "__main__":

@@ -3,6 +3,7 @@ from unittest.mock import patch
 
 from bosshunter.ai.greeter import (
 	GREETING_PROMPT,
+	REVIEW_PROMPT,
 	_generate_greeting_once,
 	_generate_with_deterministic_retry,
 	_quality_issues,
@@ -32,7 +33,7 @@ class GreeterQualityTests(unittest.TestCase):
 				)
 
 	def test_accepts_concrete_natural_message(self):
-		greeting = "您好，这个岗位同时提到多轮交互和评测体系，我之前用 LangGraph 做过订单问数工作流，处理过状态流转和结果可追溯。想了解一下，团队现阶段更侧重效果评测，还是生产稳定性？"
+		greeting = "您好，我做过 Python 后端和 AI 应用开发，负责过高并发接口、任务编排和异常治理。相关系统已在实际业务中稳定运行，与岗位对工程落地和服务稳定性的要求比较契合。如果岗位目前仍在招聘，希望能进一步沟通具体职责和团队情况。"
 
 		self.assertEqual(_quality_issues(greeting), [])
 
@@ -49,7 +50,10 @@ class GreeterQualityTests(unittest.TestCase):
 		# 反例必须是套话，正例必须含可核验数据
 		self.assertIn("很感兴趣", GREETING_PROMPT)  # 反例内容
 		self.assertIn("效果评测", GREETING_PROMPT)
-		self.assertIn("必须以问号结束", GREETING_PROMPT)
+		self.assertIn("80-130 字", GREETING_PROMPT)
+		self.assertIn("3-4 个短句", GREETING_PROMPT)
+		self.assertIn("岗位目前仍在招聘", GREETING_PROMPT)
+		self.assertNotIn("必须以问号结束", GREETING_PROMPT)
 
 	def test_prompt_picks_project_by_jd_not_strongest(self):
 		"""prompt 要求按 JD 方向选项目，解决同质化。"""
@@ -75,18 +79,30 @@ class GreeterQualityTests(unittest.TestCase):
 			)
 		self.assertIsNotNone(result)
 		self.assertEqual(result, long_greeting)
-		self.assertIn("长度不在 45-120 字范围内", _quality_issues(result))
+		self.assertIn("长度不在 80-130 字范围内", _quality_issues(result))
 
-	def test_length_upper_bound_is_120(self):
-		greeting = "正" * 121
+	def test_length_upper_bound_is_130(self):
+		greeting = "正" * 131
 		issues = _quality_issues(greeting)
-		self.assertTrue(any("120" in i for i in issues))
+		self.assertTrue(any("130" in i for i in issues))
 
-	def test_rejects_message_without_question_or_greeting(self):
-		greeting = "这个岗位同时提到多轮交互和评测体系，我做过订单问数工作流，处理过状态流转和结果可追溯。"
+	def test_rejects_message_without_greeting_but_allows_statement_ending(self):
+		greeting = "我有三年 Python 后端及 AI 应用开发经验，做过高并发服务和 Agent 工作流落地。此前负责的项目已稳定运行，在接口性能和异常治理方面积累了经验，与岗位要求比较契合。如果岗位目前仍在招聘，希望能进一步沟通。"
 		issues = _quality_issues(greeting)
 		self.assertIn("没有以“您好，”自然开场", issues)
-		self.assertIn("没有以完整、具体的问题收尾", issues)
+		self.assertNotIn("没有以完整、具体的问题收尾", issues)
+
+	def test_rejects_business_interview_question(self):
+		greeting = "您好，我做过多个 Agent 工作流项目，也有生产系统稳定性治理经验，与岗位要求比较匹配。之前负责过任务编排和异常恢复，相关服务已经稳定投入使用。想了解一下，团队目前更侧重效果评测，还是生产稳定性？"
+
+		self.assertIn("包含需要招聘方判断业务细节的反问", _quality_issues(greeting))
+
+	def test_review_prompt_focuses_on_attraction_and_low_reply_cost(self):
+		self.assertIn("前三秒吸引力", REVIEW_PROMPT)
+		self.assertIn("候选人价值", REVIEW_PROMPT)
+		self.assertIn("回复成本", REVIEW_PROMPT)
+		self.assertIn("候选人简历依据", REVIEW_PROMPT)
+		self.assertIn("岗位要求依据", REVIEW_PROMPT)
 
 
 class DeterministicRetryTests(unittest.TestCase):
@@ -94,7 +110,7 @@ class DeterministicRetryTests(unittest.TestCase):
 
 	def test_clean_greeting_returned_without_retry(self):
 		"""合规招呼语不触发重试。"""
-		clean = "您好，这个岗位同时提到多轮交互和评测体系，我做过 LangGraph 订单问数工作流，处理过状态流转。想了解一下，团队目前更侧重效果评测，还是生产稳定性？"
+		clean = "您好，我做过 Python 后端和 AI 应用开发，负责过高并发接口、任务编排和异常治理。相关系统已在实际业务中稳定运行，与岗位对工程落地和服务稳定性的要求比较契合。如果岗位目前仍在招聘，希望能进一步沟通具体职责和团队情况。"
 		job = {"jd": "AI", "title": "AI", "company": "C", "salary": "20K", "city": "深圳"}
 		with patch(
 			"bosshunter.ai.greeter._generate_greeting_once", return_value=clean
@@ -106,7 +122,7 @@ class DeterministicRetryTests(unittest.TestCase):
 	def test_banned_greeting_triggers_one_retry(self):
 		"""命中禁词时带 critique 重试一次。"""
 		banned = "您好，看到贵司在招人，我对这个岗位很感兴趣，希望有机会沟通。"
-		clean = "您好，这个岗位同时提到多轮交互和评测体系，我做过 LangGraph 订单问数工作流，处理过状态流转。想了解一下，团队目前更侧重效果评测，还是生产稳定性？"
+		clean = "您好，我做过 Python 后端和 AI 应用开发，负责过高并发接口、任务编排和异常治理。相关系统已在实际业务中稳定运行，与岗位对工程落地和服务稳定性的要求比较契合。如果岗位目前仍在招聘，希望能进一步沟通具体职责和团队情况。"
 		job = {"jd": "AI", "title": "AI", "company": "C", "salary": "20K", "city": "深圳"}
 		with patch(
 			"bosshunter.ai.greeter._generate_greeting_once",

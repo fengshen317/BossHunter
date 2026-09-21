@@ -11,17 +11,20 @@ import time
 from copy import deepcopy
 from pathlib import Path
 from queue import Empty, Queue
-from threading import Event, Thread
+from threading import Event, Lock, Thread
 
-from bottle import Bottle, request, response, static_file, abort
+from bottle import Bottle, ServerAdapter, request, response, static_file, HTTPError
 
 from bosshunter import __version__
 from bosshunter.config import load_config, CITY_CODES
+
+# 从 .env 加载的本地环境变量（BOSSHUNTER_AUTH_TOKEN 等）在导入期即可用，
+# 因此这里必须走真实环境，不能复用 _load_web_env 的覆盖逻辑。
+_AUTH_TOKEN = os.environ.get("BOSSHUNTER_AUTH_TOKEN") or ""
 from bosshunter.db import (
 	add_history,
 	count_unresolved_monitor_items,
 	get_daily_activity,
-	get_db,
 	get_funnel_stats,
 	get_job,
 	get_jobs_by_status,
@@ -66,6 +69,26 @@ RESUME_DIR = DATA_DIR / "resumes"
 PROFILE_DIR = DATA_DIR / "profile"
 CONFIG_PATH = BASE_DIR / "config.yaml"
 _assistant_service = None
+# 会话级流式暂停开关：Event 未设置表示输出暂停，设置表示继续转发。
+_stream_gates: dict[str, Event] = {}
+_stream_gate_lock = Lock()
+
+
+def _acquire_stream_gate(conversation_id: str) -> Event:
+	"""为会话创建（或复用）暂停开关，初始为继续输出状态。"""
+	with _stream_gate_lock:
+		gate = _stream_gates.get(conversation_id)
+		if gate is None:
+			gate = Event()
+			gate.set()
+			_stream_gates[conversation_id] = gate
+		return gate
+
+
+def _release_stream_gate(conversation_id: str) -> None:
+	"""流结束后清理暂停开关，避免会话状态残留。"""
+	with _stream_gate_lock:
+		_stream_gates.pop(conversation_id, None)
 
 
 def set_base_dir(base_dir: Path | str) -> None:
@@ -82,8 +105,58 @@ def set_base_dir(base_dir: Path | str) -> None:
 
 
 def _get_web_db():
-	"""Open the dashboard database from the resolved runtime data directory."""
-	return get_db(DATA_DIR / "bosshunter.db")
+	"""打开与 Agent 服务一致的业务数据库，避免回复完成后历史记录消失。"""
+	from bosshunter.db import get_business_db
+
+	return get_business_db(CONFIG_PATH)
+
+
+def _is_loopback_host(host: str) -> bool:
+	"""判断监听地址是否为回环地址。
+
+	本地绑定（127.0.0.1 / localhost / ::1）不需要鉴权；绑定到局域网
+	（0.0.0.0 或具体网卡地址）时必须设置 BOSSHUNTER_AUTH_TOKEN 才能启动。
+	"""
+	host = str(host or "").strip().lower()
+	return host in {"127.0.0.1", "localhost", "::1", "[::1]"}
+
+
+def _host_requires_auth(host: str) -> bool:
+	"""非回环绑定但未配置鉴权 token 时，拒绝提供未授权 Web 服务。"""
+	return not _is_loopback_host(host) and not _AUTH_TOKEN
+
+
+def _unauthorized() -> HTTPError:
+	return HTTPError(401, "缺少或错误的访问令牌，请设置 BOSSHUNTER_AUTH_TOKEN")
+
+
+def _check_web_auth():
+	"""对启用鉴权的请求强制 Bearer Token 校验。
+
+	仅保护 /api/* 数据与操作接口；静态资源（前端外壳）无需鉴权，
+	否则页面都无法加载，用户无法输入令牌。回环（默认 127.0.0.1）
+	请求不做校验，保持本地开发零配置；LAN 绑定场景依赖 token 防止
+	局域网内任意进程访问管理面。
+	"""
+	if not _AUTH_TOKEN:
+		return
+	if not str(request.path or "").startswith("/api/"):
+		return
+	authorization = request.headers.get("Authorization", "")
+	scheme, _, token = str(authorization).partition(" ")
+	if str(token).strip() and str(scheme).lower() == "bearer":
+		if _token_equals(token.strip(), _AUTH_TOKEN):
+			return
+	raise _unauthorized()
+
+
+def _token_equals(a: str, b: str) -> bool:
+	"""常数时间比较 token，避免时序侧信道。"""
+	try:
+		import hmac
+		return hmac.compare_digest(a.encode("utf-8"), b.encode("utf-8"))
+	except Exception:
+		return a == b
 
 
 def _get_assistant_service():
@@ -145,6 +218,23 @@ def _serialize_history_items(items):
 	return serialized
 
 
+def _redact_config_dict(config: dict) -> dict:
+	"""返回脱敏后的配置副本，隐藏 API key / auth token 明文。
+
+	与 /api/config 响应共用同一脱敏规则，供任何需要导出配置的接口复用。
+	"""
+	redacted = deepcopy(config)
+	ai_cfg = redacted.get("ai")
+	if isinstance(ai_cfg, dict):
+		key = ai_cfg.pop("api_key", None)
+		if key:
+			ai_cfg["api_key_masked"] = _mask_api_key(str(key))
+		auth_token = ai_cfg.pop("auth_token", None)
+		if auth_token:
+			ai_cfg["auth_token_masked"] = _mask_api_key(str(auth_token))
+	return redacted
+
+
 def _mask_api_key(key):
 	"""Return a display-safe API key marker."""
 	if not key:
@@ -156,16 +246,7 @@ def _mask_api_key(key):
 
 def _redact_config_for_response(config):
 	"""Hide secrets before returning config to the browser."""
-	redacted = deepcopy(config)
-	ai_cfg = redacted.get("ai")
-	if isinstance(ai_cfg, dict):
-		key = ai_cfg.pop("api_key", None)
-		if key:
-			ai_cfg["api_key_masked"] = _mask_api_key(str(key))
-		auth_token = ai_cfg.pop("auth_token", None)
-		if auth_token:
-			ai_cfg["auth_token_masked"] = _mask_api_key(str(auth_token))
-	return redacted
+	return _redact_config_dict(config)
 
 
 def _sanitize_config_for_write(data):
@@ -183,7 +264,9 @@ def _sanitize_config_for_write(data):
 	existing_ai = load_config(CONFIG_PATH).get("ai", {})
 	provider = ai_cfg.get("provider") or existing_ai.get("provider") or "openai_compatible"
 	if provider not in {"anthropic", "openai_compatible"}:
-		provider = "openai_compatible"
+		# 前端可能提交旧的 "openai" 值：保持用户已配置的提供商，而不是
+		# 静默改成默认的 openai_compatible。
+		provider = existing_ai.get("provider") or "openai_compatible"
 	ai_cfg["provider"] = provider
 
 	for field in ("api_key", "auth_token"):
@@ -381,7 +464,16 @@ def _execute_monitor(task: WorkbenchTask, config: dict) -> None:
 	interval_sec = max(interval_min * 60, 1)
 	while not task.stop_requested.is_set():
 		_log(task, "执行一轮监测")
-		summary = monitor_and_send_resumes(monitor_config)
+		# 周期级异常隔离：单轮 DB 抖动/页面结构异常不应终止整个长任务，
+		# 记录错误后等下一个周期重试（与 CLI 循环 pipeline.py 的行为一致）。
+		try:
+			summary = monitor_and_send_resumes(monitor_config)
+		except Exception as exc:
+			_log(task, f"本轮监测出错（{type(exc).__name__}: {exc}），等待下个周期重试")
+			if task.stop_requested.is_set():
+				return
+			task.stop_requested.wait(interval_sec)
+			continue
 		# monitor_and_send_resumes 内部用 console.print 打终端，不会进任务日志，
 		# 这里把未跟踪会话的回复显式写入日志，避免用户在面板上看不到检测结果。
 		unmatched = summary.get("unmatched_convs") or []
@@ -708,9 +800,12 @@ def api_activity():
 @app.route("/api/jobs")
 def api_jobs():
 	status_filter = request.params.get("status", None)
+	# Bottle 的 FormsDict.get() 会保留 latin-1 形式的原始字节；公司名包含中文时
+	# 必须显式按 UTF-8 解码，否则 LIKE 收到乱码，前端看起来就像搜索没有生效。
+	company_filter = (request.query.getunicode("company", "") or "").strip()
 	# 默认一页 50 条，上限 200 防滥用。前端再做二级分页/滚动。
-	limit = min(int(request.params.get("limit", 50)), 200)
-	offset = int(request.params.get("offset", 0))
+	limit = max(1, min(int(request.params.get("limit", 50)), 200))
+	offset = max(0, int(request.params.get("offset", 0)))
 
 	db = _get_web_db()
 	try:
@@ -718,12 +813,20 @@ def api_jobs():
 		query = "SELECT * FROM jobs"
 		count_query = "SELECT COUNT(*) AS cnt FROM jobs"
 		params = []
-		count_params = []
+		filters = []
 		if status_filter:
-			query += " WHERE status = ?"
-			count_query += " WHERE status = ?"
+			filters.append("status = ?")
 			params.append(status_filter)
-			count_params.append(status_filter)
+		if company_filter:
+			# 转义 LIKE 通配符，确保用户输入的公司名按普通文本匹配。
+			escaped_company = company_filter.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+			filters.append("company LIKE ? ESCAPE '\\'")
+			params.append(f"%{escaped_company}%")
+		if filters:
+			where_clause = " WHERE " + " AND ".join(filters)
+			query += where_clause
+			count_query += where_clause
+		count_params = list(params)
 		query += " ORDER BY score DESC, created_at DESC LIMIT ? OFFSET ?"
 		params.extend([limit, offset])
 
@@ -799,14 +902,13 @@ def api_history_unresolved_replies_count():
 def api_workbench():
 	db = _get_web_db()
 	try:
-		threshold = load_config(CONFIG_PATH).get("scoring", {}).get("threshold", 60)
 		status = task_runner.status()
 		return _json_response(
 			{
 				"funnel": get_funnel_stats(db),
-				"pending_confirmation": _serialize_db_items(
-					[job for job in get_jobs_pending_confirmation(db) if int(job.get("score") or 0) >= threshold]
-				),
+				# ready 已经是明确的待人工确认状态。定向采集岗位不会经过评分，
+				# 因此不能再按分数过滤，否则会生成招呼语后从工作台消失。
+				"pending_confirmation": _serialize_db_items(get_jobs_pending_confirmation(db)),
 				"pending_greetings": _serialize_db_items(get_jobs_approved_to_send(db)),
 				"needs_greeting": _serialize_db_items(get_jobs_needing_greeting(db)),
 				"send_errors": _serialize_db_items(get_jobs_with_send_errors(db)),
@@ -826,6 +928,13 @@ def api_workbench_preflight():
 	mode = request.params.get("mode", "")
 	try:
 		config = load_config(CONFIG_PATH)
+		keywords = [item.strip() for item in request.params.get("keywords", "").split(",") if item.strip()]
+		cities = [item.strip() for item in request.params.get("cities", "").split(",") if item.strip()]
+		if mode in {"full", "collect"}:
+			if keywords:
+				config.setdefault("search", {})["keywords"] = keywords
+			if cities:
+				config.setdefault("search", {})["cities"] = cities
 		messages = _preflight_messages(mode, config)
 		return _json_response({"ok": not messages, "messages": messages})
 	except Exception as e:
@@ -837,10 +946,21 @@ def api_workbench_task_start():
 	try:
 		body = request.json or {}
 		mode = body.get("mode", "")
-		messages = _preflight_messages(mode, load_config(CONFIG_PATH))
+		config = _task_config()
+		if mode in {"full", "collect"}:
+			keywords = [str(item).strip() for item in body.get("keywords", []) if str(item).strip()]
+			cities = [str(item).strip() for item in body.get("cities", []) if str(item).strip()]
+			if keywords:
+				config.setdefault("search", {})["keywords"] = keywords
+			if cities:
+				config.setdefault("search", {})["cities"] = cities
+			limit = body.get("limit")
+			if limit is not None:
+				config["_workbench_limit"] = max(1, min(int(limit), 500))
+		messages = _preflight_messages(mode, config)
 		if messages:
 			return _json_response({"error": "请先处理启动前检查", "messages": messages}, 400)
-		task = task_runner.start(mode, _task_config())
+		task = task_runner.start(mode, config)
 		return _json_response(task)
 	except TaskAlreadyRunningError as e:
 		return _json_response({"error": str(e)}, 409)
@@ -877,8 +997,21 @@ def api_workbench_deliver():
 
 		direct_send = bool(body.get("direct_send"))
 		if not direct_send:
+			# 工作台确认：允许确认任何非终态岗位（含 AI 助手导入等场景），
+			# 终态（rejected/closed/sent 等）不应被重新置为待发送。
+			blocked_statuses = {"rejected", "closed", "sent", "replied", "resume_sent", "follow_up_sent", "needs_resume"}
 			db = _get_web_db()
 			try:
+				jobs = [get_job(db, job_id) for job_id in job_ids]
+				missing_ids = [job_id for job_id, job in zip(job_ids, jobs) if job is None]
+				if missing_ids:
+					return _json_response({"error": f"岗位不存在: {', '.join(missing_ids)}"}, 404)
+				ineligible = [job for job in jobs if job and job["status"] in blocked_statuses]
+				if ineligible:
+					return _json_response(
+						{"error": "已拒绝、已关闭或已发送的岗位不能重复确认投递"},
+						409,
+					)
 				for job_id in job_ids:
 					update_job_status(db, job_id, "approved")
 					add_history(db, job_id, "approved", "Web Dashboard 确认投递")
@@ -903,7 +1036,26 @@ def api_workbench_deliver():
 			# 确认后不自动发送——岗位进入"待发送招呼语"由用户手动发送
 			return _json_response({"confirmed": len(job_ids), "message": "已确认，请在「待发送招呼语」中手动发送"})
 
-		# direct_send: 用户在"待发送招呼语"中手动点击发送
+		# direct_send: 用户在"待发送招呼语"中手动点击发送。
+		# 服务端强制人工确认：仅允许发送已 approved 的岗位，未确认岗位一律拒绝，
+		# 避免 AI 批量导入生成的 ready 岗位绕过确认直接投递给 HR。
+		# 已拒绝/已关闭岗位也禁止重发（前端入口隐藏了它们，这里作为兜底）。
+		blocked_statuses = {"rejected", "closed", "sent", "replied", "resume_sent", "follow_up_sent", "needs_resume"}
+		db = _get_web_db()
+		try:
+			jobs = [get_job(db, job_id) for job_id in job_ids]
+			missing_ids = [job_id for job_id, job in zip(job_ids, jobs) if job is None]
+			if missing_ids:
+				return _json_response({"error": f"岗位不存在: {', '.join(missing_ids)}"}, 404)
+			unapproved = [job for job in jobs if job and job["status"] != "approved"]
+			if unapproved:
+				return _json_response(
+					{"error": "仅已确认的岗位可以发送，请先在「今日待确定」中确认后重试"},
+					409,
+				)
+		finally:
+			db.close()
+
 		deliver_options = {
 			"_workbench_job_ids": job_ids,
 			"_workbench_skip_greeting": True,
@@ -961,6 +1113,17 @@ def api_workbench_reject():
 
 		db = _get_web_db()
 		try:
+			jobs = [get_job(db, job_id) for job_id in job_ids]
+			missing_ids = [job_id for job_id, job in zip(job_ids, jobs) if job is None]
+			if missing_ids:
+				return _json_response({"error": f"岗位不存在: {', '.join(missing_ids)}"}, 404)
+			eligible_statuses = {"ready", "approved", "error"}
+			ineligible_jobs = [job for job in jobs if job and job["status"] not in eligible_statuses]
+			if ineligible_jobs:
+				return _json_response(
+					{"error": "仅待确认、待发送或发送失败的岗位可以放弃，已发送的岗位不能放弃"},
+					409,
+				)
 			for job_id in job_ids:
 				update_job_status(db, job_id, "rejected")
 				add_history(db, job_id, "rejected", "Web Dashboard 放弃投递")
@@ -1335,11 +1498,19 @@ def api_assistant_conversation_delete(conversation_id):
 @app.route("/api/assistant/conversations/<conversation_id>/messages")
 def api_assistant_messages(conversation_id):
 	"""读取一个会话的消息。"""
-	from bosshunter.assistant.repository import list_messages
+	from bosshunter.assistant.repository import list_message_page
 
+	try:
+		limit = int(request.query.get("limit", "40"))
+	except ValueError:
+		return _json_response({"error": "limit 必须是整数"}, 400)
+	before = str(request.query.get("before", "")).strip() or None
 	db = _get_web_db()
 	try:
-		return _json_response({"items": _serialize_db_items(list_messages(db, conversation_id))})
+		page = list_message_page(db, conversation_id, before=before, limit=limit)
+		return _json_response({**page, "items": _serialize_db_items(page["items"])})
+	except ValueError as exc:
+		return _json_response({"error": str(exc)}, 400)
 	finally:
 		db.close()
 
@@ -1382,6 +1553,8 @@ def api_assistant_message_stream(conversation_id):
 	response.set_header("Cache-Control", "no-cache")
 	response.set_header("X-Accel-Buffering", "no")
 
+	gate = _acquire_stream_gate(conversation_id)
+
 	def events():
 		"""在工作线程中执行 Agent，把模型 token 实时转发为 SSE。"""
 		event_queue: Queue[tuple[str, object]] = Queue()
@@ -1399,10 +1572,11 @@ def api_assistant_message_stream(conversation_id):
 					message,
 					job_id=job_id,
 					web_enabled=web_enabled,
+					on_run=lambda run_id: event_queue.put(("start", run_id)),
 					on_token=lambda token: event_queue.put(("delta", token)),
 					on_event=lambda event: event_queue.put(("trace", event)),
 				)
-				content_length = len(str(result.get("message", {}).get("content", "")))
+				content_length = len(str((result.get("message") or {}).get("content", "")))
 				print(f"[AI助手] 请求完成：正文={content_length} 字，status={result.get('status')}", flush=True)
 				event_queue.put(("done", result))
 			except Exception as exc:
@@ -1410,37 +1584,107 @@ def api_assistant_message_stream(conversation_id):
 				event_queue.put(("error", exc))
 
 		Thread(target=run_agent, name=f"assistant-stream-{conversation_id}", daemon=True).start()
-		while True:
-			try:
-				event_name, value = event_queue.get(timeout=15)
-			except Empty:
-				yield "event: ping\ndata: {}\n\n"
-				continue
-			if event_name == "delta":
-				yield f"event: delta\ndata: {json.dumps({'delta': value}, ensure_ascii=False)}\n\n"
-				continue
-			if event_name == "trace":
-				yield f"event: trace\ndata: {json.dumps(value, ensure_ascii=False)}\n\n"
-				continue
-			if event_name == "error":
-				error_payload = json.dumps({"error": f"AI 助手执行失败：{value}"}, ensure_ascii=False)
-				yield f"event: error\ndata: {error_payload}\n\n"
-				return
-			result = value
-			break
+		try:
+			while True:
+				try:
+					event_name, value = event_queue.get(timeout=15)
+				except Empty:
+					yield "event: ping\ndata: {}\n\n"
+					continue
+				if event_name in {"delta", "trace"}:
+					# 暂停期间保持连接但不转发新内容，恢复后继续输出。
+					while not gate.is_set():
+						yield "event: ping\ndata: {}\n\n"
+						gate.wait(timeout=10)
+				if event_name == "start":
+					yield f"event: start\ndata: {json.dumps({'run_id': value}, ensure_ascii=False)}\n\n"
+					continue
+				if event_name == "delta":
+					yield f"event: delta\ndata: {json.dumps({'delta': value}, ensure_ascii=False)}\n\n"
+					continue
+				if event_name == "trace":
+					yield f"event: trace\ndata: {json.dumps(value, ensure_ascii=False, default=str)}\n\n"
+					continue
+				if event_name == "error":
+					error_payload = json.dumps({"error": f"AI 助手执行失败：{value}"}, ensure_ascii=False)
+					yield f"event: error\ndata: {error_payload}\n\n"
+					return
+				result = value
+				break
 
-		metadata = {
-			"citations": result.get("citations", []),
-			"approval": result.get("approval"),
-			"task": result.get("task"),
-			"tool_trace": result.get("tool_trace", []),
-			"execution_plan": result.get("execution_plan", []),
-			"execution_events": result.get("execution_events", []),
-			"status": result.get("status", "completed"),
-		}
-		yield f"event: done\ndata: {json.dumps(metadata, ensure_ascii=False)}\n\n"
+			metadata = {
+				"id": (result.get("message") or {}).get("id"),
+				"run_id": result.get("run_id"),
+				"content": (result.get("message") or {}).get("content", ""),
+				"citations": result.get("citations", []),
+				"approval": result.get("approval"),
+				"task": result.get("task"),
+				"tool_trace": result.get("tool_trace", []),
+				"execution_plan": result.get("execution_plan", []),
+				"execution_events": result.get("execution_events", []),
+				"dag_result": result.get("dag_result"),
+				"evidence_route": result.get("evidence_route"),
+				"evidence_tasks": result.get("evidence_tasks", []),
+				"evidence_results": result.get("evidence_results", []),
+				"evidence_coverage": result.get("evidence_coverage", {}),
+				"status": result.get("status", "completed"),
+			}
+			yield f"event: done\ndata: {json.dumps(metadata, ensure_ascii=False, default=str)}\n\n"
+		finally:
+			_release_stream_gate(conversation_id)
 
 	return events()
+
+
+@app.route("/api/assistant/conversations/<conversation_id>/stream/pause", method="POST")
+def api_assistant_stream_pause(conversation_id):
+	"""暂停当前会话的流式输出，生成过程继续，恢复后补发。"""
+	gate = _stream_gates.get(conversation_id)
+	if gate is None:
+		return _json_response({"error": "当前会话没有进行中的回答"}, 400)
+	gate.clear()
+	return _json_response({"conversation_id": conversation_id, "status": "paused"})
+
+
+@app.route("/api/assistant/conversations/<conversation_id>/stream/resume", method="POST")
+def api_assistant_stream_resume(conversation_id):
+	"""恢复当前会话被暂停的流式输出。"""
+	gate = _stream_gates.get(conversation_id)
+	if gate is None:
+		return _json_response({"error": "当前会话没有进行中的回答"}, 400)
+	gate.set()
+	return _json_response({"conversation_id": conversation_id, "status": "resumed"})
+
+
+@app.route("/api/assistant/conversations/<conversation_id>/messages/partial", method="POST")
+def api_assistant_partial_message(conversation_id):
+	"""打断后保存已生成的部分回答，作为后续补充提问的上下文。"""
+	body = request.json or {}
+	content = str(body.get("content", "")).strip()
+	run_id = str(body.get("run_id", "")).strip() or None
+	if not content:
+		return _json_response({"error": "没有可保存的部分回答"}, 400)
+	from bosshunter.assistant.repository import add_message
+
+	db = _get_web_db()
+	try:
+		saved = add_message(db, conversation_id, "assistant", content, "text", {
+			"run_id": run_id,
+			"status": "interrupted",
+		})
+		return _json_response(saved)
+	finally:
+		db.close()
+
+
+@app.route("/api/assistant/runs/<run_id>/cancel", method="POST")
+def api_assistant_run_cancel(run_id):
+	"""请求当前 Agent Run 在下一个安全检查点停止。"""
+	try:
+		_get_assistant_service().cancel(str(run_id))
+		return _json_response({"run_id": str(run_id), "status": "cancelled"})
+	except Exception as exc:
+		return _json_response({"error": str(exc)}, 400)
 
 
 @app.route("/api/assistant/conversations/<conversation_id>/resume", method="POST")
@@ -1452,6 +1696,7 @@ def api_assistant_resume(conversation_id):
 		return _json_response({"error": "无效的确认操作"}, 400)
 	decision = {"action": action}
 	decision["action_id"] = str(body.get("action_id", "")).strip()
+	decision["sql_hash"] = str(body.get("sql_hash", "")).strip()
 	selected_item_ids = body.get("selected_item_ids", [])
 	if isinstance(selected_item_ids, list):
 		decision["selected_item_ids"] = [str(value) for value in selected_item_ids if str(value)]
@@ -1471,9 +1716,12 @@ def api_assistant_memories():
 	"""列出可由用户管理的长期记忆。"""
 	from bosshunter.assistant.repository import list_memories
 
+	status = str(request.query.get("status", "active"))
+	if status not in {"active", "history"}:
+		return _json_response({"error": "无效的记忆状态"}, 400)
 	db = _get_web_db()
 	try:
-		return _json_response({"items": _serialize_db_items(list_memories(db))})
+		return _json_response({"items": _serialize_db_items(list_memories(db, status=status))})
 	finally:
 		db.close()
 
@@ -1559,6 +1807,40 @@ def api_assistant_memory_delete(memory_id):
 		db.close()
 
 
+@app.route("/api/assistant/memories/<memory_id>", method="PATCH")
+def api_assistant_memory_edit(memory_id):
+	"""修改一条记忆，并保留被替换版本。"""
+	from bosshunter.assistant.repository import edit_memory
+
+	body = request.json or {}
+	content = str(body.get("content", "")).strip()
+	if not content:
+		return _json_response({"error": "记忆内容不能为空"}, 400)
+	db = _get_web_db()
+	try:
+		item = edit_memory(db, memory_id, content)
+		if item is None:
+			return _json_response({"error": "有效记忆不存在"}, 404)
+		return _json_response(item)
+	finally:
+		db.close()
+
+
+@app.route("/api/assistant/memories/<memory_id>/restore", method="POST")
+def api_assistant_memory_restore(memory_id):
+	"""把指定历史记忆恢复成新的有效版本。"""
+	from bosshunter.assistant.repository import restore_memory
+
+	db = _get_web_db()
+	try:
+		item = restore_memory(db, memory_id)
+		if item is None:
+			return _json_response({"error": "记忆不存在"}, 404)
+		return _json_response(item)
+	finally:
+		db.close()
+
+
 @app.route("/api/history/<history_id>/dismiss", method="POST")
 def api_history_dismiss(history_id):
 	db = _get_web_db()
@@ -1640,11 +1922,16 @@ def api_config_schema():
 
 @app.route("/api/config/download")
 def api_config_download():
-	if CONFIG_PATH.exists():
-		response.content_type = "application/x-yaml; charset=utf-8"
-		response.headers["Content-Disposition"] = "attachment; filename=config.yaml"
-		return CONFIG_PATH.read_text(encoding="utf-8")
-	abort(404, "config.yaml not found")
+	"""下载脱敏后的配置副本，绝不泄露 API key / auth token 明文。
+
+	浏览器只读得到打码后的配置，密钥通过 _mask_api_key 掩码展示。
+	"""
+	config = _redact_config_dict(load_config(CONFIG_PATH))
+	import yaml
+	body = yaml.safe_dump(config, allow_unicode=True, sort_keys=False)
+	response.content_type = "application/x-yaml; charset=utf-8"
+	response.headers["Content-Disposition"] = "attachment; filename=config.yaml"
+	return body
 
 
 @app.route("/api/config/cities")
@@ -1850,8 +2137,59 @@ def error500(error):
 # ─── Run ─────────────────────────────────────────────────
 
 
+class ThreadedWSGIRefServer(ServerAdapter):
+	"""每请求一线程的 wsgiref 服务器适配器。
+
+	Bottle 默认的 WSGIRefServer 是单线程 wsgiref——SSE 流会长时间占住唯一的
+	工作线程，assistant 流式回答运行期间，暂停/恢复、任务管理等所有其他接口
+	全部不可达（暂停后无法恢复，服务整体卡死）。这里用 ThreadingMixIn 让每个
+	请求在独立线程中服务，SSE 长连接不再阻塞其他接口。
+	"""
+
+	def run(self, app):
+		from socket import AF_INET
+		from socketserver import ThreadingMixIn
+		from wsgiref.simple_server import WSGIRequestHandler, WSGIServer, make_server
+
+		class FixedHandler(WSGIRequestHandler):
+			def address_string(self):
+				# 避免对客户端地址做反向 DNS 查询。
+				return self.client_address[0]
+
+			def log_request(self, *args, **kw):
+				if not getattr(self, "quiet", False):
+					return WSGIRequestHandler.log_request(self, *args, **kw)
+
+		class _Server(ThreadingMixIn, WSGIServer):
+			daemon_threads = True
+			request_queue_size = 64
+
+		server_cls = _Server
+		if ":" in self.host and getattr(server_cls, "address_family") == AF_INET:
+			class server_cls(server_cls):  # noqa: F811 - bottle 同款 IPv6 修正
+				address_family = AF_INET6
+
+		self.srv = make_server(self.host, self.port, app, server_cls, FixedHandler)
+		self.port = self.srv.server_port
+		try:
+			self.srv.serve_forever()
+		except KeyboardInterrupt:
+			self.srv.server_close()
+			raise
+
+
 def run_server(host: str = "127.0.0.1", port: int = 8686, open_browser: bool = False):
-	"""Start the web server."""
+	"""Start the web server.
+
+	绑定非回环地址（局域网暴露）且未设置 ``BOSSHUNTER_AUTH_TOKEN`` 时拒绝启动，
+	防止未鉴权的管理面暴露到局域网。所有请求在监听入口统一校验 token。
+	"""
+	if _host_requires_auth(host):
+		raise RuntimeError(
+			"BOSSHUNTER_HOST 绑定到非回环地址时必须设置 BOSSHUNTER_AUTH_TOKEN 环境变量，"
+			"否则拒绝启动 Web 服务"
+		)
+
 	if open_browser:
 		import webbrowser
 		import threading
@@ -1862,4 +2200,5 @@ def run_server(host: str = "127.0.0.1", port: int = 8686, open_browser: bool = F
 
 		threading.Thread(target=_open, daemon=True).start()
 
-	app.run(host=host, port=port, quiet=False, reloader=False)
+	app.add_hook("before_request", _check_web_auth)
+	app.run(host=host, port=port, quiet=False, reloader=False, server=ThreadedWSGIRefServer)

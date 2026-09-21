@@ -109,6 +109,125 @@ CAPABILITY_REGISTRY: dict[str, CapabilitySpec] = {
 	},
 }
 
+# 兼容期保留 intents 字段供旧路由使用，通用 Agent 依赖以下可检索元数据。
+_CAPABILITY_METADATA: dict[str, dict[str, Any]] = {
+	"job_collect": {"tags": ["jobs"], "side_effect": "local_persistent"},
+	"job_score": {"tags": ["jobs"], "side_effect": "local_persistent"},
+	"job_query": {"tags": ["jobs", "database"], "side_effect": "none"},
+	"company_analysis": {"tags": ["company", "research", "web"], "side_effect": "none"},
+	"greeting_generate": {"tags": ["jobs", "send"], "side_effect": "local_persistent"},
+	"greeting_send": {"tags": ["jobs", "send"], "side_effect": "external"},
+	"reply_draft": {"tags": ["send"], "side_effect": "local_reversible"},
+	"reply_send": {"tags": ["send"], "side_effect": "external"},
+	"reply_monitor": {"tags": ["monitor"], "side_effect": "external"},
+	"pipeline": {"tags": ["jobs", "send", "monitor"], "side_effect": "external"},
+}
+for _capability_name, _spec in CAPABILITY_REGISTRY.items():
+	_metadata = _CAPABILITY_METADATA[_capability_name]
+	_spec.update(
+		{
+			"when_to_use": [_spec["description"]],
+			"when_not_to_use": [],
+			"input_schema": {"type": "object", "properties": {}},
+			"output_schema": {"type": "object"},
+			"side_effect": _metadata["side_effect"],
+			"timeout_seconds": 30,
+			"cost_level": "low" if _spec["read_only"] else "medium",
+			"tags": _metadata["tags"],
+		}
+	)
+
+CAPABILITY_REGISTRY.update(
+	{
+		"resume_read": {
+			"name": "resume_read", "description": "读取当前用户简历，为岗位匹配和求职建议提供依据",
+			"tool_name": "resume_read", "intents": [], "required_fields": [], "risk_level": "low",
+			"read_only": True, "requires_approval": False, "when_to_use": ["简历", "匹配"],
+			"when_not_to_use": ["用户未要求结合个人经历"],
+			"input_schema": {"type": "object", "properties": {}}, "output_schema": {"type": "object"},
+			"side_effect": "none", "timeout_seconds": 5, "cost_level": "low", "tags": ["resume"],
+		},
+		"web_search": {
+			"name": "web_search", "description": "搜索公开网页以补充时效性事实和研究资料",
+			"tool_name": "web_search", "intents": [], "required_fields": [], "risk_level": "low",
+			"read_only": True, "requires_approval": False, "when_to_use": ["公开信息", "搜索", "研究"],
+			"when_not_to_use": ["本地数据已经足够"],
+			"input_schema": {"type": "object", "properties": {"query": {"type": "string"}}},
+			"output_schema": {"type": "object"}, "side_effect": "none", "timeout_seconds": 20,
+			"cost_level": "medium", "tags": ["research", "web"],
+		},
+	}
+)
+
+
+def _arguments_for_capability(intent: IntentResult, capability_name: str) -> dict[str, Any]:
+	"""合并实体与对应步骤参数，作为能力的统一槽位来源。
+
+	模型有时会把已抽取的实体仅放在 steps.arguments。完整性检查和
+	工具调用必须读取同一份合并结果，避免已提供的信息被误判为缺失。
+
+	Args:
+		intent: 已通过策略过滤的结构化意图。
+		capability_name: 能力注册表中的能力名称。
+
+	Returns:
+		可供该能力使用的标准化参数。
+	"""
+	arguments: dict[str, Any] = {}
+	for step in enabled_steps(intent):
+		if ACTION_TO_CAPABILITY[step["action"]] == capability_name:
+			arguments.update(step["arguments"])
+			break
+	# entities 是实体的唯一权威来源；步骤参数仅用于兼容旧会话和承载非实体参数。
+	# 最后覆盖可防止模型在 steps.arguments 中用冲突值改写已确认实体。
+	arguments.update(tool_constraints(intent))
+	arguments.update(intent["entities"])
+	return arguments
+
+
+def entity_contracts_by_intent() -> dict[str, list[str]]:
+	"""从能力注册表生成各意图的必填实体契约。
+
+	Returns:
+		意图名称到必填实体字段列表的映射。
+	"""
+	contracts: dict[str, list[str]] = {}
+	for spec in CAPABILITY_REGISTRY.values():
+		for intent_type in spec["intents"]:
+			contracts[intent_type] = list(spec["required_fields"])
+	return contracts
+
+
+def canonicalize_capability_entities(intent: IntentResult) -> IntentResult:
+	"""将能力必填实体统一收敛到 ``entities`` 并同步执行步骤。
+
+	新请求以 entities 为唯一权威来源；若旧模型仅把必填实体写入步骤参数，
+	则先兼容性回收到 entities。随后把权威值同步到对应步骤，避免规划与执行
+	看到不同参数。
+
+	Args:
+		intent: 已归一化的结构化意图。
+
+	Returns:
+		实体和步骤参数一致的新意图。
+	"""
+	entities = dict(intent["entities"])
+	steps = [{**step, "arguments": dict(step["arguments"])} for step in intent.get("steps", [])]
+	for spec in capabilities_for_intent(intent):
+		matching_steps = [
+			step for step in steps if ACTION_TO_CAPABILITY[step["action"]] == spec["name"]
+		]
+		for field in spec["required_fields"]:
+			if not entities.get(field):
+				for step in matching_steps:
+					if step["arguments"].get(field):
+						entities[field] = step["arguments"][field]
+						break
+			if entities.get(field):
+				for step in matching_steps:
+					step["arguments"][field] = entities[field]
+	return {**intent, "entities": entities, "steps": steps}
+
 
 def capabilities_for_intent(intent: IntentResult) -> list[CapabilitySpec]:
 	"""查找支持当前意图的能力。
@@ -154,11 +273,12 @@ def complete_missing_fields(intent: IntentResult) -> IntentResult:
 	"""
 	# 模型可能臆造 candidate_name、job_id 等并非能力契约要求的槽位。
 	# 缺失字段必须由能力注册表统一裁决，否则普通咨询会永久停在澄清节点。
-	result: IntentResult = {**apply_intent_policy(intent, intent["goal"]), "missing_fields": []}
-	entities = result["entities"]
+	result = canonicalize_capability_entities(apply_intent_policy(intent, intent["goal"]))
+	result = {**result, "missing_fields": []}
 	for spec in capabilities_for_intent(result):
+		arguments = _arguments_for_capability(result, spec["name"])
 		for field in spec["required_fields"]:
-			if not entities.get(field) and field not in result["missing_fields"]:
+			if not arguments.get(field) and field not in result["missing_fields"]:
 				result["missing_fields"].append(field)
 		risk_order: dict[RiskLevel, int] = {"low": 0, "medium": 1, "high": 2}
 		if risk_order[spec["risk_level"]] > risk_order[result["risk_level"]]:
@@ -175,15 +295,10 @@ def match_capabilities(intent: IntentResult) -> list[CapabilityMatch]:
 	Returns:
 		供执行层消费的能力匹配结果。
 	"""
-	intent = apply_intent_policy(intent, intent["goal"])
-	base_arguments: dict[str, Any] = {**intent["entities"], **tool_constraints(intent)}
-	steps = enabled_steps(intent)
+	intent = canonicalize_capability_entities(apply_intent_policy(intent, intent["goal"]))
 	results: list[CapabilityMatch] = []
 	for spec in capabilities_for_intent(intent):
-		arguments = dict(base_arguments)
-		step = next((item for item in steps if ACTION_TO_CAPABILITY[item["action"]] == spec["name"]), None)
-		if step:
-			arguments.update(step["arguments"])
+		arguments = _arguments_for_capability(intent, spec["name"])
 		results.append(
 			{
 			"capability": spec["name"],
@@ -197,4 +312,11 @@ def match_capabilities(intent: IntentResult) -> list[CapabilityMatch]:
 	return results
 
 
-__all__ = ["CAPABILITY_REGISTRY", "capabilities_for_intent", "complete_missing_fields", "match_capabilities"]
+__all__ = [
+	"CAPABILITY_REGISTRY",
+	"canonicalize_capability_entities",
+	"capabilities_for_intent",
+	"complete_missing_fields",
+	"entity_contracts_by_intent",
+	"match_capabilities",
+]

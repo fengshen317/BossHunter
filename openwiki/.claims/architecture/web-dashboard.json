@@ -1,0 +1,230 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:435299d32f15372d3fa44eefe2732358ebe9bd0315f75dd402f92181b8c6d705",
+  "claims": [
+    {
+      "id": "claim_be7339fa49f34630ab8f2d0ed034e747",
+      "statement": "The web dashboard is a single owned system: src/bosshunter/web/server.py defines one Bottle app that serves JSON under /api/* and the built React/TypeScript assets from web/frontend/dist under /*, with SPA fallback to index.html for non-API routes and a JSON 404 for unknown API routes.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/web/server.py#L2089-L2117",
+          "version": "repo-lines-v1:sha256:7bcec1930dc852c7410227f3e2d92ee96cde4187b2f23683119e8d901aaa72a8:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZkYjY5MDNlNjcwNjE3ODU0NTQyNzNkZTBmOTIwNjUwZmNkM2FkOTM0ODZlOTQ4Yjg2M2VlNTc5Yjc5YTY3NGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM4MjVkOWJhZGU2OTYyZTI1OTZlOTU4NWY0NzJlNjE1OGYwYTQ0NWJjMThlYTIyMmRiMmEzM2JhNzAyNGJhZDEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFmMjQwZjdhNzIzZjJkNDZkYjNjNmY4ZmFkNmQ0NWQwYzZjNGVlZmM5YWM2ZTMxY2RhMzI4Yjk4YzM4NjU1MTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU3NmMxZGJhNzY1ZTE5MDNhYTg0MmZjNzgxNmEyNTgxMDNmMzU1ZWE1NWFlMGQwNTJlZjgwNWYxNGRhNjBiMjYifQ"
+        },
+        {
+          "resource": "repo://src/bosshunter/web/server.py#L45-L50",
+          "version": "repo-lines-v1:sha256:5697b91928717e7ae2fd5d1763ee3b4f9fa72edf690b00041b8fe599790f8428:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTM1Y2EwMDEyMjEzM2Y1NTdhMzM1MTcwMDJmMjcxZTVhZGU2ODJhNDgwNDNmOGVjZmNhOWU3YzgzNjVmNWY4YSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNzdjNWI0MTA2ZTY4ZTc2Y2JlNDI2NTFkNDdiZTBjOGIxZDI5MDk5MDFiMzFjM2JmOGFmYmExYzVkZTdjYjExZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTE0NjIwYWFlY2FjMWIwYzhhYTE4YTNjMDA1YTg4Nzg1Y2E1ZmExOTI0NTc5ZDYyOTYyZDRiZmQ2ODNhYmIzMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDk2NjViN2Y0YWE1ZWM0ZDZmYmU4ZDE0ZTc5MDI0YjE0MGNmYWE0M2NiNjEyMmQyMjk4YWQxZGE3ZjYyY2JjNCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_e4cf30d376b84af09289837551449acb",
+      "statement": "The workbench task executors are registered once on the module-level WorkbenchTaskRunner at import time, mapping full, collect, score, reenrich, monitor, deliver, greeting, reply, and import modes to their _execute_* adapters.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/web/server.py#L743-L755",
+          "version": "repo-lines-v1:sha256:a4695bac8ff6a69592818b18b58d6bc3130651c8fb62b09b474064bfacdf432b:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ1ODI5ZTkwYWQyNzM2YjVjODYwMjk4NzgxNDE3ZTY1ZDVhNzgwNmQ2MTlmNzE0YjhkNDQ1OTM3ZTIyNmJkZGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZhZmJhMDUyN2MzOTUzYzRiNmUwZTViNTczOWJhODM2MTJmODA1M2JjZGM5NDY2NzMwMTkzY2QxZDU5MGI0MDgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ4NjBlNjJiMmNkM2RlMTVlZTViMTY0ZDIyODVjYWU1MjkxN2NmN2YzOThiOTkxZDUxNzI4MzhlMGZmYWNlZGQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjkxNWU1MjIwZTBlMGViMWE1NTkwYmRiZGUwNGYwZjUxMjA4OTk0ZTdlODg1OTBlYmE3MTUxN2E4NGU1MTc2YzMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_7fb68072bc9c4f1eb9992c044db81d07",
+      "statement": "run_server defaults to 127.0.0.1:8686, refuses to bind a non-loopback host without BOSSHUNTER_AUTH_TOKEN, and serves through ThreadedWSGIRefServer (wsgiref plus ThreadingMixIn) so per-request threads keep long-lived SSE streams from blocking the other endpoints.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/web/server.py#L2129-L2167",
+          "version": "repo-lines-v1:sha256:306ec05cbdafa60f60b7b8dd965da9c7df800a9107b7a9252e4fbe16626c4215:eyJzZWxlY3RlZExpbmVDb3VudCI6MzksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNjM2FlMWQyYjM3MzM0ZmJhMzU1NmIwOWI3Njk5NGY5ZWVhMGU5YTkxN2IxNzA0MTUzYTY1OTI2ZjNjMDA2Y2MiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVjNjhiMmFmMTc5ODhhNmMyZDVhNmM1NWY3NzU4MmY2MjQ4NGQ2OWZjMDVkY2Y5OWY2N2Y0YzAyZDc4ZGFhYzUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM5ZWVhZTlhN2NmZjM3YmRmMTIxNDliZjI1YjdmOTZkNTE3MWI1MTYwMzZlMzVlNTc4M2ZhZGRlYzBjNGY0ZmQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImExNzFhZWFhZmYxMDI4NmQyN2YwNzY4OWZmNTIyZmY2NzFiYmFjZWQ2ZWQ3M2M5NjUyMGZkYmUzZTNlMjg0MTAifQ"
+        },
+        {
+          "resource": "repo://src/bosshunter/web/server.py#L2170-L2193",
+          "version": "repo-lines-v1:sha256:45ea0b810da535f630c054eb80e2bb9c37722bfd0dd2e50383e6bdbdd0f59543:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIzYmU4NjFkNmM3ZTU2YTc2MzliNjZkYTk2N2JkZDViZjZiYTU1NjYxMzk2OGI3YTE3YmFiYWU5NDJjZmM3ZWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg0NDM0ZTMzZTdhZDk0ZjYxYmU1MGFmOWM4YmNkYzJjMjVjZDQ1NjdiYjlmOWU1YWQzZGMyNmE0MDMxMDU0NzgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdhZTFjOTEzZDg0NzQ2ZTk3ZTA0ZDdmNDBmODQzN2UwYWJmZTE4MTk1NmZiZmMwZjcxMDA5YWJlM2VjYTNlNmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_660b969448a7480bbda3c75e9b539c1b",
+      "statement": "WorkbenchTaskRunner enforces a single active non-parallel task under a lock, raising TaskAlreadyRunningError on conflict; only the short reply and import modes may start alongside a long task, and two same-type short tasks remain mutually exclusive.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/web/tasks.py#L28-L34",
+          "version": "repo-lines-v1:sha256:9fc008ee3a2484d2ae0bcafa6f6e3dfeb720781a688b093ca5ef08bd390a4dce:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjY5ZTU2Y2MxOGE1ZjBiYmViNjc0NGM3Nzc0NmU1MzA2YTZmZjFjMzZhMTYwYmY2NGIzNTI5OGI5ZGI4MzJlNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTE3ZWI5YTYwODJhNzM2YWUxZmY1MGFiOTlkNzM4NWIzN2JlOWQzM2E5ODg1YmVjNDk1MDA3ZTFkMjliOWIwYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZGQ3NWZhNWJmYjY2ZjQ5NzZkMDE4YzExOWZiMWFiNDQ4NDk3YWE1NzA5YmNmNWM2Y2Q2YThiZDIxMjExOWM3NyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDYwZjllZWZiNTY3YTg5YWYxOGNhODQ1MmYxNjc0ZWZmZjUzOTJjNTE3MzNmZmI0NDU5NmQ0MzczYzNjNmEyOSJ9"
+        },
+        {
+          "resource": "repo://src/bosshunter/web/tasks.py#L84-L122",
+          "version": "repo-lines-v1:sha256:4baea207c00ad3a7f1014d72782532c4dca4b38963451fdb13629489435dd7f0:eyJzZWxlY3RlZExpbmVDb3VudCI6MzksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI3MDZlYTJkYTk3Zjc5YjY5ODRlZmEyMmEzM2JkOWM0NmZkMGE4Y2EzNzU3OWNlMGNlYmQ4MWI5OTUyOWE2OTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkyY2M0NmI1YzM4Y2NhMDg3NDJhM2ViMjRjNWE2Mzc2NzNmNTg1ZmRkNzgxZDIyOTc3ZGIzYjQ1MmM1N2YxNTQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjllODQ5MzJlNDcwNmRiYTgwZjk1ZTgxNzkyOWFmY2NmM2ZiZDBkYmFhNTRmN2YzMTcxMTA3ZjVjZmVjYWI1MWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZjMTI0NjU4ODMxNmE2YmEyOTIyNDA4ZGZmY2FmYTI1MDkzNzc1ZWYyZDIwOWUyYzVmODMxODRmYmIxNDk3MTAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_d05abb553e6940039805bbd5f3dfce1f",
+      "statement": "Task stop is cooperative: stop() sets the stop_requested Event, moves the task to stopping, and wakes any parked confirmation Event, while _run() assigns the terminal status completed/failed/stopped and only releases the active slot after the executor thread actually returns.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/web/tasks.py#L134-L151",
+          "version": "repo-lines-v1:sha256:5691a1ea34b2fb6e62e62ad4bd5228ee658809aff20217ac10413c4fc1c329f2:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJjODFmNTBkYjBmNWYxMzYxYTkyNjZkNDk3OWRmYWFlNzhmNzI1NTNlY2RjNTQzZjYyZTc2NmU3NjdiN2VjOTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkyY2M0NmI1YzM4Y2NhMDg3NDJhM2ViMjRjNWE2Mzc2NzNmNTg1ZmRkNzgxZDIyOTc3ZGIzYjQ1MmM1N2YxNTQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQyNjJkYjRhNzRmMDA1MmVmNTc5NjI4OTkzM2M3YmZlMDI4MGVlYzMyYzY1NDViNWE5ODUyNjcyZTYzN2Y4ZDMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVjNTE1MzY0YTI2NTM3MGE5N2IyMWEzYjFlNjA5YTA1NmJmNThmMWJlMjdiY2RmOTY3Y2ZlMDdkM2ViZjZlMTEifQ"
+        },
+        {
+          "resource": "repo://src/bosshunter/web/tasks.py#L158-L187",
+          "version": "repo-lines-v1:sha256:211a4c621668a346fec7016c8fba846378be6cd8e1b981824c37372068a41207:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM2YTE1ODg3NmE0NGU2MzdmMWE2NzczNDFiNTdlMDYwZjdkNTQwM2M3ZDYwYmUzZjcxNGEzYzI2ZmE1ZTliYzEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhmNThjMzU3MTdiZDk2ZWYxYWVhMzczOGIzZTk4ZTZkODk1ZjAyZjFjMWY5Y2VmYjFkOWI4OTdlNjM0ODEwZWUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY3NjJkZTA1ZjY2MzkwM2QwNjRkM2YyMjM3OWM1ODJmNjQyNTA3YzU3NmVjYjdmMjNkNDRkNmFjZGZkNzFmZDAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjEwNjk1NzIyMzJjZDEzY2FmMDYyZjkxNWI3ZWQwZjU0YzQ1MzU5MjNmYTM2NzJlNDA4Y2RmYzIzODRkNzBlOWUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_03fac20127bd4ad5b4d2f90397c24dec",
+      "statement": "Full, monitor, and deliver tasks resolve an automatic stop deadline from throttle.send_windows via SendWindowChecker; a Timer calls stop() at the deadline, and a task whose deadline is already past is recorded stopped without starting a worker thread.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/web/tasks.py#L189-L193",
+          "version": "repo-lines-v1:sha256:bde3f4febf341c89b0e8083cebee54770f1b643eb66a9749e498342efa70fd8f:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMmFhYWQxOWVlNGJjN2VlMTg5OTYzZjEzNWJjZDczYmM3M2I1MzY3NDQ0ZmYxNTk2ODhmY2M2M2ZhN2NlYzA0YSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNWU3YmNkMzZlZjUzYjQ0NTIzZTY1ZTk4ZDE5NDQ5OTNlMGZmMTc0NmY1NTM2YzFhNTExNzQ2ZjNlMDFlNzU2ZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzM0ZjkwNDI4NTJjY2E0Mjg5YjhlMWE3Yjc1MzA0ZGU3MTc1NWYzMTdhMmNlMzVkYmRhOTAzNWFkNWQxMjdhYSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMGFiMDIzNDI4ZjM2NzNmM2I3ZTQ1MDA4MWI2YzgzMmViYmFjOGViNWRlMTM2MWMxNWY2NDQ5YzU4OTk3MWVhNSJ9"
+        },
+        {
+          "resource": "repo://src/bosshunter/web/tasks.py#L247-L255",
+          "version": "repo-lines-v1:sha256:bd1029a6ac09772d14949dce6cdc51d7031cd54ddc4cbad591c4eab99db803ae:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZTkyY2E3MTQ1OTY0Y2Y5MDc1NGVlY2MwZjc0ODFhZTQ2NzRkNGE1MGNiNTZiYmU3M2I3N2FiNjAwZGJjYWZkZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYjNjN2M3NzQ3Y2YxOWFiNzc1OTZiZmZlMTQ1ODNmZDRjOGY2ZmIzNjZiNDAwNDdlNGI4N2Q3Y2Q4OWFiMjY3OCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMmIxYzY0NmMwZDgxOGUyNWVmZGI2YjAwMzY2OTdkZmEzMWIwN2MyNDkzNDdiOTRiYjI0YmFjZGUwYTIxYTM1ZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        },
+        {
+          "resource": "repo://src/bosshunter/web/tasks.py#L99-L120",
+          "version": "repo-lines-v1:sha256:5befdf0a54483788c44f80a3ab1323995cc617c6aa83bc64ba0cf098c2259398:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVjYjc2NDU4NDZhMTZlMjkwMzdhODBhOTFkY2JkMzllZmQwM2ViMDhmODgyNmQ2NGRjMzUwNmQzZGNiNzE0ZTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI0ZmE2ZmMzYTljYjk3Y2M3YWQ2ZDkzNzc0ODYxNTU3MzJjZDFmZGUwNjNlNTJiMWE2MjcxNmE3Zjk2MmJiNzIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdkNjA5ZTFhNTY2ODI4YzM1MGMyOWM1ZDE0MTZhMTFhZjA3OTY1MWFjZDVlNDdkZDk2ZDA0ZWE5OTBmZGViMjIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBlYjcwNjMyMjdlMWY2NmYzMzU0MjYyMjMyYmY2YmY4NjFlNmU5YjUwZGZmNjQyMDkzMDNlNThkNmU2OWYwNjEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_ae7ed0d6fe5248cf8cbebdf2c9ac02e6",
+      "statement": "Task state is upserted into the workbench_tasks table on every change and restored on startup; rows left in running or stopping by a previous process are rewritten to stopped with reason '服务重启，任务未自动恢复' and are never auto-resumed.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/web/tasks.py#L201-L217",
+          "version": "repo-lines-v1:sha256:d61a8f4e7e397a17b975cb0c7e2c98af077635036dc54bd426770b463616ff40:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg5ZmRjY2JkMWI1NTc5Njg3MTM2ZjliOGQwY2JiZTRmNWM4YzI2MDYwN2Y3NmZiNWUzNWM2ZDUzMTBkYTBjYzgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE3MzJmOGJlOGM1Yzg2OTBmOTY1ZWRlMWQ0NzA2YzQwZTAxMmEwNDQ2NGIyYTAxNzc4MDM4MGQwYzVmYTJmMmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIyOTRmZDM5YTlhZTEzZTE0NWEyMDA0NzI4MDg3ZGQ3YjNmZTgyZDVkYjQyYzU5NDBlZGJkODhkMjMzZDJiOTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImEyNWFkNmQ0Yjc1ZGYyZjNhODg2YTc2ZTg4NDZlYmFkYWFmNDFlZjM1ZWE4N2MyNWE1OTE3MTNiMThlYmExMGQifQ"
+        },
+        {
+          "resource": "repo://src/bosshunter/web/tasks.py#L219-L244",
+          "version": "repo-lines-v1:sha256:ee2e330ceb4a9bd52d71bea258ebd7a122acb954292779726b5a9250ea0d3b1d:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ1NTRiODM5ODI5ZjhjZjk2NjY1NGY4YjQxZDQ3OTI1YTQwNzcyZmNlNGY5MWNjZWMwYjQ0YjUxM2JhZDU4MzEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE3MzJmOGJlOGM1Yzg2OTBmOTY1ZWRlMWQ0NzA2YzQwZTAxMmEwNDQ2NGIyYTAxNzc4MDM4MGQwYzVmYTJmMmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ4YThhODRjNGYwZmI1ODIwM2Y5MjI5Zjk0YjFhOWM0NzE2YjU0NjM4YjI0MjNhZjNiNWNlYWViMWRhYjQ4OTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg3Yjc0YjRmNzNmNTMwMWJjZWJhOTZkZjQxYTRkOWEyYTA3YmU0M2NjMzFjZTE3ZjkyMDlmZDk1NjQxZjYxZDcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_281ac9c4849b4405a0c9dcb5c195bc27",
+      "statement": "The full-mode executor composes collect, a pending-confirmation wait, deliver, and monitor: it parks on an in-process confirmation_event after selecting jobs at or above the scoring threshold, then continues to deliver and monitor once the frontend supplies confirmed job ids.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/web/server.py#L490-L529",
+          "version": "repo-lines-v1:sha256:f45df1c6b0af7d8d943a4bd587c55d665684ca626595df2a7c5bd777a90958eb:eyJzZWxlY3RlZExpbmVDb3VudCI6NDAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY1M2IzZjA3Y2MwNzQ0ODY5ZGE1ZWVjZjMzNmY4NmRhZjgwMGE5OTExNzE5OGMyYjljZGNkMmQxOWUwZjQ2N2QiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI2NzY2MzRiZWJlZGE5Zjg5MjU5OWIzMThmMGE4NjZjYjE3Njk1YTZhMjZiMDg0OTQzMGMxY2NkYzI4OWRkOTIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRjMzc1NWU4MDU1YzQzNDI1Y2YzZjVkNjM5NDM0YmViMWZhOTUxODE5NmUxNjQzMWUxMGNhNDliZDUyZDFlOWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk5Y2Q2NGI0ZGU0ZTM5YTViMTUwNjM5YzU0YjZkZGM3MTBiYWQzZWY5ZTNiZWQyOTRmYzhiYjg4NDBhYTQ4OTkifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_b37c1d408aa3424aa184e81a35146dc6",
+      "statement": "POST /api/workbench/deliver enforces human confirmation in two modes: confirm mode rejects terminal jobs and marks the rest approved (handing ids to a waiting full task when present), while direct-send mode only starts a deliver task for jobs already in approved status.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/web/server.py#L990-L1069",
+          "version": "repo-lines-v1:sha256:c83483bb60d331edfb3819f89212e26e8262bfe815985b82595af5b1f919d6e8:eyJzZWxlY3RlZExpbmVDb3VudCI6ODAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYxNzNmNzc3YzRhN2MxNzFkYTQ2NjcxYWExYmZhODJlYzRjYjRiNWE0ZTk0MmQ1YTJhYWQ4M2MyMTIwMTAxYTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEwMzM1M2VkNGU3NzVmZWMyYjA3YmM2M2Y2ODhiZjRjYmNiMzRkYjA5NGY3N2VjMmFiZWFmMjBkNjlhOGFhYjgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM4MzBkZGQ3YjY2NThmZGNjZjBiMDZlYTE2NWQ4ZGFkM2UxZmRlN2UyOThmODM1NmIzOWZlNTM3N2FjMjAzN2QiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJiMmIwYmM0YWI4OTU4ZTc3Y2RlM2I0MjNjZGMxNmI1YjFmYTg0YjQyMjJiNWYxZDhlYzkxMjBkYTMyOGRiYjgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_dadd0a3247314caaa3043b9962a9c4d6",
+      "statement": "The dashboard auth boundary protects only /api/* routes with a Bearer BOSSHUNTER_AUTH_TOKEN check when a token is set, uses hmac.compare_digest for token comparison, and leaves the static shell and loopback requests unauthenticated so the UI can load and local development stays zero-config.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/web/server.py#L114-L126",
+          "version": "repo-lines-v1:sha256:06f40a50ec5ba73157646950b47537d16a5e1162894afa0c99f81c1a4be7a988:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkwNjBlZTNkNzk2NTk2MmQ3ZDNlMThiM2NhMjc1ZDkzY2IzMDlmMmU4YTA5ZWQ0OTNhMDBmZjJiYzMxOTY1NDciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA5Njc3ZTMzODJkYzZlMzUxYWE4NjhiNjQyMzhlODE0N2Q4NWM3ZjExM2U1MjcyM2JlZjFmOGI4MGE0NjY3NzIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIwYmE4NGM3YzFmNjRmMTJhYmRhMzJmZjdhYzRhOTcwYzcyYzJiYjAwN2E2MTM5MTRmYTUwNjg2MmQxNWMxY2UiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM1YzE1ZDk0ZWQ4YWQ1YTQ4NmYxNDAxYzJiZDE0NmIzY2RkM2YzNzBmYTk5NzU1OWFhYmJhNGY2YmQ1NjM4NzYifQ"
+        },
+        {
+          "resource": "repo://src/bosshunter/web/server.py#L133-L159",
+          "version": "repo-lines-v1:sha256:adda64871f962a5973aa03e1a9ca8ad0ff2ade7440a59559858f2361ba50154b:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZlYmRkODA2ZmNhYzgyNTUyMTA5ZjY3MDk1MDRjNmMxOWY0NTQyODUzYjNlODc2NWJiMzY3NmEyMzY2ODQwNTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZjYTQyN2ZkMTNmNTcyNTU5MmNkNGFiOTU3NzEyY2UxYTMzNmUyMzhlODU2MWIzOWEyNTY4NGRlYmNlOTYzYTYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImMwZmEyOTQ0OTgzYTRjMmNmNTg1YTNlODk3NjIxODYwZmQ2YzY0NjMzNjIwNmEwMTdkZTI0ZDNmMzY0MDAzNTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAxYjg4N2VmYmZiOTAwNWQ1NzRhZTQ1NDA5MDM1ODAzMTI1ZmY1ZjE5MTc4NjlkZjFkMTlkMTNlMGJjMjRhMjgifQ"
+        },
+        {
+          "resource": "repo://src/bosshunter/web/server.py#L2170-L2180",
+          "version": "repo-lines-v1:sha256:43a01fb967dc1c12d553644c6af176d75119b3fa7f40171fd6f95f88903de86e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIzYmU4NjFkNmM3ZTU2YTc2MzliNjZkYTk2N2JkZDViZjZiYTU1NjYxMzk2OGI3YTE3YmFiYWU5NDJjZmM3ZWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJhOGUyNjhhMTA2YTNhMzZlMWZhNDQ0ZGIzMGQwMGQ4MTFlYzZmNjVmZDRjNzViYmJkZTRiYzE1Y2FkNjc5M2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdhZTFjOTEzZDg0NzQ2ZTk3ZTA0ZDdmNDBmODQzN2UwYWJmZTE4MTk1NmZiZmMwZjcxMDA5YWJlM2VjYTNlNmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYwMjU1Yjk1MDFkMDQ3NjYwNGQwNjI3YTc2MDcyYTI0NDFiYzU2NmU1ZTIzYWUzNjAxNDQ3NDkxZDYzNGRlMmUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_6e74d62122e04764b82994c8a17ab01e",
+      "statement": "Config responses and downloads redact ai.api_key and ai.auth_token into masked markers, and config write sanitization strips browser-only display fields while preserving existing secrets when a client posts a blank or already-masked value.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/web/server.py#L221-L235",
+          "version": "repo-lines-v1:sha256:ea27ebe62eeddf9583ea55b07ef9e9513c1314edb9b21dbf739198ba7c4b63b1:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI2MDA1OTU0YjBhYjM4MTU4YmQ2ZGE4ZDBlNjczZDVlM2M1NGNlNDU3MWM4MzBlNzU0NGY4ZWRjYmNlYzJkMGEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJlYjg0MDBhM2ZhNmU5YjdmMzE2NTE5MWQ4Y2VmNTE4NjUxYzQ4ZGQ1YWNlZTNjM2Q2MTgxM2U4YTNlZjIyN2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk4OGVhMjAyYzlmMjhmMmZmNDFhMzc3ZjFhZWIwNjhkNzFmODFkNjM1ODlmMzM3ZGZmNzQ4OWJhM2E5NzNjYzEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRjNGRmZmRkNWY3NWYxZmFkMTQ2MzBhMGM3NGFmN2UzZDhhYWJhNWUyZTQ2ZTZhNDg1NzJhYmVlZDhhMDhjNGQifQ"
+        },
+        {
+          "resource": "repo://src/bosshunter/web/server.py#L252-L286",
+          "version": "repo-lines-v1:sha256:71d6c6c2ac978580038f401f526daa9ec4c2687d09523cc7cd72500cc53c5449:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg5Nzk1YmM3OTdjNzBhYWMzZDQxZDlkMmMyNjUxYzFiOTAwNjdlZWQ4ZjJhODM0OGI5YzU1NTk0NmFiY2QyYzQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMwN2M3Zjg5OGZkN2UxMzUzYzczYTE3MjU5NjNiMWEyYWRiYzY4NDY3NmNmZmFjMDZiYmNkZGNlNDJlNmUyZGMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkyYjExN2M1MDI2NTc4YWRhOWM5MzI1YjE4YzA5YTc3YTMwYjVlYzg3MDhlNmJjMjhlMTM4ZWQ2ZmFjN2E2YTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImIwMmVkNTYzODI2ZjdmYmIzNGIzMzhlYzIzMTJiYzFjOGVhMjE4NDljYzY1OGIxZjRjNWNiYWUwZWY0MWZhZDEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_dd34af46bd89468994f49460538202af",
+      "statement": "Workbench task starts are guarded by _preflight_messages, which requires an uploaded Markdown resume, requires search keywords for full/collect, and requires an AI key for full/collect/score/import, while import skips the keyword check because it is URL- or company+title-driven.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/web/server.py#L289-L316",
+          "version": "repo-lines-v1:sha256:75bc8172a6dd36fa4dd544ad7ab245159859bd5b7469503f7b0bbe731a752ba3:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkyM2Q1ZTI3ZGI1OTEwYTBiZmYwNmUwYTUwOGIxMjRkZjFhZjkxYjUyZTkzN2NmNmViMzM3ODRjNzAzMzIwZjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA3Y2NiOTQ0YjI1YjRlMDdiMDMxNGI4MDc3NDliMjhhYjFiNjE4YzFjNmQ0YTU1N2ZjNzViMTkyODQ3ZDBmY2MiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImYwZTRjZTY3OWYzODk3NjU3YzMwMmQ2M2M3NjE5ZDdkN2VlYTExNWQ2ODA2YWMxYTM0YmFlYmRmOTllYzdjYjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFkYjQ4ZThmZjQzNzZjYjRmNGU2MmQ2OGZjNWM5NDNkMmE3NzMzODAwY2EzZTdjNjRkYWE4ZWMzZDZkN2VlOWYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_f31d3e47a0804a6581341cc71bdbbf2b",
+      "statement": "The assistant SSE endpoint runs the blocking AssistantService.send_message in a daemon worker thread and forwards start/delta/trace/done/error events with ping keepalives, while a per-conversation Event gate implements pause/resume that keeps generation alive but withholds forwarding until resumed.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/web/server.py#L1530-L1625",
+          "version": "repo-lines-v1:sha256:7f50a432a26e5ad4ddc1a15125492e2c39d048c2f4013e7b76786cf6560f2439:eyJzZWxlY3RlZExpbmVDb3VudCI6OTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ0MzNjMzE2YjMzYjgyMTI5ODc5OTg1NGE1NmFmZWEyNWQ3NGYxOWMyZTBlZWI5NGM0MTMwNmExZjFlYTZlYTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIzMDZhMWE1MzYwNWQ2ZWRlMjdhOTVjNDZjOTNlMzA5MmI0MGMzZjg5NjMxZTExZGIxZmE0YjZjMDRlMzFmZmEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI1YTBlODEzZGE3ZWYzZmU5MGRjZGZhOWZiY2VhNWVmZGRlOWM4ZmFkZTZjMWRhNTc0OWVmNDc1OTYyNTdhMjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI1NmE0ZDM5YjllODI3MDM4ZTE2M2JhNTRiZmY5NDY4N2I0MTY0M2ZiOTk5ZjM4YTYwNzc3YTM3ZDM1YmVkNzUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_72c02a7a24254e4194a6a742f1317f2f",
+      "statement": "The React frontend is a three-page SPA (DashboardPage with workbench/jobs/monitor views, ConfigPage, AIAssistantPage); useDashboard polls /api/workbench, /api/jobs, and /api/history and drives task start/stop, useConfig loads /api/config plus /api/config/schema for a schema-driven form, and useBackendHealth polls /api/health for the online indicator.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/web/frontend/src/App.tsx#L1-L43",
+          "version": "repo-lines-v1:sha256:3d296b278655b8e8f08a87316a0fc67f9641350669cc162fdf76ce6991d1f5c7:eyJzZWxlY3RlZExpbmVDb3VudCI6NDMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRjODI2NGUxNGQ3ZjllZmRmMjM5NjZhNDk4ZjQzZDQ5YjAwMjA1NDM5MWU0NzM4MWUyZWY5NmFjNTYxMmU2YWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://src/bosshunter/web/frontend/src/hooks/useBackendHealth.ts#L1-L37",
+          "version": "repo-lines-v1:sha256:dd609b4700986939208572220827a7808623130f48ba566593f0cb217ed5eeb8:eyJzZWxlY3RlZExpbmVDb3VudCI6MzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM3NDMxZjk3NjgyNGExOWJhMDY3M2ZmOWNiMWI2NTgzYWVhZjE1YzQxZDM2MGRiMTA3ZDdjMGQ5ZjcyMzhlNDAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://src/bosshunter/web/frontend/src/hooks/useConfig.ts#L1-L86",
+          "version": "repo-lines-v1:sha256:2e047463d1bd738f367f65b2103450c744438b8ce5b29d6a88244e9b06d8ea4a:eyJzZWxlY3RlZExpbmVDb3VudCI6ODYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJlM2MzOWEzMjQxMGU4MTg1ZDdmYjZkMzBkMDI5NDgyMWQ3N2M5YmI2NzVkYTMzYmQwN2Y5MDE0ZWY2MzQ3MDAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://src/bosshunter/web/frontend/src/hooks/useDashboard.ts#L122-L245",
+          "version": "repo-lines-v1:sha256:554c0c9b1fe6df8f5858c26186f25beff10c1a61c254cf465e75918067bfb704:eyJzZWxlY3RlZExpbmVDb3VudCI6MTI0LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI0Y2VkYjNhOWNmN2JkZjI5OTcxZTQxZDk4ZGI4OWZhMWVmOTI3NzhlZGFkOWFhNzBiZjIxNmZhYWFmN2Q0MDYwIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0MTJjYTM0NWNjZjc1YmY5YzA4MDZiY2U2OTViZThkZTgwOGI3OTk4NDI1MWE3YTU0ZDIwMmNmNjEwMWRkNDUxIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlNDhmNTJhYzhiOGE5MjM0MzZmZDQzMTUyYzM5NWZhNjI4NzYxOGZlZWQ0NjEyMDE0ODc0ZWRmY2UyOTE2MDc4IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MiwiZm9sbG93aW5nQ29udGV4dEhhc2giOiIxZWQ3Nzc3YzRiMWIwMWI1ZjEwMGEyYzdmMmQwNzQ5YWQ5NDFlYzEyMzgyZDBjOGQ2ODYwYzAzZmM0MzExMGFlIn0"
+        }
+      ]
+    },
+    {
+      "id": "claim_15b2889e3c6d4358b26c1c95a44dbed1",
+      "statement": "The targeted-import executor supports three sub-modes selected by config._import_params: url collects one detail URL and generates its greeting, search stores a candidate list in task.context for the frontend to choose, and select collects the chosen candidate; candidates are read through /api/jobs/import/<task_id>/candidates.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/web/server.py#L1127-L1208",
+          "version": "repo-lines-v1:sha256:0cfc375c6cdc63a5195791b6d7d2fb965f8c96ec8018de945bfcae1dee668147:eyJzZWxlY3RlZExpbmVDb3VudCI6ODIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRhNGExMzVhYzE5NDFiZTI2MTdjNTQ3NWMzY2E1Zjc5MTFkYTJkNzhjNTk1MDlmYzAyMmZiNzI3OWFhYzU4YmQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEwMzM1M2VkNGU3NzVmZWMyYjA3YmM2M2Y2ODhiZjRjYmNiMzRkYjA5NGY3N2VjMmFiZWFmMjBkNjlhOGFhYjgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY1NWVlOWUxODYyNjc1YjYzMzZmOWQxODA1YzA1M2E2Zjg3ODQzNDU1Nzg5ZTllOWRhYTk5ZDUxMzMzMzc0OGUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFiM2VkYmQyMzQzMTgzYzExMThjMDJkOTVmNjdhYWRmOTZhNTZkMzM0OTYzMzkxMDNkNWFmYTM3ZTM4MDczMjQifQ"
+        },
+        {
+          "resource": "repo://src/bosshunter/web/server.py#L669-L740",
+          "version": "repo-lines-v1:sha256:39419fb64725e86841dd6355035c5c367aced5060dc8d2a04d9d1c980173cd4e:eyJzZWxlY3RlZExpbmVDb3VudCI6NzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE5MjM3Nzc3NGZjOGVhMjJjOWIxZWVkY2RiNjQxNTFiMzY1ZTJhYWZiZDQ1ZTFmOWI1NjZhYWEyODVhOTMzMTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhmN2E5MDMxNmQ5NGUyOGMyMTcyZTdlZTFjMzk0NmUxMjNhNzZlOGM0ZmE3NjQ0MjNjMTU0ODRkMzQzNDc1ZDciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNjNzBlYjA3ZTdlZmYxYTk2ZDAzMzVjOWU4M2EyMDU0MTkwYjQ2N2ViMWExMmU1NzhlOGQ3MDkyNTlhZjQ1MjQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQzZTkyODM1ODVmOTIxZTY0NjI3MDIxMjgzYzBjZGU4ZmNlYzI5NzYzZGVlMWM5MzFlNzU2ODE5MTViZDU1ZDQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_3bbf26edccf54483a2ba33124b13cc97",
+      "statement": "The dashboard-confirmed HR reply path starts a reply task that re-validates the history row is still reply_pending, opens the matching BOSS conversation, sends the message, closes the tab, then records replied history and sets the job status to replied.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/web/server.py#L1249-L1279",
+          "version": "repo-lines-v1:sha256:4bb28b080274462d5fbf271a734cb4b0db306ce7aca5162a8a74a3196d3fceed:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYxYjIxNTYzZTM3Y2I4ZDliNjQ3YWRjOWNlMWEwZTVkMzExNTA4YWUzMmJjMGUyZjY0MTZmMTdlYmRhYTVjODgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ4YWE1ZjMxNGIzNmJmNzc1Mzg1YTBhY2I5NWY2ODBlNzdkMWM5MjFlNjliN2VkNjI0NDEzNzA5MzllYzUzNDMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImEzNjk1ZmFiM2MwZDZiZGYwMWQ0NTliNjUxNDJkZjE1YTQ4YzhmMzE1NGIyYjEwMmUyMGUzN2Y0YjVmODEwMmUifQ"
+        },
+        {
+          "resource": "repo://src/bosshunter/web/server.py#L563-L610",
+          "version": "repo-lines-v1:sha256:10f24e74e30f4523d80beda134cff12ec58e657a9ec32168958bbe642d1ea8b1:eyJzZWxlY3RlZExpbmVDb3VudCI6NDgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZlZTc4ZWY5MTMwZjRjYThhOTQxMzg0YWJjZTQzNDA1ZTk2MjZlMmViMGE3NmNiNDdlMTE1Y2Q3YmJkYTZhOGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhOGQ1Y2Q3MjhhNTNmMGQ5MzA3YWU3YTUwNDllZTk0MjRjMTdlMGJmN2I5NzFiMzk5YTlhMjgwM2I2YWQ3N2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAwZDdiM2E3OTU2MjZkYTRmMDM0OGFhYzY1MjRiZjE5NzQyM2VkM2NiYzRlZTAyOTcwNWRhZjFlZDZiZjUzZTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRhMjA3NDM4YWIwNTlkNTIzODBmNGQ2YzFjNmJiNjY5OWM3MWY5ZDU1NGJlOTJhNGI3MDIxZDU0YzNjMGNmZGMifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.5.2",
+    "at": "2026-09-16T06:31:53.644Z"
+  }
+}

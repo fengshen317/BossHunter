@@ -36,14 +36,14 @@ export function RecentActivity({ data }: RecentActivityProps) {
 						<div className="w-1.5 h-1.5 rounded-full bg-text-tertiary mt-2 shrink-0" />
 						<div className="flex-1 min-w-0">
 							<div className="flex items-center gap-2">
-								<Badge variant={item.action as any} className="text-[10px] px-1.5 py-0">
+								<Badge variant={item.action as any} className="text-xs px-1.5 py-0">
 									{ACTION_LABELS[item.action] || item.action}
 								</Badge>
 								<span className="text-xs text-text-secondary truncate">
 									{item.company} · {item.title}
 								</span>
 							</div>
-							<p className="text-[11px] text-text-tertiary mt-0.5">{formatLocalDateTime(item.created_at)}</p>
+							<p className="text-xs text-text-tertiary mt-0.5">{formatLocalDateTime(item.created_at)}</p>
 						</div>
 					</div>
 				))}

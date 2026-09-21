@@ -397,9 +397,7 @@ def _call_claude(prompt: str, config: dict) -> str | None:
     global _last_resume_api_error
     _last_resume_api_error = ""
     try:
-        ai_cfg = config.get("ai", {}) if isinstance(config, dict) else {}
-        max_tokens = int(ai_cfg.get("resume_max_tokens") or 8000)
-        return call_anthropic_text(prompt, config, max_tokens)
+        return call_anthropic_text(prompt, config)
     except Exception as e:
         _last_resume_api_error = str(e)
         console.print(f"[red]API 调用失败: {e}[/red]")

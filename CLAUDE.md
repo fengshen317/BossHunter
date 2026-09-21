@@ -88,3 +88,11 @@ bosshunter status --full    # 查看状态
 - 所有投递必须经过人工确认，不可跳过
 - 仅在配置的时间窗口内发送
 - 首次使用时必须提示封号风险
+
+<!-- OPENWIKI:START -->
+
+## OpenWiki
+
+@AGENTS.md
+
+<!-- OPENWIKI:END -->

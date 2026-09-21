@@ -158,6 +158,10 @@ _RETRYABLE_ERRORS = frozenset({
 
 # Permanent failures: do not retry inside the job and skip progressive backoff
 # (they reflect a real page/business state, not a flaky environment).
+# send_verify_failed 是"消息可能已发出但无法验证"（选择器漂移/渲染慢会误判），
+# 重发必然导致同一条招呼语重复发给同一个 HR，因此必须按永久失败处理，
+# 交由工作台显式重试（重试前会先检查 conversation_id 是否已存在，见
+# _send_greeting_once）。
 _PERMANENT_ERRORS = frozenset({
     "job_closed",
     "job_page_unavailable",
@@ -165,6 +169,7 @@ _PERMANENT_ERRORS = frozenset({
     "captcha",
     "rate_limit",
     "blocked",
+    "send_verify_failed",
 })
 
 
@@ -396,6 +401,20 @@ def _verify_message_sent(
 
 def _send_greeting_once(job: dict, greeting: str, throttle_config: dict) -> tuple[dict, str | None]:
     stop_event = throttle_config.get("_workbench_stop_event")
+
+    # 幂等防重：该岗位若已建立过稳定会话（conversation_id），说明此前已成功
+    # 发送过招呼语（发送成功的记账是写 conversation_id 的），无论当前状态如何
+    # 都不再重发，避免同一 HR 收到重复招呼。此检查同时兜底"发送成功但记账未
+    # 完成即崩溃"的窗口：下次重试会先在这里被拦下。
+    existing_conversation = str(job.get("conversation_id") or "").strip()
+    if existing_conversation:
+        return {
+            "success": False,
+            "error": "already_sent",
+            "history_detail": f"该岗位已有会话记录（{existing_conversation}），已跳过重复发送",
+            "skip_backoff": True,
+        }, None
+
     target_id = new_tab(job["url"])
     if not target_id:
         return {"success": False, "error": "open_page_failed", "history_detail": "无法打开页面", "skip_backoff": True}, None
@@ -805,17 +824,24 @@ def send_greetings(config: dict, force: bool = False) -> int:
 
             if result_data.get("success"):
                 throttle.mark()
-                update_job_status(db, job["id"], "sent")
+                # 记账顺序：先写 history(action='sent')，再更新 status 与
+                # conversation_id。每日限额按 history.action='sent' 计数
+                # （见 send_greetings 开头），若在更新 status 后、写历史前崩溃，
+                # 下次运行会因历史缺失而重复计入一条未真实发送的配额，
+                # 导致"今日已发"虚高、漏发真实岗位。先写历史可收窄该窗口；
+                # conversation_id 则在发送后立即落库，配合发送前的
+                # conversation_id 检查形成"已发送即不再重发"的幂等闭环。
                 hr_active = str(result_data.get("hr_active") or "").strip()
-                if hr_active:
-                    update_job_hr_active(db, job["id"], hr_active)
-                conversation_id = result_data.get("conversation_id")
-                if conversation_id:
-                    update_job_conversation_id(db, job["id"], str(conversation_id))
                 history_detail = greeting[:50]
                 if hr_active:
                     history_detail = f"{history_detail}（发送前 HR：{hr_active}）"
                 add_history(db, job["id"], "sent", history_detail)
+                conversation_id = result_data.get("conversation_id")
+                if conversation_id:
+                    update_job_conversation_id(db, job["id"], str(conversation_id))
+                update_job_status(db, job["id"], "sent")
+                if hr_active:
+                    update_job_hr_active(db, job["id"], hr_active)
                 sent_count += 1
                 backoff.record_success()
             else:
@@ -832,6 +858,14 @@ def send_greetings(config: dict, force: bool = False) -> int:
                     if hr_active:
                         update_job_hr_active(db, job["id"], hr_active)
                     add_history(db, job["id"], "skipped", result_data.get("history_detail", "已按发送规则跳过"))
+                    progress.update(task, advance=1)
+                    continue
+                if error == "already_sent":
+                    # 幂等守卫拦截：该岗位已有会话记录（此前已成功发送），
+                    # 不再重发，也不会计入失败状态或退避。若状态仍是 approved
+                    # （说明上次成功记账未完成），这里把它收敛为 sent。
+                    update_job_status(db, job["id"], "sent")
+                    add_history(db, job["id"], "sent", result_data.get("history_detail", "检测到已有会话记录，标记为已发送"))
                     progress.update(task, advance=1)
                     continue
                 update_job_status_with_retry(db, job["id"], "error")

@@ -73,6 +73,26 @@ DEFAULTS: dict[str, Any] = {
         "greeting_review_threshold": 7.0,
         "greeting_max_iterations": 2,
     },
+	"assistant": {
+		"context": {
+			"default_context_window_tokens": 32768,
+			"output_reserve_tokens": 4096,
+			"safety_margin_ratio": 0.15,
+			"recent_history_ratio": 0.35,
+			"recent_turn_min": 2,
+			"recent_turn_max": 12,
+			"summary_max_tokens": 2048,
+			"pending_digest_max_tokens": 1024,
+			"compaction_batch_tokens": 8192,
+			"compaction_batch_turns": 8,
+		},
+		"memory": {
+			"capture_mode": "automatic",
+			"min_confidence": 0.85,
+			"retrieval_max_items": 8,
+			"retrieval_max_tokens": 2048,
+		},
+	},
     "resume": {
         "template": "modern",
         "theme_color": "#0F766E",
@@ -105,6 +125,22 @@ DEFAULTS: dict[str, Any] = {
         "auto_start_proxy": True,
         "enable_port_guard": True,
         "site_patterns": True,
+    },
+    "database": {
+        "url": "",
+    },
+    "runtime": {
+        "redis_url": "",
+		# 单进程桌面版使用本地锁；多实例部署时显式开启 Redis。
+		"redis_required": False,
+        "worker_enabled": False,
+        "max_concurrency": 4,
+    },
+    "artifacts": {
+        "backend": "local",
+        "local_path": "./data/artifacts",
+        "bucket": "",
+        "endpoint_url": "",
     },
 }
 

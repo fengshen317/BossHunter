@@ -1,0 +1,244 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:1e5eec3d8c0914e680a772613cde723cf8c250575180a262135a07a75c12c277",
+  "claims": [
+    {
+      "id": "claim_b63abca038a54454a1ce9c73fa3bc0f6",
+      "statement": "Pytest discovers flat `tests/test_*.py` modules with `testpaths = [\"tests\"]` and imports the `bosshunter` package from the src layout via `pythonpath = [\"src\"]`, so tests do not require an installed package.",
+      "evidence": [
+        {
+          "resource": "repo://pyproject.toml#L46-L48",
+          "version": "repo-lines-v1:sha256:52716a0d06c430176d97458a64db575c85c3b3f1b3c5703d1c2c26f40430676c:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODY3NmU2NDE0NjVhNjU1MWU5ZTljZmZkN2ZhYTFlNmE0MmY5YjcyNDgwOTgxM2M5MDNkN2VkY2I1MmYzMDA2ZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNTdjZDQ4YzFmYzhkZDI3OTE0ZjMwZDczYjNjNTI1NmUzNzk0ODc3NzhkYTYwZmFmNDZkZmNmMjEyZTJlMTlhMSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODZmZjQ4NGUyZjhmOTVhZTcxOGJkMTQ4MDIxNmZkOTliZjJkZGYxZTU3ZmUwNGM2OWE0MzBlNTE4MjczYjZiMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYmI4NTBkMDkxYWU4MjgxODRhZDRiMDJhOWI2N2Q3YzU0YjQ4YThkYjdlMTU5YWE3MDVkOTdiYzIzMDYwYWQ1NCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_8408e41bcf8f459990e13e6cfe877407",
+      "statement": "The Python style gate is ruff configured with line-length 120, indent-width 4, and tab indentation; `ruff check src/` runs in CI with `continue-on-error: true`, making lint advisory rather than merge-blocking there.",
+      "evidence": [
+        {
+          "resource": "repo://.github/workflows/ci.yml#L36-L40",
+          "version": "repo-lines-v1:sha256:d3a3e96e2df1cfe1eaa83c54f566165974d6f69e336cba1c66bad47d075b33da:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODQxNDU3NjQ5ZDJkZTdlNzViZDhhODkyNWEyNDViZGU5ZmVlMzU5NTUwNmM5Y2FmODgxMDIxMTQ0MGMzNjA4OCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZGY1NTBjOWIzM2NmMzhhZjJjM2JjMWE5NGQ0ZmFhNjE2N2UxMTY5OTYxNjhiYTJiMzcwYTBmNjQxN2RiYjNmOCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMmQ5YjEwYzIwNWFjZjRhZWVhNzljY2NkZTkyYTg3MjEyZGU3M2ZmNGJlNDViMTEwZDg4MTEyYjQzMWRmNjQyNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        },
+        {
+          "resource": "repo://pyproject.toml#L50-L55",
+          "version": "repo-lines-v1:sha256:df99ac9e9ad974ab649f7f75de06c38acad45b11f8e9525f23b8c35476189812:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzc0NWZhYjg2YjEyMWRjODViNGY3ODY3MzM5YTEzZmVlODA0YzhhMDJmNDcxMDY1NzJmMmJmMDY2NGQ1OTUxZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNTgzZmMwNGUzMzkxMjYzNmZjZTgyM2Q4ZGZjMmI4MzRjYTM2ZGI2M2M5YmZlZmRmNzBlMzAzNGYzZDZjYmU0OCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMTdjODdjNzAzZmFkODQ0MjE1OTBhYTg3Y2Q1ZGY0NDRiMDVjZmJlZTkxZjFkZmRjMTU2MjdjOGZhNjM5MTE3OCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_0daafe821ae744e7b9b8aa443b712aeb",
+      "statement": "The dashboard build gate `npm run build` runs `tsc && vite build`, emitting a committed `dist/` artifact so the Bottle server can serve the UI without a Node toolchain at runtime.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/web/frontend/package.json#L6-L10",
+          "version": "repo-lines-v1:sha256:07f90436512b24c30f58513a39b4733a633cd78986cd0f319a39a182f5b9a3be:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzQ4MzNkNTk0OWMwM2E0MGNhOTUyNDkxNjEwYTY2NTk2NDRiM2FhNDY2MzYyZjc5OTAyMGRiZjE5ODE1NDdkYiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNGQ1Y2QyZmI0ZjNkZjg4NDUxNTI1NWIzOTUyM2YyZjhiNTQ3MmJlZWE5ZjU2NmZmY2EyMDRkYjgwMjU2MTA0MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNGY3YTQ4NzI3ZDJkMTFhMjUyYjMzYWM1Yzk0ZDZhNzkzZTExMWYwYTU5NmMyZjdiMDRjMmJjMTEyOWQ3MmVkMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMWQzNDk1OTI3OTZhN2EwOTZmZTBkOTYzMGQxZWFiZTNmY2RkNzU0MmQyMDBiZWVhM2Y3MTYzZDEyNTJmMmQ1NCJ9"
+        },
+        {
+          "resource": "repo://src/bosshunter/web/frontend/vite.config.ts#L22-L25",
+          "version": "repo-lines-v1:sha256:1a36529911091d7e09ad7a5eaacb1a6acde7e4741199487fe02d5b6ade7ff752:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjNlNzAyMDUxODE1OGJkZGE4NGNkNTg1ZTNjNDg0YjE4ZjY2ZGE1N2MwOGE5MTlkMzIyNjhkYWM1NWE0OGRiMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDg5M2Y0MGUzNzgxZWI4OTZjODJkMDQ2YTA4MDY3YTExZTM1Y2RmMmYxZGZhZjI2ZmVhOTBiOGRiNjY3NjQxMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZmE2MmU0YWIzMTRhZjFjNjIwYWMwOTk5ZTNkNmRjZDc4MzRiMDQxZDhiMjYxNGIyNjFhYThmZjM2YmMzMzI1MSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjIsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDI2YWVhOTQ1NDM3ZGZkZjY1NDdkNjAwNmMzNWZiZGU4ZDU3Y2EzYzY1YWMzNWU1YjYyZjU5Zjc1MzA1ZDkzNiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_0ab79614f1744c90a47853fe56f5694e",
+      "statement": "Automated tests mock network, browser/CDP, and AI-provider boundaries by patching runtime facade entrypoints (`new_tab`, `evaluate`, `close_tab`), sleep, and provider call functions, and use temporary or in-memory SQLite databases instead of real data.",
+      "evidence": [
+        {
+          "resource": "repo://tests/test_greeter_concurrency.py#L51-L60",
+          "version": "repo-lines-v1:sha256:e5c6baa6aa5c1964b10d04b18b6c21b2dc28465aa9eeb75e4c38d40a687cd45c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4Njg5YjdiMTUxZWIwMmIzYmI1MWIwYjMxYmNjZDE2NGFlZWNjMTEwYWUxZDQ3YmFiZTk4MWM3YTNhZjUxOWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiOGY1ZmU2ZmQ2NDg3OGUzYzM5MzdmOGZhMjUwMjViZmNiYzNkMjQ0ZmY5MjM3NDRkZDE2ZjVlYjA1N2RkNGMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRhOWU3ZjJlYzIxMzIzNTIwNjkyOTI5MzZjNDBkYjEwZTg2MGYzYjA0MDMxNDdjMjQ3YmI5MjA2NjRlOTlmNjIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjIzYjU2ZTc0MmEzY2FlNTFiOGI3YzRkYTg0NjE2M2RlZjMxNDFmYjZhNzYyZDUyZTRkZjViMjk4OGIzMzYyOGYifQ"
+        },
+        {
+          "resource": "repo://tests/test_job_selection.py#L62-L75",
+          "version": "repo-lines-v1:sha256:a8371db7a8c104574dca5fe5aed68f0fd2d32285c91fbd45d22e5c0b9bae9da5:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUyZDEzNjlhNzZiZGI1MDExOWM0YzM1MTkyYjNhOGRiZTg2MThkMTkzNGVjNDEwYzVkMTQ5Mzg0NGRhZjcxOGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQzYmU1ODAwNjJlNGQ3OTFkMzkxYzZhNjI4ZmY5OWFjYzhjZDYwMTU3ZDRlOTc3YTZmNjY3MGJlMTcyZjM4Y2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjUyNWNjMmJjNDc2YzExNzhlMTVjMzczMjAxNDIxMWJiYTQ2MjVjMGY5Mjk2MjA3NzQ3MGM1YzI5NWVkYWEyZjQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFiMzA0NzJlNTJhNGEzN2M3NTMwMGNlNzdkMzVhMWZhZWM4NmQ4ZWE0NDcwYjRhZDVjZWVmMzBiMmU3NjhhZGUifQ"
+        },
+        {
+          "resource": "repo://tests/test_send_retry.py#L74-L83",
+          "version": "repo-lines-v1:sha256:b14262cc0f3c4f1a56f63114105b63fb095eb46120557814a5d3ca7f5524f4ac:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZhYjNmMzRhYzJkMzFkMDJiOWM4ZTc0MTk1NTNhMTcyMzQwOTE4YmQ3MTBlNGE4ZDAwODA2Yzg0YmY2NWI2NTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQzMmFjOGJhYjE5N2Y0ZWNkZWFlYWU1ZDRhM2EyZWRhMDUwMWZhYjVhZjg3ZjA1ODk1MjBhYTBmZDhhMmYzY2YiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQyMWVhZjVlYWM2NGUyNzQ4ZDY3MGU3YmYxMTVhMzJhYmYzNzFiYzdjOTk5YTRiODRiOGE2MTJkNWFkMzVmZjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE4ZmExNGVlZWNkYzA1NGJiNzhiOTZiMWIxMTNhOTVhNmRhMGFjNjczY2U4MDkyODNhNTFhMzM0M2M4M2ZlOTYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_df24b59190a3494f85c2738d86bd898b",
+      "statement": "The web API regression suite drives the Bottle `server.app(environ, start_response)` WSGI callable directly without a socket and covers JSON 404s, UTC serialization, task control, and database-backed routes.",
+      "evidence": [
+        {
+          "resource": "repo://tests/test_web_api_routes.py#L65-L110",
+          "version": "repo-lines-v1:sha256:5ec82ba1f86ad301103483a3b7020145e390d368f887bdd7b4e5f7214057c42f:eyJzZWxlY3RlZExpbmVDb3VudCI6NDYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUyNTFhMzFjZjI0MjQ3ODY5NGM4MWQwMzZlMjkzY2VmNjJkODg4OGY4Njc2MGM4MTA0ODY1MTkyZTZlOWQxNGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZiMjE1MWU0ZjFhZDRkYWFmYzhkOTVmMDRiOWYzOTljM2YzODEyNGE3NTRkMGU4Nzg5NzMxYzI5YWMxNGE0NTkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVmYTEzYjI5N2ZiOTA3NjgwOTRmYTE0OThkMWRhODJmMGU2ZDJhOTZlNDQ0MDg2ZjVkYTc1ZTI2ZmZhNWQ4NzUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVmZGEyODBlYmI5NDZmMGU0NzQzN2RiZGUxNDE4MGI3ODhlZGZhZDFjMWNiNjlmY2Q1OGM0ODQxNTRkOWQxMDkifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_81aa60ff871f40dcb82a0d4c8fd806e1",
+      "statement": "The send-retry regression suite protects transient-vs-permanent error classification, in-job retry short-circuiting, `no_chat_button` diagnostics, and `recover_send_errors` re-queueing.",
+      "evidence": [
+        {
+          "resource": "repo://tests/test_send_retry.py#L1-L9",
+          "version": "repo-lines-v1:sha256:133df7b522cd7bd6853de98833cf4fda550638a14d8c9c0607904f38c5623d17:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMWU0NzVlYzgyZTVjNDFkNzk5NGY0NTQ4ZmI3MTMwODcyZWE4MDI2YWZjYzA0ZTU4N2MwZjZkMzlhZGYwYTY3MSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTMwM2VjZGQ0YTRkMTBmMTljNzNmZDQyZmQxMjQzN2ZkMzM1NGE4MjY4MTYwNWRhNTI1NWE5N2EzOTA2OGRiYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYmRkMTUxN2QyMWVjODZmOTRkMjVmZDgxYmI0YmFlODZmMzk5Y2ViM2M4NGE2OGUzOTdhYjJkMTQ3MTYwNDU3ZiJ9"
+        },
+        {
+          "resource": "repo://tests/test_send_retry.py#L53-L98",
+          "version": "repo-lines-v1:sha256:b994651dfccc029bfd0d4ac5eba6be2de775b8e0ec4030d269eaffd65dad7ff7:eyJzZWxlY3RlZExpbmVDb3VudCI6NDYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM4YmNhMTkxNzcyZGEyMzBkMDRkMGY0MTdhOWY5OWQ1ODZhNmE5NjU5OTI1ZjViOTE3MDJiNDQ1OGE0YjJkMzAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlkYjdhNDQ5MzRjZmU0MjE1ZmEzMGNlZjIyMDQyMTMwZmVlMzQ5NTYxYjJmMjkxYTc1OWM2MTUyNmYzMTgzZjIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJiMjZlNzI3NDkyOWE3OTQzMWYxNjkwMmIzNmU1NWY4MTE0NDJiNTA4YWJkN2UyMWQyYjVjM2I2MmVmMWYwODUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzZDg3ZmVjYjA5ZGM2YzkwMGMzOTRmMDZjZGNmN2QyM2E2ZWMwZWZjNzRiMjFkYmQxNmMyZTlkOGQ2MWRmNjYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_97164b9685464fa3adcfc539b42618f0",
+      "statement": "The monitor reply-detection suite guarantees the chat-list preview stage stays permissive and that the `sent → replied` status advance occurs only after `_handle_conversation` confirms a real unreplied HR message, preventing the user's own outgoing message from being misdetected as an HR reply.",
+      "evidence": [
+        {
+          "resource": "repo://tests/test_monitor_reply_detection.py#L1-L19",
+          "version": "repo-lines-v1:sha256:ae14f8775f65bf2d8c9cfdd61955d00b6a6011c1d40894954e9fc66e3fbc48e4:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdjMGNkNTY4ODkzN2YwMzM4OTIzMjJjYjhiMmJhZDVhZWI2N2Y4ZmUwMmRiN2JlMTE4MzNlMGI4NWY2YTY0YTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEzMDNlY2RkNGE0ZDEwZjE5YzczZmQ0MmZkMTI0MzdmZDMzNTRhODI2ODE2MDVkYTUyNTVhOTdhMzkwNjhkYmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJkZDE1MTdkMjFlYzg2Zjk0ZDI1ZmQ4MWJiNGJhZTg2ZjM5OWNlYjNjODRhNjhlMzk3YWIyZDE0NzE2MDQ1N2YifQ"
+        },
+        {
+          "resource": "repo://tests/test_monitor_reply_detection.py#L48-L72",
+          "version": "repo-lines-v1:sha256:abb4bd8590ce0b747138c21953eb9293cce2f9cd1232f645f77fa9a8e37fc02e:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRkZDhjZTZlNDE3MjUwZDhlYTVlMzc4ZjE0M2RkNmI1ZjcxMDQ3N2I5MGMwMTI0NGFiNTM1MWEyZmFlMDkzNGEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJiMjZlNzI3NDkyOWE3OTQzMWYxNjkwMmIzNmU1NWY4MTE0NDJiNTA4YWJkN2UyMWQyYjVjM2I2MmVmMWYwODUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNmNGVkNzQyOTY2NjExZWI0NGQ1MDQ2ZTYwOGMxMTIyNjBkOTc5ZTU5OGU0NjE4MDYxMGI0MGU4ZGEzY2IzZmUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_827044395648488dade49d5743bf30e7",
+      "statement": "Monitor dismiss and navigation suites protect reply refinement, dismissed pending replies not being recreated, and the conversation-extraction JS dedup that drops container wrappers, keeps leaf messages, and resolves sender from ancestor classes instead of defaulting to HR.",
+      "evidence": [
+        {
+          "resource": "repo://tests/test_monitor_conversation_navigation.py#L37-L74",
+          "version": "repo-lines-v1:sha256:242b39559b0a79846d651aec5182babcc7b630ad18e4ad12b9767c3657bd7aba:eyJzZWxlY3RlZExpbmVDb3VudCI6MzgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBhMDY5ZGE5YzgyNTlmNWEwN2QxZDY1NGQxNTRlZjhjMTFkYzJkNzczNTY4OTdmYjQ1NTIyYjZmNjMxOTQyNjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEzNmQ1MTI2YTBmYWQxYTAzMzAwN2RiNWY3NmVlYjNhMTg3MTk2NzdiNTczYzI4OWFhMzM5NTczYzQzZGI4YjgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ5MWMyNGQ5ZGJiMTNjZWNkMDVlYTUxZTIzMmYyMmM2NGEwNWZjNTRkN2EyNmYyY2M0NDJlNDAxNTQ4ZTU0MDYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjIzYzg4NzNmNzYxNWFkNTM4M2NkNjY2MmEyNjEyYzE4Mjg0YWE3ZjFlZTMyMWM1ZDRmYmE1YWY5YzExOTA4MzIifQ"
+        },
+        {
+          "resource": "repo://tests/test_monitor_reply_dismiss.py#L28-L67",
+          "version": "repo-lines-v1:sha256:633e1d4d7da362235be19e3f79c22319f68eac8b85795a8f620854e488a6ecef:eyJzZWxlY3RlZExpbmVDb3VudCI6NDAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVlZGUzOWMyMTU4MjM2OGNkOWRiNzU5MzNiMTQwNThmMjgyZjA2YzM3ODJjODdmZTJhNzc3NTJjZDQ4ZDU2NjgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhMzZhMjFlYjI3NTA2MGFlNGRkYTJiMDc4ZTE4ODBiZDc2NzBlYjQzYjFhNWQ5YTliNGM1NmJlOGRjMmE5ZjEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRmYmQwMDkzMTRiYzI3MDg0MTY3MzRhMDJhZTVmZjM5YTFlNDhhMDUwYmU5MWY0M2IyZmFhOTIwMDJjNjJiZmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFiYzI2OGMwNzg0ZDFmYTMwOWMwZTM3ZjAzYWM2ZDQ0NWM0NGM4OTUxNjhmZGE0NzQ0OWNkM2FmZGQ0OWY3NDAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_283927a0702c4e84b1b0f089bf4cd22a",
+      "statement": "Resume regression suites assert the tailoring prompt forbids artifacts, detect artifact and placeholder phrases, and verify template rendering rules such as base64 avatar embedding for the modern template, no avatar for ATS, and unknown-template fallback.",
+      "evidence": [
+        {
+          "resource": "repo://tests/test_resume_pdf_runtime.py#L7-L19",
+          "version": "repo-lines-v1:sha256:a4a696bd325f8d3ea5a72d0e888324e40b8fb3a559ce6fe0ddf4ee2c6ccd59b8:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU2ZDcyMjQ4ODY5NGQ4OGYzYTgzNDYzNDYxYzE2ZTgyOTJjZjBkMDJiNzU5OGMxYTczODhmMDY5YTFmZjFlMDYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM3NDI1ODhkZjVlODNmODk1ZmFjYjc1MjUxMDJhMzNjYTYwZTA2MTQ0YzVhYjFkMzU5NmE0ZTZlMTRkMGM1MWIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjgwY2FkNjQ4MGUwNjliNDNlNjQ3OTI1OGJkZTg0MjkwOTljYzc0MzNmMjQ2NWVmMzE3Nzk0ZDM4MTVhMjc5MzEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjIzOTZiNDU3ZjVmMmI5NmJlNDVjZGUyZWZhZTZmMTgyMmFlYzE4MzdhMjI2YThmNjkzZTMzOWM3ZWVlM2FkZWIifQ"
+        },
+        {
+          "resource": "repo://tests/test_resume_templates.py#L7-L46",
+          "version": "repo-lines-v1:sha256:e4b6ea6638b7b6a055210cb4a0f2d2a4fc7aa70bc1d2afee49bb7ad24ec207a2:eyJzZWxlY3RlZExpbmVDb3VudCI6NDAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgzNTVjOWY0ZTljYzJjYzJjNGRjMmFlMDE5NTQ4ODk0ZGI3NmEzMWM3ZGI1NzFkYzY3NzUyYjg5OTAyZTk2NDciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc1OWRmZWUzZGVkMjY5ZjFhMjE4YWRhM2Q3M2NiMmZkMzQ1NWM0NzhhODlhMGUxYTJlZjRhNzJkMjM1MTc1M2YiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE5MWJmM2Q5NmYxYjExOTY4OGRlZWE5YTAwNGIyYjNmZWJiMTgwYmI4ZmIyMzQ0NjI1NjE0YWRjODU5NTYzYWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI1YWMwOTQ5YjcyOTZkOTcxN2EwMjBmMTcwODU0NmQzZDJiNWFjNzEzMmNkY2E1NTYzYjFmMGU3ZDM3MDZlMWYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_8a86b75efe184039a47d50845da11691",
+      "statement": "Greeter regression suites reject banned template phrasing, require prompt few-shot examples, and verify concurrent greeting generation produces no job-id cross-talk and honors `greeting_concurrency`.",
+      "evidence": [
+        {
+          "resource": "repo://tests/test_greeter_concurrency.py#L1-L9",
+          "version": "repo-lines-v1:sha256:e5c311cfffbfc847763a17d612df92873102d6ad573dc246e908ee7c3738a744:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZWFlYWRjYzEyODcyZmRlYmI3YTNlY2M4NWEzMjg1NGU0NTBlYTFkMTQ0ZDQ0YTgxMWNmNjJlNzk5YzQzMjk1MiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYTg1YTIxNzg0NjA4OTJhOGE5NDVhOTk2OTFlMTRiYjc1OGQ4ODA0OTg3OGRmMDgwOGJjZWJmYjk2ZTEzODlkMCJ9"
+        },
+        {
+          "resource": "repo://tests/test_greeter_quality.py#L12-L37",
+          "version": "repo-lines-v1:sha256:718392d42ab9ccdcaf43bdd55bcb6445b672ea6aa972a5fde566e92a8e72d385:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg1MTI5YTE4YWVhMDlkNjQ4NTNhYWUxOTIwYTMyODdmZjI5NmU2Y2Y2ZWI2NjYwMDg4ZjY3NTYwODYxZGZhM2YiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ1ZjM5Y2QwZTlmZWI5ODhlYWRmZGZkYTEzOGEzZDkzNGEzZTY4ODI1MGU4OWMxNWFiNTNkNjRiNTY3MWFkNWUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE5OGIwNjNkOWI0N2U2NTM3OTYyNTU3MmNjZTE5NzY2OWQ1NzY3ZTEyYzE4YmUwNzU2NTJiOGNkOTgxY2U4ZDUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFkMDM0YzM2Yzg4ZmI5MzY1NmZjY2FmNjI4YTY1Y2JmNDJmOGQ2YzQ5MWFlMGZiYTMwZTExYWYyNzc3Y2JhYjQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_74dea53fc78649018311fda33909d990",
+      "statement": "The greeting failure-recovery suite guarantees `_recover_jobs_with_failed_greetings` rolls back `ready` jobs with an empty greeting to `approved` and writes an error history row so failed generations stay visible and regenerable.",
+      "evidence": [
+        {
+          "resource": "repo://tests/test_greeting_failure_recovery.py#L1-L9",
+          "version": "repo-lines-v1:sha256:28a1178ac2428baeb47a9469490aeb39fc7a25d3827b9fe1502c72803274067d:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjcwMjQ4MDJlMmVjNjI2YmMwOTMwMGFmZjg3NmZkMmY2YzA0MzcwNDVkYjU1ZmJiOGY1YmJhNzlkMjUyMGVlYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiN2MyMDFhMzE2NjUzNGMwYjQwYmY1ZTk2YjYyOGZjZDVhOGVmNDc2Y2ZjNzBlZTUwMzAxMWVlNjkwZTRhM2M0MiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiM2I0MDNlMGNjMWYxYTZlNzNiNzM4M2I2MjIyYmEwMDkxMzY0MmE4NzZlYWE1MTFhM2NmYmQ3NDliNDFiNjJlZiJ9"
+        },
+        {
+          "resource": "repo://tests/test_greeting_failure_recovery.py#L40-L60",
+          "version": "repo-lines-v1:sha256:4367ecd9a7634cc9f9a2981cca8f7da00c92884d829ceb38b9c025291ae782f7:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUwNTgwMTk5MjQ4ODE5ZjhlNzdhMThmYzUzY2IwYTA4OTM2NDYxMTcyM2NhZjZhZjUyNDc2OTlkODY2MTA1MjEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ2M2IwZjczMmYyNWQ2OTkxNjA3YTViYjJkN2Y0ODgyNjc3ODIzNjNjNzIzZWI2NDc2OGQ0YjAwMmQ1NGNiOTYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU0YzRlYmE5ODQxYzUxZDBiNGE2N2Q5MDNiM2Q0OTA2MTg5ZjI5ZTk4Mzc1ZTI3ZjIzNGI4Zjg1NTk5MDk3YTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImEyMzYwZjE5ODkyMmJmMjI4OTJiZTk5MTA4YTk5NDhlNjA0MTQ0YzBhMWM2NmVlYzM1NjJmMWQ1OTNmNTg3OGYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_88daf5dbc0c24939a91d95282146401d",
+      "statement": "Scorer regression suites cover job-intent assembly from the profile, score clamping, provider retry, and bounded concurrency where only AI provider calls overlap while SQLite writes remain safe.",
+      "evidence": [
+        {
+          "resource": "repo://tests/test_scorer_intent.py#L1-L9",
+          "version": "repo-lines-v1:sha256:5d7f126eb2a00b9370e2f249418e6f49893e1f30c5e4f3f1323241dfbe97104a:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiM2IzMzdkMmZkZmZhMTY2ZDNiODE2NGUzYjA0NjVmZjBiM2U1ODc5Yjk5NTQ1NzNhZGU4NzY3MTQzZWVmNWYyZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDZjZDIyNjg2NjA0YmZjZThlNTE5Y2Y4MDRhMzg3OGYyYmI4MTkzYmFkZWVkODkyMzI2OTllN2Q3ZDM3MTNjNSJ9"
+        },
+        {
+          "resource": "repo://tests/test_scorer_parallel.py#L33-L55",
+          "version": "repo-lines-v1:sha256:011f2906fa8764e37eedf82061aa2c08c2f29cd176ba72750878067b4c2b78ca:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNmYzg4OTUwNDAzNGM5NGY2YzRjNDIxNTZmZDViNmM4NDUwYWU1MWZjYmM4Nzc5ODk2YTI5ZjQ2ZWZhZmU3MDQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRmYmQwMDkzMTRiYzI3MDg0MTY3MzRhMDJhZTVmZjM5YTFlNDhhMDUwYmU5MWY0M2IyZmFhOTIwMDJjNjJiZmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjcwZDc2ZTc4NmZjNjExYjg2NTlmNGU2NDYzOGExMmFmMjFhODY1ZjY2ODAxNjExY2EzYTlmZGU5NDQ2MTU3YzUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_00490d8da0d845a39b22fa39883b5967",
+      "statement": "Job selection, enrichment, and reenrich suites protect chat-button selection order, unavailable-job-page reporting, district extraction, company metadata storage, fill-only-missing enrichment, and reenrich failure tolerance.",
+      "evidence": [
+        {
+          "resource": "repo://tests/test_job_enrichment.py#L10-L42",
+          "version": "repo-lines-v1:sha256:0237575d32fa5fcf6e56e6901bf514f3ba185901e5825da519da36b10b4029f1:eyJzZWxlY3RlZExpbmVDb3VudCI6MzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNjOWFlOTk2ZWY2NzFmZDU5ZjQ5YTQyNjE4N2I3YWM0ZmFhMDg3OTNlNWVkMDY1N2FmMmVhZThhMTAxZDMwMjciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2OGIyN2ZhNTZhMjZjODk2YzVlNmYzMTk0M2IzYzI3ZWMyN2NmOGFmODFiMTA4NzVlNjc5YTU1Nzk0ZTM1NTUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIzZDA1MmIzZmUxNGJjODNmZWQwYjlhNWNlMDQ4OGVhNWIwZTM5M2U4M2Y4MDUyZjNlNDM5ODdhNjhiNzJiNmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI4NTEyNzNjYjc2MGE4NmQyNzY1ZDQ3MDBiNzMzYmVmMDM2MTllNjQ1ZWU1ZjZhMmVmMjA1NWJiYWEyODFmYTYifQ"
+        },
+        {
+          "resource": "repo://tests/test_job_selection.py#L45-L75",
+          "version": "repo-lines-v1:sha256:28452165736990aa8359d4b50c10142e611b42ff2f424e5300a3fdfdcce21c47:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJiNmQzOTllNzE3ODdhZjljZWFlMzQ4MTkwNzY5MDNiMTQ5NDQ4MGE3ODY0Y2NjMzdkNjU0N2JiZWMwNGE5YzciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQzYmU1ODAwNjJlNGQ3OTFkMzkxYzZhNjI4ZmY5OWFjYzhjZDYwMTU3ZDRlOTc3YTZmNjY3MGJlMTcyZjM4Y2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRmYmQwMDkzMTRiYzI3MDg0MTY3MzRhMDJhZTVmZjM5YTFlNDhhMDUwYmU5MWY0M2IyZmFhOTIwMDJjNjJiZmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFiMzA0NzJlNTJhNGEzN2M3NTMwMGNlNzdkMzVhMWZhZWM4NmQ4ZWE0NDcwYjRhZDVjZWVmMzBiMmU3NjhhZGUifQ"
+        },
+        {
+          "resource": "repo://tests/test_reenrich.py#L1-L8",
+          "version": "repo-lines-v1:sha256:825a56164d789e417532e9f60feace5dae7e9ddeadef2624f39b03b595cec01e:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjQ2M2YxZDYyNTI3YTExZWEzMWU0OTQ3ZWIyNzFhY2I0OGM0MWU4NGRhYmI0MDA1M2YyZTkyODkwZjJjOWUwMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNGJiZjQxNGQ0M2Y0OTY4YzA1MDM0ODc3NzY2NzU2ODA5YTcxMTJlNGMwMmE4M2NmOTdlNDQxZmIzNjY4NGY3YiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_ffa6802b6b6c4063a15f61ecb2a4833a",
+      "statement": "The city-codes regression pins the BOSS city codes for Guangzhou (101280100) and Shenzhen (101280600).",
+      "evidence": [
+        {
+          "resource": "repo://tests/test_city_codes.py#L4-L9",
+          "version": "repo-lines-v1:sha256:021d0556cc1e59e6b601ec7ce9898acf9cefd1ea29cffe80e6efd888c5e6c079:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjc2MDA2NGZiM2RhYTNhMmEzYzI1YmIzMTFjMmQ2YTg1OGRjNmQyOGQwOTAwODMxYmJkMTk3YTg5OTc2ZjRmOSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYjVhZWFkMWMyOWJjMGJiY2JiYWRmZjQyYjEzOGJmN2Q2ODNlOWY0ZGE1YjgxNjk4ZmU4ZGQ4YjE4NWQ1NDQxMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODJmNTJkOGE1NGY3NzdjZjgyYjczYjIzZjFmZTNjOThkYmFiYWUzNTcxN2FmYmJmMTc4NDU0OGQ5YWM1YWI1NyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiM2Q0MTM0MGNjMjM5YTE1OWNlOWI2MDIyZTlmNjMyMjgzMmUyZWFkNzZjYWU5ZTQ3NTRkMjEwZWI4ZmI2ZDVlOCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_5dd108e1114c46c5ae54fe7e182a6120",
+      "statement": "Assistant regression suites cover pure-function architecture (capabilities, planning, react loop, routing, context resolution), versioned long-term memory with auditable supersession, and evidence-domain isolation that allows only the tools relevant to each evidence mode.",
+      "evidence": [
+        {
+          "resource": "repo://tests/test_assistant_architecture.py#L1-L16",
+          "version": "repo-lines-v1:sha256:c5dff996ab15b15b3af0a87565b182ce48b92f2de4f1c232a11f9a605041e043:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkyM2FhMGQyMWY5ODg3ZGUxZWMyMzEwZmU4OGJkN2NiNjEzMWI1NTg3ZmE0MjNjZThjMDMyZjZjZmQxMmFlODEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM0NTAyYzExYTdjNTU2YzBkY2YwMTQ4YTMyZWQ4MjA0Y2QxYmQ0YThjZTcwNTY0M2RkNDI3ZTlhMDE2OGJkY2YifQ"
+        },
+        {
+          "resource": "repo://tests/test_assistant_memory.py#L27-L58",
+          "version": "repo-lines-v1:sha256:e15e2c8e57e8751f029b1dbed911282a5152129e193a9151b649cd4322cf7631:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM4OTQ3ZjQ0ZjM2YjhhYThiOTJlZGUwOWU1ZGRlMWUyOTJhMzEyZWU1ZTEzNTE1YzNhMDk0MTVkYTYzMThlZjgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhlZDIxOWNkMTM0NmYwMTE3ZGQwNTE2ZjE4MzIyZDM0YjQ5YmM4ZWZlZjdkYmU3YjBiMzBiYTZjNzVjZjU1YzYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJhZWE5MTFlMmI0Nzk3N2FjMGVmM2Q1Nzc1ZTQ5MmNlMDliMmIwMmU5MjkxNTExYzIyYTcwN2M4ZTJlMjM2OTkifQ"
+        },
+        {
+          "resource": "repo://tests/test_evidence_routing.py#L33-L58",
+          "version": "repo-lines-v1:sha256:1e8f68804955c19b68071c2f444089a377fc5a85ccaf9abbdd8f9e1d9410b22a:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNkZWFmZTQzMTY0NTBlMDA0NDA1ZTY4Mzc4OTc5NDEzYzdjOGRlZTg2MGY3YTQ4Y2VmMmRiYjMzOWUwNjJjYmEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcxOGFkMWJlYzZkMzMzMGMwNmMyYTdkZWQyYTc5Y2QzMTVjYjViYjMwZTkwZWM2NmRjMzZmN2VmODZlMmM3MDEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQxNjk3ODczZjcxMGUyZGJiZWFiOTQwNTU4NmEyNGNmZTMyOWNhNmQxYjEyMzZhZDY5NjczNmMwZTk5NWRmNmYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY1MzU5ZWY5MjcxZjZlN2Y4NzYxNGIxYmYwYTBiYTdmZjczZmI5N2Y4MjA4ZTYwYzRiZjVkYjhmMzMyZmI3M2IifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_a02446362cba42d3b7f88269999143a3",
+      "statement": "The assistant QA evaluation script replays the documented Q01–Q31 cases against a live web server, infers the effective route from structured intent, stops a multi-turn case on approval or interrupted status to avoid side effects, writes JSON and Markdown reports, and returns a CI-style exit code.",
+      "evidence": [
+        {
+          "resource": "repo://docs/%E9%97%AE%E7%AD%94%E6%B5%81%E7%A8%8B%E6%B5%8B%E8%AF%95%E7%94%A8%E4%BE%8B.md#L18-L45",
+          "version": "repo-lines-v1:sha256:4fc4198cc9c9d6a75088c8764ee1a21d80c70d914e3d3a88d3e21d11c10ee9b5:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjExYzQ2ZWVhYjliOGQwNWRmMmY3YTNlMzYwYjUyYTdkYTYxNzU3NmY3YTYyYzFlMTI5ODg5ZDZiZDI4NjYwMmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ0YzVkN2FmM2FiYTVhZjQxMzdmZTA2NjkyNzQ2NzRiMGM4OWE4M2ZhOTJmYjUxNjZjNmViZDg0NDQ3YjE0NDgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI2ZDg0MWVlNDg3ZmExNTVkNDMzN2JkZjZjOTA4OTQ3ZmFlNGQ5Y2ZhMzM2ZGU1MzkwYTE1MTlkZmZjOTlmZTgifQ"
+        },
+        {
+          "resource": "repo://scripts/run_assistant_qa_eval.py#L210-L253",
+          "version": "repo-lines-v1:sha256:97f0ff4fcf1a04e8f816f73f524e2d2762b7746a75ecdda95ae3c680e940b286:eyJzZWxlY3RlZExpbmVDb3VudCI6NDQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMxNzRkY2I0ZGNlZGVhYzU5ZWRjMzBlZjFmNWIzMjI1MmE3NTcxYTY3ZmE2MDQ1YjU5YmE4ZmEzOTkwZTA5ZjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY4YmQyODAyZjNjMDY0Y2ExM2I5NWY5M2VhMjBmY2E3MmM0MGQxNjJkZDEwMWRhMTNiM2MyODc2OTUwNzRkZGYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQzOWQ4YTUyMjNjNTE5NWRmN2NkODlkY2M5NDQ2MmIzMzYxNjdjYWZkZTg1ZjI3NzZlYjk0YjM1OWEwZmViZTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUxODU2ZDYxYTFkNTk4NDMyMWQ2OWM0YzYyYWY3YWIzODYzYWU2N2MzYTJjMzBjZmNjYjgzNTk2MDcxMjViYjYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_071fbc083fb84d72b2373f3120902589",
+      "statement": "GitHub Actions CI runs on Python 3.11 and 3.12, installs the package, verifies the CLI entry point and version, checks import, and runs ruff as an advisory step.",
+      "evidence": [
+        {
+          "resource": "repo://.github/workflows/ci.yml#L9-L40",
+          "version": "repo-lines-v1:sha256:70d9258c7932378b9354e40ca6c121ed3703119eb66bed3a7566d34f9e4dbe62:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU5ZDgwMTU0ZWQ0MmZjNWM3NzliMTMzMTU3OGI1OGI4OWM4MDFlYWNlNzRmMjRjZDQ4ZWI0YTIzNTc5NDBhOTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRmNTUwYzliMzNjZjM4YWYyYzNiYzFhOTRkNGZhYTYxNjdlMTE2OTk2MTY4YmEyYjM3MGEwZjY0MTdkYmIzZjgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFlMmM3MjFiM2RjMjBmZjczNGQ5N2NmNWI5OWU1NWU4ZDRjNzJmOThiZWYzYjk5ZjkwM2NjMWYyYzRjZGM2ZGYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.5.2",
+    "at": "2026-09-16T06:31:53.644Z"
+  }
+}

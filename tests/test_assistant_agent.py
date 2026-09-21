@@ -1,6 +1,7 @@
 """LangGraph 求职助手的回归测试。"""
 
 import json
+from datetime import datetime, timezone
 from pathlib import Path
 from unittest.mock import patch
 
@@ -16,6 +17,8 @@ from bosshunter.assistant.repository import (
 from bosshunter.assistant.graph import (
 	IntentResult,
 	_build_pending_action,
+	_direct_smalltalk_answer,
+	_enforce_mode_capability_boundary,
 	_execution_plan,
 	_fallback_action_tool,
 	_job_context,
@@ -73,6 +76,43 @@ def test_intent_result_defines_the_understanding_layer_contract() -> None:
 
 	assert set(IntentResult.__required_keys__) == set(result)
 	assert result["intent_type"] == "job_search"
+
+
+def test_answer_mode_rejects_side_effect_capabilities() -> None:
+	"""回答模式必须在执行层拒绝模型误选的写入和审批能力。"""
+	intent: IntentResult = {
+		"goal": "回应用户问候",
+		"intent_type": "greeting_generate",
+		"entities": {},
+		"constraints": {},
+		"missing_fields": [],
+		"confidence": 0.95,
+		"risk_level": "low",
+		"reason": "误分类",
+		"mode": "answer",
+		"steps": [],
+	}
+	matches = [
+		{
+			"capability": "greeting_generate",
+			"tool_name": "generate_greetings",
+			"arguments": {},
+			"risk_level": "medium",
+			"read_only": False,
+			"requires_approval": True,
+		}
+	]
+
+	assert _enforce_mode_capability_boundary(intent, matches) == []
+
+
+def test_casual_greeting_has_local_fast_answer() -> None:
+	"""普通问候直接返回产品能力提示，不等待最终回答模型。"""
+	answer = _direct_smalltalk_answer("你好")
+
+	assert answer
+	assert "BossHunter" in answer
+	assert _direct_smalltalk_answer("分析我的岗位") == ""
 
 
 def test_assistant_persists_multi_turn_messages_and_explicit_memory(tmp_path: Path) -> None:
@@ -247,6 +287,37 @@ def test_generate_greetings_action_requires_approval_and_exposes_plan(tmp_path: 
 	assert action["allowed_actions"] == ["approve", "reject"]
 	plan = _execution_plan(action["type"])
 	assert [step["status"] for step in plan] == ["completed", "approval_required", "pending"]
+	assert [step["capability"] for step in plan] == [
+		"intent_understanding",
+		"human_approval",
+		"greeting_generate",
+	]
+	assert [step["depends_on"] for step in plan] == [[], ["understand"], ["approve"]]
+	assert all("requires_approval" in step and "arguments" in step for step in plan)
+
+
+def test_collect_action_normalizes_scalar_keywords_and_cities(tmp_path: Path) -> None:
+	"""模型返回字符串时不得把关键词或城市拆成单个字符。"""
+	base_dir = _prepare_base_dir(tmp_path)
+	db = get_db(base_dir / "data" / "bosshunter.db")
+	try:
+		action = _build_pending_action(
+			db,
+			[
+				{
+					"name": "collect_jobs",
+					"arguments": {"keywords": "AI赋能", "cities": "深圳"},
+				}
+			],
+			None,
+		)
+	finally:
+		db.close()
+
+	assert action is not None
+	assert action["parameters"]["keywords"] == ["AI赋能"]
+	assert action["parameters"]["cities"] == ["深圳"]
+	assert "准备采集：AI赋能" in action["summary"]
 
 
 def test_score_action_excludes_manual_and_incomplete_records(tmp_path: Path) -> None:
@@ -438,3 +509,26 @@ def test_message_rating_can_be_changed_between_good_and_bad(tmp_path: Path) -> N
 
 	assert result["rating"] == "unhelpful"
 	assert row["rating"] == "unhelpful"
+
+
+def test_assistant_message_metadata_serializes_database_datetimes(tmp_path: Path) -> None:
+	"""PostgreSQL 返回的 datetime 应可安全写入助手消息元数据。"""
+	base_dir = _prepare_base_dir(tmp_path)
+	db = get_db(base_dir / "data" / "bosshunter.db")
+	created_at = datetime(2026, 9, 17, 10, 30, tzinfo=timezone.utc)
+	try:
+		from bosshunter.assistant.repository import add_message, create_conversation
+
+		conversation = create_conversation(db)
+		add_message(
+			db,
+			conversation["id"],
+			"assistant",
+			"查询完成",
+			metadata={"tool_result": {"created_at": created_at}},
+		)
+		messages = list_messages(db, conversation["id"])
+	finally:
+		db.close()
+
+	assert messages[0]["metadata"]["tool_result"]["created_at"] == "2026-09-17 10:30:00+00:00"

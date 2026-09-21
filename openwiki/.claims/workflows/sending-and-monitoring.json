@@ -1,0 +1,186 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:8ee406a2baf7961bd5041a4557cbbda081d68750380b42829b03cda9571314b0",
+  "claims": [
+    {
+      "id": "claim_e443e9d2c7824ef2ab38b4ee0e2f32e0",
+      "statement": "The greeting sender only consumes approved jobs with a non-empty greeting via get_jobs_ready_to_send, so ready (greeting-generated but unreviewed) jobs are invisible to it and human confirmation cannot be bypassed from the executor.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/db.py#L512-L535",
+          "version": "repo-lines-v1:sha256:e649668e0936f071c9e4d1033312c2c6c38b563738b07f05a028831eacbc7052:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhmN2Q3OTg1NjM0MGQ1MTI5ZWRkYzQzYzY0NTg3OGZjYmU3NjNlM2YxZjBlZmNkZGMxN2FkMmYxN2JlYjBmMTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2NmEwZTBjYjE4MWM0Y2VkNGQ1NDczNTBkOTg4YzRhODkzOGIyNDA4MWI4ZTU4Y2M1Y2UxYjgxMGRkYzVlZWIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIyMTNkYjQxMWEzZjQwM2QyMWRhMDcwNDQxNDQ5M2YyMGQ1NTA3MDg0Mzg4MTM5YjY4MTFjMTJjNTliYmVkM2IiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRlMDQ5ZGM5Njg5ZTA3ZDY0MzYwOGVlZjYxMTIyMzU1YTUyMjM3NmY2YjM5ZjUxOGIzNmVkZDFiMzgxZWU2NGQifQ"
+        },
+        {
+          "resource": "repo://src/bosshunter/executor/sender.py#L746-L750",
+          "version": "repo-lines-v1:sha256:beb867729376cf1fcb79f01812ba2699db9e143fba6f687d047953794e56fb62:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDg2ZDQwMzQxZDM5N2QxOWQ5M2I5Zjk4ZTVhNDJiM2NiZTE0ZGVjMDVhMTY0N2IxNjk2ZmFjMTQ2MTMwOGM3YiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMzBjMWYxODhmMTQyZWQ3YTgyNDY4MGIyMDcxNzJjNTUxOWJjNjE0YTQ4ZmRhN2NmMTY3ZWRiOGRkZjc5OTU2YyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYjZlMGM3NTE2YmE5Nzg3NTQ2NmI0M2RhZTllMWExOTM4MDZkZDBmYjU4MTY2ODlkZDRhZjNkMGYyMTkyODE4YiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTcwMjA4YTdhOThkNDljOWE3MDljZmUzNzdiNDYwMjFjNzdiMGIwNjg1NDBjYTg5ZTJmZThmY2RhOTZjNTE5NyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_bd13b20ab233454db9e77fdf7a9b11f7",
+      "statement": "A job with an existing conversation_id is short-circuited as already_sent without re-sending, and a verified send writes history(action='sent') before persisting conversation_id and status, which together close the duplicate-greeting and quota-accounting crash windows.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/executor/sender.py#L402-L416",
+          "version": "repo-lines-v1:sha256:853dc2a284b4f98c86b110678f527c222afe303eca146b6816133bcade9d5c32:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNiODIzNDkwOTc0ZmYzZjFmZTk2NDFhYWIwODYwOWNjNTQzMmY1OTU1MWQzNmVkNmIzMWRmZGM4MGI1MGJjZTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMxZTUzMzAyMzRmN2Y3N2M3OGY3MTkxZjQ0NzAwNmQ1NDVlNjYyZmZlZDRhMjYwN2U4MWZhODQ5MWY2MTgwNGEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRmYmQwMDkzMTRiYzI3MDg0MTY3MzRhMDJhZTVmZjM5YTFlNDhhMDUwYmU5MWY0M2IyZmFhOTIwMDJjNjJiZmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM2ZWI2YWZkMjg1NTlhZmZkMzI4MzQ4ZGIyYzVhNTU5ODZiYzgwNzhlN2Y1NzYyZDQyMGQzMGExZTMwNDEzMTgifQ"
+        },
+        {
+          "resource": "repo://src/bosshunter/executor/sender.py#L825-L846",
+          "version": "repo-lines-v1:sha256:2f826076298d3b95dac2746fcd2ca53b2b5eeccd6334cb35247376c3de19678b:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk3Nzg5NTU0MjY4NDI2ODkxNGY0NjU4MzYyY2IzMDA4YTBmZTJkZmVmYjcwYzRiNjQxYmRkOWZmYWYyY2MwYjEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk5MTkzODJiMzY1ODVkZDU2MmY2OGJmNzdjNGE1N2FjYzA3MWRmYmEwZDU0ZmIzZTIzYTc1MTZkYWNhMjRhN2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZiZDFhZDM1NDBlMThjMDNmZmNlNGNjNzZiMWE0ZWNmMzBjMzQxZTg2NGMzNGQzODY0NDI2YWQ2MTVhY2NmOGQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg0ODI4NzA1YzcyY2NjNDQ1OWRmYmQwNjQ2MWNhZDBlYjM5ZDM1MzZiZmFjN2RiZmJlZWY4ZjlkMTRjYmMyNzMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_0667f96f796f44cfa2894b7174de500b",
+      "statement": "Send failures are classified retryable, permanent, or stopped; retryable errors are retried up to send_max_retries inside the job while permanent errors short-circuit, and send_verify_failed is permanent because the greeting may already have been delivered.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/executor/sender.py#L146-L182",
+          "version": "repo-lines-v1:sha256:e02a85af2b9c806f5f5ec5237a2c637c50e2ee62b87c001a2b66bc0439a34260:eyJzZWxlY3RlZExpbmVDb3VudCI6MzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYzMjQ0NDg4ODg2N2E3NzJmY2RhMWMzYmIxOGQ2ZjFhZjgxZjhjNTFlMjFmODkwNGRkZTY0ZmY2Nzc3YTBjZjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE2YmQ0OTk2YjJlODM2OGRlNTEwNWYyNTYwMGNmYmFkNzBjZWNlYWRjY2VmOGE1Nzk1Yjg1MzBiZDVjNzQwNDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFjOGYzNjZkYTI1OWU5Zjk2ZWFhZDhjYzA0ZjdkZTU4OTlmYzg2YTdjMzJmOWZkNTY3ZDZkOWE3NTg2MWMwNmQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhmNmYxYWE0NWUxMzQyZDhmNDI1YjEyODdjYzBlNDI4YzBmMmVkZjYzMzMyNzhlYTA0N2E4MTA3NjY3ZTUzMDUifQ"
+        },
+        {
+          "resource": "repo://src/bosshunter/executor/sender.py#L669-L706",
+          "version": "repo-lines-v1:sha256:b9381ec0b4e318267ad4f91ab3f23dd8036d1676ea41b0541e94356dd5c40f23:eyJzZWxlY3RlZExpbmVDb3VudCI6MzgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJjMzVhYjA5YjIyZTQ1MGRhMWRlYjBiZWNkNjg3OWRhMTQwOTdhMGE3NDUxNTRmMTk1NWI0MGI1ZGY3MGYzYWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM2NjI3YzlkNzdiOTdjOGQ3YTU5MDBiZTIxM2MzYzRiZGE3MzhmMDIwZTdkZGJlYzEwODVhZWE1MGI0MGQwNjQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY0MWVlZTcxZjIyMjBhMGRhOTIwMzQ4MTY1YTU3ZDg1NTAyMGFmNzM5ZTA3MWMxMGU5ODFiYzkxNDJlYzY3MjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA5NjFmODIyZTNjODk3OGE2YTA4YTIyZmMxMjA0MzgzM2FkMWM5ZWVjMjVlZTE5ODM4NTg3ODU3NGNhMDY4NTAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_f29141f620274494a40570abd00fc49f",
+      "statement": "Greeting sends and monitor chat sends are both verified by polling the page after clicking send — the greeting path requires the message list to grow and the monitor path accepts input-cleared or list-growth — so a button click that does not produce a message is never reported as success.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/executor/monitor.py#L702-L770",
+          "version": "repo-lines-v1:sha256:c48141e8d33ad2a6f5fb8f1c238b2c2801bcb32973cce46f8f58fa9c727be851:eyJzZWxlY3RlZExpbmVDb3VudCI6NjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE4MTIxOTlhZmVhZDJjNzA4MTEzZDY0ZjdmNzE2MTRiMWU5MTFlOGU3YWIwZGFjNzhjZmM1NTNjNjUzMDFhYzMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMwZTJhNDY1MDA5NWZhOTVkMGUyYmI0MWIyZGIyOTA5NGQzNDA0ZDI4Y2UxMjMzOWVjODhiYjRiNWM1YmU4ZjYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFjMDZjZTg2ZTU5NjJhZTA5NjU3NjFiMTJmZGM3ZWFjN2YwNDljMDE3ZmNmZDYyOTlmM2ZkNzQ3M2U0Mzk1ZTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjYyN2ZkYTdjMDA2ZmQzMzFlZTg4MTc3YjdmMzg1Yjg4ZTYxMDliMGU4ZjI2ZjA5MDk2OWQzODJhOWYxMmNkN2QifQ"
+        },
+        {
+          "resource": "repo://src/bosshunter/executor/sender.py#L365-L399",
+          "version": "repo-lines-v1:sha256:eb9e5f3262cb9479b4648837d7591f5f94c01af398b134ed949887882a8ee949:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQwMWM1YmUzNjczNDEzNjEyZmY1MDM3N2FiNzkwYWUxYzI2NTUxN2JjMjY3YjY4YWU0MjYwNTBmZTE3ZjExZWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY3N2YwNjA1ZDcwMThkNWZlZDE4ZjM5ZDU5NzljNDg0N2IzMzdlM2EyZWYwMjliYTFkZDgxMmRjMjRhZjA1ZjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjcwZTUwYTBiZjE5YjNjMDkzMzBhNTFmNzE0OGQxY2NhNWNiMWNhM2M2YzcxMmM1MWVhY2FhN2ZhOTA4YjcwYmMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_34e256d2c7534107ba4d7a996b77ce62",
+      "statement": "After a failed send, job_closed and job_page_unavailable become closed, already_sent converges to sent, and other failures become error with error_retry_count incremented; recover_send_errors later re-queues error jobs to approved (never ready) once the backoff window elapses and error_retry_count is below the maximum.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/db.py#L384-L451",
+          "version": "repo-lines-v1:sha256:3c02957ce096aedf5a10831bdbf243897fab9ffa369e9a7241c86806db21cce0:eyJzZWxlY3RlZExpbmVDb3VudCI6NjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEzZWZiYTY2ZmExMWMwOTk4MDc3ZDY0NWY4Mjg1NTg4YjZiNWI2ZTQ1MGM4MjlkZDA3MzYwM2M4YjhjNmJkOGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFkMDhmMDJkOGMwNWRhNWQyZmEwOWM0ZWEzYTFiMzQ4MzI1MDhlZTBiOGI5YTIxNWQ4NGY0MTI1MDRhODhjOGYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY1MzE0ZTk0MTIzMTA0ZDZlZDIwZDJmM2M4NDM5ZmRhMGU0Nzk2Njc1YjQ4YjcwOWU3YTM5ZjkwODk2N2JmZmQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjExMTJjOTE5OTk1NDllYTIwYjRhZjUxMTAyZDhhNWQ0MzA0OWQxNmFlYTUwNWE3MDEyZjY2M2VjMjQ3NjRiYjEifQ"
+        },
+        {
+          "resource": "repo://src/bosshunter/executor/sender.py#L848-L871",
+          "version": "repo-lines-v1:sha256:af78408de7c71aa7103ef5800e3fb44c3a2f9b2a373b1a99adbca5cd708ddbb7:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBjMDdlMTNiOWQ5YjNkZjJiNmU3M2VkY2Q1OTg0ZGQ0MDUyZmQyZDdhYmYxY2UwZWE4MGJjNTk0MzgzZDVkYjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJkNTY4YjA4MTg5YjIzYzQ3OThlZDgyODQ1NjBjN2Q4ODVmNGYzY2ZhZGE2ZmI5M2U2NGE4OGY0ZWM2NzI5MGUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE3YzUwNmUyYjUwYWEwNjRlMGExNDMzZWM2N2M5ZGIzMTI4NTNkZGI4N2M5ZTU2ZTY2ZDc5YWFhNWUxZTVkZTciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJkYjczMzljMjI3NmQ1MGMyMDEwMmQwOWYzYmE2Y2FhZjE0YWE3MDg1ZjhjN2QxMjAwOWY3NTczYjM4YjUwMmYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_a67be0f6e60b49fd916f95eee80dd227",
+      "statement": "check_replies collects permissive needs_inspection candidates from the chat list without mutating job status or writing reply history, and unmatched conversations become stable manual_-prefixed shadow jobs so HR-initiated chats are monitored without entering the scrape/score pipeline.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/executor/monitor.py#L1105-L1201",
+          "version": "repo-lines-v1:sha256:bc5300a3fd1c671374ce8e5de0f191ad905a2f03c9158f4af6ed3d0be4e75e16:eyJzZWxlY3RlZExpbmVDb3VudCI6OTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQwMmIzZjlkZGQ1ZTBkMTRiMWUxM2U5Y2RjMmU0ZGUxNjY4MzBjNzYyMjg5MTQ5MjRlNzdhZWQ4MDEyNmVhNjgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcwZTRmYjRkNDIzZWMzZTYwYTFkMDNkYjA4OGU1N2U4YjM1MjIxZDkxMzg0OTM2YTg4ZmQ5Mzg5NzllZDlkOTYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE0YTI2YTcwODgxYTVmZTk2Y2EyNWVmM2JkMDg0ZWZmYWQ3OWNiNmNhY2VmMWZiNjdmZGVkOGE5OWM4NjZiODQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM1NTMxMjZiYTA2MDk4OTJjMmM0MDRiZDMwN2VjMzNjZjA2NzIyZGUzOGZjODU3ODQwM2U3NjM1YjY4NDU0MjUifQ"
+        },
+        {
+          "resource": "repo://src/bosshunter/executor/monitor.py#L1242-L1293",
+          "version": "repo-lines-v1:sha256:cfde0a73f5fcac6a608821bbd44c60cac5957ed8641509cd32ae0a970bf12adf:eyJzZWxlY3RlZExpbmVDb3VudCI6NTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYxOTJiNTQyZGY2MjU0MTY3OTM0NzliYWQ0OGU3MzAwMmU5NjZkNzgzYzBiMDBmODljYmRhMzU3YTcxYTdlYjEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUwMzViMWQzZTgwYTNkOWMzZTU3ODIyODFiOWE1YTlkZjIwNWZmMmViM2FiOWQ2YjY5Y2Y1MWYxZGM2ODRkZmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ3MDE0OWUwNjlhZDY3ZWNjZjQ3MzY0NmZmMWM3NTAwNTBkMzI5ZDExMDAxOGRjNTc2Njg3OGVhZmExZDYwN2QiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE5YzE2N2JiMzIxNjA2NDkwNmVkYTEwY2FlNWQyYjU3OThmMjQ3MGI3N2YzYzYzZDdjNjI2N2ZlNjJhM2M2YWYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_72087dd245f24f4ca85c1103d396b6e0",
+      "statement": "_handle_conversation is the only verifier of HR replies: it skips conversations whose last message is the user's own or that have no actionable HR message, detects rejection, and generates a reply only after those checks; sent -> replied advances only for reply_pending or auto_replied outcomes with a prior sent status.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/executor/monitor.py#L1296-L1399",
+          "version": "repo-lines-v1:sha256:e92976313d097285352b247d1a2a26dd93d7d56e47756ac9f6253cc9a48f9d7b:eyJzZWxlY3RlZExpbmVDb3VudCI6MTA0LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJmODJiNGJlZjViZDMyNDAxY2U2YmYxZjc4YWU0MjU1OGE2NzA1NTY3ZmJkYmVjMTdiZDQ5NzkzNThiNTcyMzZiIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJjYTQzMDgzZTkyYmM2MzNjMjg5NTlkNjI3NDJmNmViZmY3OTZiMTYwYmY5YzQ3ZDIxNDc3YjhjOTNiYjFjZTBiIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI3NzcwM2Q1OGZhOTliMWU1ZTA4MGNhMTA4N2E0NGQ0Njg3YmY3ZTM2MTFkZjg3YmE1MTQ3NWI2ZTNhNDIwNmFhIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJmODQ2MThlNzc0YWRmMWE2NGRlZjYxNzQwY2E1Y2EwNDI3Njg5NzljYzUxZDRiMjgyMDRmZGEzOTAyNTkzNjJhIn0"
+        },
+        {
+          "resource": "repo://src/bosshunter/executor/monitor.py#L1694-L1709",
+          "version": "repo-lines-v1:sha256:cbf3e7996e87de81b291c7fbcc472838a078bf40338c2c38a1bf92e3ff36c0b9:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVlYWNjNTIwZTdiYmY1ZGQ4YzQ5ZmM2ODRjNzliNTNlNGU0NjUyNzFjYzQ4ZGYwZGY2ZGNmNTNlNWM5YmEzNDAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYwZmE1NGJhZTk2NzQxZmUwZTAyZWRlN2ZhZThkNzQwMjg3YmE4NjQwNWIxZDU1YzMxMDNmNmMwYmM2ZTdiM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNkN2FiZTNkYzA1NDU0ZDU4ZjFmN2IxYmNkMmEzM2RiMmU5YTY5ZTZlZGQ3YWZhODZiYTE4MzE3NmMzMjM3ZDQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM3ZWNhMDNmMjM2Y2JlMzMwN2NiZmIzYjZmMWNiMDBiYmMyNGEzYzZjMjMyYWM1MzY3N2VlNDg5YmI3MjhkNzgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_a1ee07ce521544d8b56420440fc44473",
+      "statement": "Reply suggestions are deduplicated using a fingerprint of the last three actionable HR messages, with history checks that skip dismissed, already-resolved, and already-pending identical questions before a new suggestion is generated.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/executor/monitor.py#L1350-L1368",
+          "version": "repo-lines-v1:sha256:754b13b138ce26015c497887ef2d84a9f9f579017133ec75cd156f5d1f2145e9:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZhM2FhMDQ5MTMyZjhiMTE1MjYzY2E5MTMxNWZjMmVmODMyZmFiZTkyZDA3NjdhZmFhYzY0NGY3ZmRiOTk3YWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI5Zjc4MmNmZTM0OTFlM2ZjMGMxMWZmMTJhYWIyOGZjYzRjNmMwNzg4NTVmZWFlMWY5YWU5YzY4YWExYjMyMDEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIxY2U0MDljNjliZmJiNjdkZjY1ZDBkNjg3N2Y3NzdmNDgwNjBkMTMyNzQ5OWFkMTczZjdjZWVlODlhZjIyOWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAxYzM2NDIxZGNjMTZhMmU5ODQ3MzI4MGQ1ZmFmOTQ2ODNiOGYwNGE0ZjU5ZGEzMGJkZTk3MzNlY2UxMDEwMWUifQ"
+        },
+        {
+          "resource": "repo://src/bosshunter/executor/monitor.py#L1435-L1515",
+          "version": "repo-lines-v1:sha256:844a8f731034010394bb1af528900e47ae2f14fb6b97cb7f3585012e9e8fba41:eyJzZWxlY3RlZExpbmVDb3VudCI6ODEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM3MDg1YjgxNzMxNGUxNTk2NWI0OWUwODhlNGQzMmQ2NDQ1Zjk1M2Y5MThiZDVlNDUwN2VmNDM2NTY0YjA3NDUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNmZWE2YmI0Njc1ZmY0NTUwOTM1YmIxODhjMDJhZWUwN2FlYzkyNDU1ZGZjZmY1MzI5Yjg1OTQ5ZjMwOTYzZGUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ2YTkxMGFmNTJlYzRhMGZjNjA5ODQ5ODFmMjVlZGU4MjZlOGM4ODdkNmQ0MjdjMjdkYzU1ZDY4OWU5N2RjYTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY3NzBiNTdlOGMxMjk3ZmZkOTM3NmFkMjYxNDc2ODg5N2VjODg1MTNiYWU2YTBmYjgwMWUyYzEwY2RlMzZhMTAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_e47ca1b20d1b4b8aa4474770daee6dd0",
+      "statement": "Generated replies are stored as reply_pending drafts by default and are sent automatically only when monitor.auto_reply_hr_questions is enabled; workbench reply confirmation later opens the conversation and sends the user-confirmed message through the verified send path.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/executor/monitor.py#L1380-L1399",
+          "version": "repo-lines-v1:sha256:9fc3456855293be45e3e70c5c12ad302b31d880c794b900dc3b29aeeb8de18fa:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEwODEwNzk1M2JmYzgyZWFkMTVjZGMyZjY0OTQ4NTVmMDViMTI5NzkwNGNhNWE4YjJjMzdkZDNlMDc2MzkxNDIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNhNDMwODNlOTJiYzYzM2MyODk1OWQ2Mjc0MmY2ZWJmZjc5NmIxNjBiZjljNDdkMjE0NzdiOGM5M2JiMWNlMGIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY4M2U0M2NkMjg5NjM0Zjc4YzliN2U1OTNkODZkNDE1OGVjMzI2MDdiZjkxYmJhMTgyODE1MDIyY2FhZmMxNTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY4NDYxOGU3NzRhZGYxYTY0ZGVmNjE3NDBjYTVjYTA0Mjc2ODk3OWNjNTFkNGIyODIwNGZkYTM5MDI1OTM2MmEifQ"
+        },
+        {
+          "resource": "repo://src/bosshunter/web/server.py#L563-L610",
+          "version": "repo-lines-v1:sha256:10f24e74e30f4523d80beda134cff12ec58e657a9ec32168958bbe642d1ea8b1:eyJzZWxlY3RlZExpbmVDb3VudCI6NDgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZlZTc4ZWY5MTMwZjRjYThhOTQxMzg0YWJjZTQzNDA1ZTk2MjZlMmViMGE3NmNiNDdlMTE1Y2Q3YmJkYTZhOGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhOGQ1Y2Q3MjhhNTNmMGQ5MzA3YWU3YTUwNDllZTk0MjRjMTdlMGJmN2I5NzFiMzk5YTlhMjgwM2I2YWQ3N2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAwZDdiM2E3OTU2MjZkYTRmMDM0OGFhYzY1MjRiZjE5NzQyM2VkM2NiYzRlZTAyOTcwNWRhZjFlZDZiZjUzZTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRhMjA3NDM4YWIwNTlkNTIzODBmNGQ2YzFjNmJiNjY5OWM3MWY5ZDU1NGJlOTJhNGI3MDIxZDU0YzNjMGNmZGMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_837ca2f472cb488eb3fd5c49049f4c8b",
+      "statement": "Resume-request cards are classified by the conversation extractor and Python detectors and recorded only as a resume_requested flag inside the reply detail; the monitor never clicks agree, refuse, or send, and resumes are delivered manually with the web mark-resume-sent endpoint writing resume_sent.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/executor/monitor.py#L122-L126",
+          "version": "repo-lines-v1:sha256:e9a8f9fba70105dc7978eb7fe885657bda03098f4251a57decccc4fe11ff0c1c:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjcyN2M2NDI1ZWI4YmQ5ZDRhMjBmNDhhZDQ3ZDc0ODRjNWMzNzZiZTAxOWJiNTkxMDQ2NzA0MDhmNzIyMTY0MyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDg5M2Y0MGUzNzgxZWI4OTZjODJkMDQ2YTA4MDY3YTExZTM1Y2RmMmYxZGZhZjI2ZmVhOTBiOGRiNjY3NjQxMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTEyZDMzNGZjYzhhMjk5MTJjMGQ1MDQ4NDJlMGJhMGIyYzlhMzlkMjhlYjRjZDExYTQ3MGExOWY0MTVkMTUyZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZmY3ZTIxOWQ3NWJkZTcwNDMzYmVmYzE5MDA4NGUzNzY1ZTkyZjRjZTZkMWU5ZDAxMWQ0NjVkZDRhYzk1ODk1MCJ9"
+        },
+        {
+          "resource": "repo://src/bosshunter/executor/monitor.py#L333-L382",
+          "version": "repo-lines-v1:sha256:211ca11ea81feb8a1739ca82db7548595454df3b53e4fe60346151d22773a9c7:eyJzZWxlY3RlZExpbmVDb3VudCI6NTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkzMmNhMjM0ZmU5MTQzOTFjZDVkNzRlM2ZhZTE4YjViNTk5YmZlZjM4M2M0ODg4YjQyMGVkY2UwNjZlNjcxM2YiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU1YmM0NzExZWNjYTA0NTBhZmM4MzI3NzlhODg2NzZhN2M2OTYwZmEzZGE1YWY0MTBlZTAyZDFlMDE1MTU5MWEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUwYjIxYmY4OTVmYWUyZDczOTIwZDkzMTc4Y2ZkNTg0MWNkZjhmOTUyNDUxNmM4YTU2NTg0MzZhNGFjNDhmM2IiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNhOTUxODZlZjc1YzU1NDkwODc0NmY4NjcyNTdkOTY1MzdjNTA5ZDEzYmM1OGMzYmQ1MmNhZjhhZDRlNzBiMTgifQ"
+        },
+        {
+          "resource": "repo://src/bosshunter/executor/monitor.py#L462-L486",
+          "version": "repo-lines-v1:sha256:502a64fd53ac779668e12438080b3234127a28391205827e02b475cb7775375b:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVjYzc5MGU4NjZmNTBjNTdlOTFiNGQyNzYwMjU2OTVkMGU5ZmNmY2I1YTBmM2NjZGFjY2M0MmMxOGRlZDU2ZTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU3ODc5YjE5OWQ3ZmRlYmU3M2I1ZDgyMGU5NmJkYjg1NTc2YzcwZTk2YzdhNDE1ZTYyZDI4ZTY4NWFiYjNhZmEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBhYzc5MzA2MDIwYjljNzhlZWQ4YTlmMWQ4ZjA2MDI5NjQyYWIwOWJkYTYzMDQ2ZWViY2M5YTk0NmRhNTdhNjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRlM2MyZTA5OGQyM2M1ODRhYmZlNWFiMjBlMmQ0NjdkOGNjYmJhMmQzOTZmZmIxMjQ2NmU3YmY1NGZlM2RiZDIifQ"
+        },
+        {
+          "resource": "repo://src/bosshunter/web/server.py#L1223-L1231",
+          "version": "repo-lines-v1:sha256:fa5a93db8f575532464ebc5d2cd662dbd6fe9a31b0bc83c0d3f0a79ccf2c9cb5:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOTc2M2I5NzAwNGRmZjJlZDljNWY2OTYyMjRmMWM4OGVmODRhYWI2MjIwM2E3NTI4YzMyMTE5YWZiYzk5MGQ3ZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNzA2ZjhjMmJiZTRjNGM0OWY4MDkwMDBlMmVjYmNmOWNjZDFhNDQwZTkyODkwNmY1ZDg5MDMwOThjNzZjMjYzNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDhhYTVmMzE0YjM2YmY3NzUzODVhMGFjYjk1ZjY4MGU3N2QxYzkyMWU2OWI3ZWQ2MjQ0MTM3MDkzOWVjNTM0MyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzg0OGQwNmExZWE2ZmE4ODY5MzExYzQwZTk3YjBlYzY3MWUzNmI2NGM3MmZjNDdkYThlZTgzMjQwZDI2OTA1NyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_cd5b10b822d343fdbcc6fbab9117a5e9",
+      "statement": "Follow-up runs only on sent jobs with no HR reply in the current cycle and no prior follow_up_sent history, gated by follow_up.enabled, interval_hours, and weekend skipping, so each job receives at most one automated follow-up.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/executor/monitor.py#L1426-L1432",
+          "version": "repo-lines-v1:sha256:44b7c8307fe5974ad7aa5ba7f450cf2f3fa561e9d1926ddf29cc15d3d1da96f5:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYmVkZGM3ZTg3YTEyYjE2MTkxNTZiYTMxMzdmNjdiYmMyY2EwNDI4NzUwYTg1MDc2YTc0YjZmM2Y5ZWRhY2Y2MCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTExMjE5Mzg5NWI1NzE0ZjkyYzlhNjk3YmNlZWI5Yjg4ZWYxNDA0NmQ1ZDRhMGFiYTczNjM1NWI0MjIwYjcyOSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYjEzOWI0MjkwZjAwNWU1NDQyNmI5ZmQ3M2E3N2M3MTE4ODgxZjIyMjNlZTQ2YjAwYWZhNzkzOTdlNGEwNGU4YyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDk2NzM1ZDYzMDVmNDc4ZjliMzEyODM3MWM5MmE5MzY0YTFkMGNlMTBhMDhhMmNiZGYzY2Y3YTIwMWYzYWM1ZSJ9"
+        },
+        {
+          "resource": "repo://src/bosshunter/executor/monitor.py#L1518-L1605",
+          "version": "repo-lines-v1:sha256:97d2d330e198d3f12f58d3fc07b74b5982f02335fd1d33251f8b27879ca17c14:eyJzZWxlY3RlZExpbmVDb3VudCI6ODgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgzNzZiNTAwZTdhMmQ0N2RkMDFiYTk0OWYzZjJkMDU1N2M3Mzc1N2RmYzM5YjhkMGU1ZmYwMDE2MmQxMDg3MmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhjM2RiZjY1NmQ0MmFhOTM2ZGVkZDU1NDFjY2Q4MDgxZmFiNTdmNDY0N2NiNzZkN2Y3NWVmZTg5NWJlZjQ1OTYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY2MTZiNDU2ZmE0YzdlYTA5NTMxNmRlZWU0NDkwODljMzYxMDMxMGUwMDVmNTQ0NTc1YjhmM2Q2MzkxY2UxOWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImIxZTJiZmQ5OGU2YTQ0MzVmZWU0OWIwZTc1NDA1NDQ0MWJhYzM0ZjY0YjNlMTBmMTc0YzVjYzA1YmU2ZmU2OTEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_e221ab610c2c42acafa2772ed5bf01d6",
+      "statement": "_open_conversation opens BOSS chats through three ordered strategies — stored conversation_id direct navigation, job-page 继续沟通 redirect recovery, and chat-list name/company text matching — and persists any recovered conversation_id back to the job.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/executor/monitor.py#L773-L792",
+          "version": "repo-lines-v1:sha256:aa726615470aa24e9d7e7aa7472caf38e1801abc4eb5642e5c7383f0657d3904:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZjZTRhN2E5M2IwNTRjYzFlMTUwMGY5ZmQwNjRlNjhiYzFkMzI4MTQ0NGQ3YTM0MTMxNDYxMGQ4MjdjMGI3YzAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM5NTNjM2VlYWE0MjVhOGEyNGRhYjQ5ODYxNzE5OTc2NDcyNzc3NDBhNzg3NTQ3N2E0NjhhY2UxODU3MDU0MDMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRlNzU3NWMzYjc3NzZjZjJmOWMyYmZiY2E0NGYyMTQ4MTNhNzgyN2VhYTljMzg0NTRjNzAzYjY4OWE3NDQzODYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBmZGJiNGI2ZGI2ZWQ5OTcxZTQ1YzlmYWVjMjllNWQwNDFmYWNkMWRmNTYzOTcwNjM4NDEzYjQxYmI4N2Q2ZmIifQ"
+        },
+        {
+          "resource": "repo://src/bosshunter/executor/monitor.py#L869-L1050",
+          "version": "repo-lines-v1:sha256:c52c358a75d4225ea07660f99124bb60e8594ac03eb43a07b3e79537dab8e5f3:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgyLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIzZGZmY2I1MzRiZjljNDZmNDgwYjUwMGExMDM1OTE2ZDQ0YjU3NTAyNmU5NDY3MWNjZDM2NGNkYmM4YWM1NGQ0IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0ODk2MDBhNzNkMmUwMmYzNTJiOTBmZWYxZDhkNjM4MTFiYTRhOGVlMGMxYmVhYTdhZTQ2NThmMzZhYTJlMTk4IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI3YWVlNGY0OTIxNjk3OWMxNWI1YTdjMjEyYmYwYTVjY2MyM2IwYWRjYzFkNTAwZDM4NmJjMDkwY2E5ZWMzN2NkIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJiM2ZkYTUwMTNmMjk3YzRlNjVmMjNhZDZmYjYwMGU1ODhjMGI1ZTQ3NTkxMjI0YjNlZWRhYTVkZTQwMWE1OGQ3In0"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.5.2",
+    "at": "2026-09-16T06:31:53.644Z"
+  }
+}

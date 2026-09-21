@@ -1,7 +1,7 @@
-import { Fragment, useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { ChevronDown, ChevronUp, RefreshCw } from 'lucide-react'
+import { Building2, ExternalLink, MapPin, RefreshCw, Sparkles } from 'lucide-react'
 import { getStatusLabel } from '@/lib/status'
 import { formatTimeAgo } from '@/lib/utils'
 import type { Job } from '@/hooks/useDashboard'
@@ -17,220 +17,101 @@ interface JobsTableProps {
 }
 
 function statusVariant(status: string) {
-	const variants = new Set([
-		'pending',
-		'scored',
-		'filtered',
-		'ready',
-		'approved',
-		'skipped',
-		'sent',
-		'replied',
-		'resume_sent',
-		'needs_resume',
-		'follow_up_sent',
-		'rejected',
-		'error',
-		'closed',
-	])
-	return variants.has(status) ? status : 'default'
+	return new Set(['pending', 'scored', 'filtered', 'ready', 'approved', 'skipped', 'sent', 'replied', 'resume_sent', 'needs_resume', 'follow_up_sent', 'rejected', 'error', 'closed']).has(status) ? status : 'default'
 }
 
-/** 解析注册资本字符串为"万"单位数值（"1亿"→10000），无法解析返回 null。 */
-function parseCapitalWan(text?: string): number | null {
-	if (!text) return null
-	const match = text.match(/(\d+(?:\.\d+)?)\s*(亿|万)/)
-	if (!match) return null
-	const n = parseFloat(match[1])
-	return match[2] === '亿' ? n * 10000 : n
+/** 只允许打开可信的 HTTP(S) 职位链接，避免脏数据注入可执行协议。 */
+function safeJobUrl(url: string): string | null {
+	try {
+		const parsed = new URL(url)
+		return ['http:', 'https:'].includes(parsed.protocol) ? parsed.toString() : null
+	} catch {
+		return null
+	}
 }
 
-/** 注册资本三档样式：≥500万 高亮（资本雄厚）、<50万 标红（不靠谱）、缺失灰色。 */
-function capitalClass(text?: string): string {
-	const wan = parseCapitalWan(text)
-	if (wan === null) return 'text-text-tertiary'
-	if (wan >= 500) return 'text-primary font-semibold'
-	if (wan < 50) return 'text-danger'
-	return 'text-foreground'
+function scoreTone(score: number) {
+	if (score >= 80) return 'text-primary'
+	if (score >= 60) return 'text-info'
+	return 'text-text-secondary'
 }
 
-export function JobsTable({
-	jobs,
-	onRegenerateGreeting,
-	regeneratingJobId,
-	actionsDisabled = false,
-	selectedJobIds = new Set<string>(),
-	onToggleJob,
-	onToggleAll,
-}: JobsTableProps) {
-	const [expanded, setExpanded] = useState<string | null>(null)
-	// 直接渲染服务端返回的当前页岗位（分页/筛选已由后端处理）。
+export function JobsTable({ jobs, onRegenerateGreeting, regeneratingJobId, actionsDisabled = false, selectedJobIds = new Set<string>(), onToggleJob, onToggleAll }: JobsTableProps) {
+	const [activeJobId, setActiveJobId] = useState<string | null>(jobs[0]?.id ?? null)
+	const selectableJobIds = useMemo(() => jobs.filter(job => !['rejected', 'closed'].includes(job.status) && !job.id.startsWith('manual_')).map(job => job.id), [jobs])
+	const activeJob = jobs.find(job => job.id === activeJobId) ?? jobs[0] ?? null
+	const allChecked = selectableJobIds.length > 0 && selectableJobIds.every(id => selectedJobIds.has(id))
 
-	// 轮询刷新（2s）会传入新的 jobs 引用，即使内容没变。只在岗位集合真正变化
-	// （job id 序列不同）时才折叠展开的详情，避免轮询打断查看。
-	const prevJobIds = useRef('')
 	useEffect(() => {
-		const ids = jobs.map(j => j.id).join('')
-		if (ids !== prevJobIds.current) {
-			prevJobIds.current = ids
-			setExpanded(null)
-		}
-	}, [jobs])
+		if (!jobs.some(job => job.id === activeJobId)) setActiveJobId(jobs[0]?.id ?? null)
+	}, [activeJobId, jobs])
 
-	const getScoreColor = (score: number) => {
-		if (score >= 80) return 'text-primary'
-		if (score >= 60) return 'text-info'
-		return 'text-text-tertiary'
-	}
-	const selectableJobIds = jobs
-		.filter(job => !['rejected', 'closed'].includes(job.status) && !job.id.startsWith('manual_'))
-		.map(job => job.id)
-	const allSelectableChecked = selectableJobIds.length > 0 && selectableJobIds.every(id => selectedJobIds.has(id))
+	if (!activeJob) return (
+		<div className="flex min-h-72 flex-col items-center justify-center rounded-xl border border-dashed border-card-border-strong bg-surface px-6 text-center">
+			<Building2 className="h-8 w-8 text-text-tertiary" />
+			<h3 className="mt-4 text-base font-semibold text-foreground">没有找到符合条件的岗位</h3>
+			<p className="mt-1 max-w-md text-sm leading-6 text-text-secondary">调整搜索词或状态筛选，或者先采集一批新岗位。</p>
+		</div>
+	)
 
+	const activeUrl = safeJobUrl(activeJob.url)
 	return (
-		<div className="rounded-lg border border-card-border bg-surface overflow-hidden">
-			<div className="overflow-x-auto">
-				<table className="w-full text-sm">
-					<thead>
-						<tr className="border-b border-card-border bg-background text-xs text-text-tertiary">
-							<th className="w-10 px-3 py-3 text-center font-medium">
-								<input
-									type="checkbox"
-									aria-label="选择当前页可重新生成的岗位"
-									checked={allSelectableChecked}
-									disabled={selectableJobIds.length === 0 || actionsDisabled}
-									onChange={() => onToggleAll?.(selectableJobIds)}
-								/>
-							</th>
-							<th className="px-4 py-3 text-left font-medium">公司</th>
-							<th className="px-4 py-3 text-left font-medium">职位</th>
-							<th className="px-4 py-3 text-left font-medium">区域</th>
-							<th className="px-4 py-3 text-left font-medium">企业背景</th>
-							<th className="px-4 py-3 text-left font-medium">注册资本</th>
-							<th className="px-4 py-3 text-left font-medium">薪资</th>
-							<th className="px-4 py-3 text-left font-medium">评分</th>
-							<th className="px-4 py-3 text-left font-medium">状态</th>
-							<th className="px-4 py-3 text-left font-medium">时间</th>
-						</tr>
-					</thead>
-						<tbody>
-							{jobs.length === 0 && (
-								<tr>
-									<td colSpan={10} className="px-4 py-12 text-center text-xs text-text-tertiary">
-										暂无记录
-									</td>
-								</tr>
-							)}
-							{jobs.map(job => {
-							const isExpanded = expanded === job.id
-							const isManualChat = job.id.startsWith('manual_')
-							const canRegenerateGreeting = !['rejected', 'closed'].includes(job.status) && !isManualChat
-							return (
-								<Fragment key={job.id}>
-									<tr
-										className="cursor-pointer border-b border-card-border bg-surface transition-all hover:bg-background"
-										onClick={() => setExpanded(isExpanded ? null : job.id)}
-									>
-										<td className="px-3 py-3 text-center" onClick={event => event.stopPropagation()}>
-											<input
-												type="checkbox"
-												aria-label={`选择 ${job.company} - ${job.title}`}
-												checked={selectedJobIds.has(job.id)}
-												disabled={!canRegenerateGreeting || actionsDisabled}
-												onChange={() => onToggleJob?.(job.id)}
-											/>
-										</td>
-										<td className="px-4 py-3">
-											<div className="flex items-center gap-2">
-												<span className="max-w-[160px] truncate font-medium text-foreground">{job.company}</span>
-												{job.company_size && (
-													<span className="rounded-md bg-background border border-card-border px-1.5 py-0.5 text-[10px] text-text-tertiary">{job.company_size}</span>
-												)}
-											</div>
-										</td>
-										<td className="max-w-[220px] px-4 py-3">
-											<div className="flex items-center gap-2 font-medium text-foreground">
-												<span className="truncate">{job.title}</span>
-												{isManualChat && (
-													<span className="shrink-0 rounded-md border border-info/30 bg-info/10 px-1.5 py-0.5 text-[10px] text-info">HR沟通</span>
-												)}
-											</div>
-										</td>
-										<td className="px-4 py-3">
-											<div className="whitespace-nowrap text-foreground text-xs">{job.district || '—'}</div>
-											<div className="mt-0.5 text-[11px] text-text-tertiary">{job.city || '—'}</div>
-										</td>
-										<td className="min-w-[200px] px-4 py-3">
-											<div className="line-clamp-2 text-xs leading-5 text-text-secondary">
-												{job.company_background || job.company_industry || '—'}
-											</div>
-										</td>
-										<td className="whitespace-nowrap px-4 py-3 text-xs">
-											<span className={capitalClass(job.registered_capital)}>{job.registered_capital || '—'}</span>
-										</td>
-										<td className="px-4 py-3 text-xs text-text-tertiary">{job.salary || '—'}</td>
-										<td className="px-4 py-3">
-											<span className={`font-bold data-value ${getScoreColor(job.score)}`}>{job.score || '—'}</span>
-										</td>
-										<td className="px-4 py-3">
-											<Badge variant={statusVariant(job.status) as any}>{getStatusLabel(job.status)}</Badge>
-										</td>
-										<td className="px-4 py-3">
-											<div className="flex items-center gap-2 text-[11px] text-text-tertiary">
-												{formatTimeAgo(job.created_at)}
-												{isExpanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
-											</div>
-										</td>
-									</tr>
-									{isExpanded && (
-										<tr className="border-b border-card-border bg-background">
-											<td colSpan={10} className="px-6 py-4">
-												<div className="grid grid-cols-1 gap-3 text-sm lg:grid-cols-3">
-													<div className="rounded-lg border border-card-border bg-surface p-4">
-														<p className="mb-2 text-xs text-text-tertiary">职位描述</p>
-														<p className="line-clamp-6 leading-6 text-text-secondary text-xs">{job.jd || '无'}</p>
-													</div>
-												<div className="rounded-lg border border-card-border bg-surface p-4">
-													<p className="mb-2 text-xs text-text-tertiary">招呼语</p>
-													<div className="line-clamp-6 whitespace-pre-wrap leading-6 text-text-secondary text-xs greeting-block">{job.greeting || '未生成'}</div>
-													{canRegenerateGreeting && onRegenerateGreeting && (
-														<div className="mt-3 border-t border-card-border pt-3">
-															<Button
-																variant="secondary"
-																size="sm"
-																disabled={actionsDisabled || regeneratingJobId === job.id}
-																onClick={event => {
-																	event.stopPropagation()
-																	onRegenerateGreeting(job)
-																}}
-															>
-																<RefreshCw className={`mr-1.5 h-3.5 w-3.5 ${regeneratingJobId === job.id ? 'animate-spin' : ''}`} />
-																重新生成并进入待确认
-															</Button>
-															<p className="mt-2 text-[11px] text-text-tertiary">生成后不会自动发送，需要你再次确认。</p>
-														</div>
-													)}
-												</div>
-													<div className="rounded-lg border border-card-border bg-surface p-4">
-														<p className="mb-2 text-xs text-text-tertiary">评分原因</p>
-														<p className="line-clamp-6 whitespace-pre-wrap leading-6 text-text-secondary text-xs">{job.score_reason || '无'}</p>
-													</div>
-													<div className="rounded-lg border border-card-border bg-surface p-4">
-														<p className="mb-2 text-xs text-text-tertiary">公司信息</p>
-														<p className="leading-6 text-text-secondary text-xs">区域：{job.city || '—'} {job.district || ''}</p>
-														<p className="leading-6 text-text-secondary text-xs">背景：{job.company_background || job.company_industry || '—'}</p>
-														<p className="leading-6 text-text-secondary text-xs">注册资本：{job.registered_capital || '—'}</p>
-													</div>
-												</div>
-											</td>
-										</tr>
-									)}
-								</Fragment>
-							)
-						})}
-						</tbody>
-					</table>
+		<div className="grid min-h-[36rem] overflow-hidden rounded-xl border border-card-border bg-surface shadow-sm xl:grid-cols-[minmax(22rem,0.82fr)_minmax(34rem,1.18fr)]">
+			<section className="min-w-0 border-b border-card-border xl:border-b-0 xl:border-r" aria-label="岗位列表">
+				<div className="flex min-h-12 items-center justify-between border-b border-card-border bg-surface px-4">
+					<label className="flex items-center gap-2 text-sm font-medium text-foreground">
+						<input type="checkbox" aria-label="选择当前页岗位" checked={allChecked} disabled={!selectableJobIds.length || actionsDisabled} onChange={() => onToggleAll?.(selectableJobIds)} />
+						当前结果
+					</label>
+					<span className="text-xs text-text-tertiary">{jobs.length} 条</span>
 				</div>
-			</div>
-		)
-	}
+				<div className="max-h-[44rem] overflow-y-auto">
+					{jobs.map(job => {
+						const isActive = job.id === activeJob.id
+						const canSelect = !['rejected', 'closed'].includes(job.status) && !job.id.startsWith('manual_')
+						return (
+							<div key={job.id} role="button" tabIndex={0} aria-pressed={isActive} className={`relative flex w-full cursor-pointer gap-3 border-b border-card-border px-4 py-3.5 text-left transition-[background-color,box-shadow] duration-150 last:border-b-0 ${isActive ? 'bg-primary-soft ring-1 ring-inset ring-primary-border' : 'hover:bg-surface-raised'}`} onClick={() => setActiveJobId(job.id)} onKeyDown={event => { if (event.key === 'Enter' || event.key === ' ') setActiveJobId(job.id) }}>
+								<input type="checkbox" className="mt-1" aria-label={`选择 ${job.company} - ${job.title}`} checked={selectedJobIds.has(job.id)} disabled={!canSelect || actionsDisabled} onClick={event => event.stopPropagation()} onChange={() => onToggleJob?.(job.id)} />
+								<span className="min-w-0 flex-1">
+									<span className="flex items-start justify-between gap-3">
+										<span className="min-w-0"><span className="block truncate text-sm font-semibold text-foreground">{job.title}</span><span className="mt-1 block truncate text-sm font-medium text-primary">{job.company}</span></span>
+										<span className="shrink-0 text-right"><span className="block text-sm font-semibold text-foreground">{job.salary || '薪资面议'}</span><span className={`data-value mt-1 block text-sm font-bold ${scoreTone(job.score)}`}>{job.score || '—'} <span className="font-normal text-text-tertiary">分</span></span></span>
+									</span>
+									<span className="mt-2 flex flex-wrap items-center gap-2 text-xs text-text-secondary"><span>{[job.city, job.district].filter(Boolean).join(' · ') || '地点未知'}</span><span aria-hidden>·</span><span>{job.company_size || job.company_industry || '企业信息待补全'}</span><Badge variant={statusVariant(job.status) as any} className="ml-auto">{getStatusLabel(job.status)}</Badge></span>
+								</span>
+							</div>
+						)
+					})}
+				</div>
+			</section>
+
+			<section className="min-w-0" aria-label={`${activeJob.company} ${activeJob.title} 详情`}>
+				<header className="border-b border-card-border px-5 py-5 lg:px-6">
+					<div className="flex flex-wrap items-start justify-between gap-4">
+						<div className="min-w-0">
+							<div className="flex flex-wrap items-center gap-2"><h3 className="text-xl font-bold tracking-tight text-foreground">{activeJob.title}</h3><Badge variant={statusVariant(activeJob.status) as any}>{getStatusLabel(activeJob.status)}</Badge></div>
+							<div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-text-secondary">
+								{activeUrl ? <a href={activeUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 font-semibold text-primary hover:underline">{activeJob.company}<ExternalLink className="h-3.5 w-3.5" /></a> : <span className="font-semibold text-foreground">{activeJob.company}</span>}
+								<span className="inline-flex items-center gap-1"><MapPin className="h-3.5 w-3.5" />{[activeJob.city, activeJob.district].filter(Boolean).join(' · ') || '地点未知'}</span><span>{activeJob.experience || '经验不限'}</span><span className="font-semibold text-foreground">{activeJob.salary || '薪资面议'}</span>
+							</div>
+						</div>
+						<div className="min-w-32 rounded-xl border border-primary-border bg-primary-softer px-4 py-3 shadow-sm"><div className="flex items-baseline justify-between gap-3"><span className={`data-value text-2xl font-bold ${scoreTone(activeJob.score)}`}>{activeJob.score || '—'}</span><span className="text-xs font-medium text-primary">匹配度</span></div><div className="mt-2 h-1.5 overflow-hidden rounded-full bg-primary-border"><div className="h-full rounded-full bg-primary transition-[width] duration-200" style={{ width: `${Math.max(0, Math.min(activeJob.score || 0, 100))}%` }} /></div></div>
+					</div>
+				</header>
+
+				<div className="grid lg:grid-cols-[minmax(0,1fr)_15rem]">
+					<div className="space-y-7 p-5 lg:p-6">
+						<div className="rounded-xl border border-primary-border bg-primary-softer p-4 shadow-sm"><div className="mb-3 flex items-center gap-2"><span className="grid h-7 w-7 place-items-center rounded-lg bg-primary-soft"><Sparkles className="h-4 w-4 text-primary" /></span><h4 className="text-sm font-semibold text-foreground">AI 匹配分析</h4></div><p className="whitespace-pre-wrap text-sm leading-7 text-text-secondary">{activeJob.score_reason || '该岗位尚未生成评分原因，可先进行 AI 评分。'}</p></div>
+						<div><h4 className="mb-3 text-sm font-semibold text-foreground">职位描述</h4><p className="max-h-72 overflow-y-auto whitespace-pre-wrap pr-2 text-sm leading-7 text-text-secondary">{activeJob.jd || '暂无职位描述'}</p></div>
+						<div><h4 className="mb-3 text-sm font-semibold text-foreground">招呼语</h4><div className="greeting-block whitespace-pre-wrap">{activeJob.greeting || '尚未生成招呼语'}</div>{onRegenerateGreeting && !['rejected', 'closed'].includes(activeJob.status) && !activeJob.id.startsWith('manual_') && <Button className="mt-3" variant="secondary" size="sm" disabled={actionsDisabled || regeneratingJobId === activeJob.id} onClick={() => onRegenerateGreeting(activeJob)}><RefreshCw className={`h-3.5 w-3.5 ${regeneratingJobId === activeJob.id ? 'animate-spin' : ''}`} />重新生成招呼语</Button>}</div>
+					</div>
+					<aside className="border-t border-card-border bg-surface-raised p-5 lg:border-l lg:border-t-0">
+						<div className="flex items-center gap-2"><span className="grid h-7 w-7 place-items-center rounded-lg border border-card-border bg-surface"><Building2 className="h-4 w-4 text-primary" /></span><h4 className="text-sm font-semibold text-foreground">公司信息</h4></div>
+						<dl className="mt-4 divide-y divide-card-border text-sm"><div className="pb-3"><dt className="text-xs text-text-tertiary">规模</dt><dd className="mt-1 font-medium text-foreground">{activeJob.company_size || '待补全'}</dd></div><div className="py-3"><dt className="text-xs text-text-tertiary">行业</dt><dd className="mt-1 font-medium text-foreground">{activeJob.company_industry || '待补全'}</dd></div><div className="py-3"><dt className="text-xs text-text-tertiary">企业背景</dt><dd className="mt-1 leading-6 text-text-secondary">{activeJob.company_background || '待补全'}</dd></div><div className="py-3"><dt className="text-xs text-text-tertiary">注册资本</dt><dd className="mt-1 font-medium text-foreground">{activeJob.registered_capital || '待补全'}</dd></div><div className="pt-3"><dt className="text-xs text-text-tertiary">更新时间</dt><dd className="mt-1 text-text-secondary">{formatTimeAgo(activeJob.updated_at || activeJob.created_at)}</dd></div></dl>
+						{activeUrl && <a href={activeUrl} target="_blank" rel="noreferrer" className="mt-6 inline-flex h-9 w-full items-center justify-center gap-2 rounded-lg border border-primary-border bg-surface px-3 text-sm font-semibold text-primary transition hover:bg-primary-soft"><ExternalLink className="h-4 w-4" />在 BOSS 查看职位</a>}
+					</aside>
+				</div>
+			</section>
+		</div>
+	)
+}

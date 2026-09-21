@@ -180,6 +180,9 @@ class WorkbenchTaskRunner:
         finally:
             with self._lock:
                 timer = self._deadline_timers.pop(task.id, None)
+                # 终态任务移出活动线程/定时器表，避免服务器长跑后 _threads 无限增长；
+                # 任务行本身保留在 _tasks 供历史查询。
+                self._threads.pop(task.id, None)
             if timer:
                 timer.cancel()
 

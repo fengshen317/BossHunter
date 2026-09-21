@@ -6,7 +6,7 @@ build-backend = "hatchling.build"
 name = "bosshunter"
 version = "2.0.0"
 description = "BOSS直聘智能求职Agent - 端到端自动化求职工具"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 license = "LicenseRef-BossHunter-NonCommercial"
 dependencies = [
     "click>=8.0",
@@ -18,7 +18,13 @@ dependencies = [
     "markdown2>=2.4",
     "bottle>=0.13",
     "langgraph>=1.0,<2",
-    "langgraph-checkpoint-sqlite>=3.0,<4",
+    "langgraph-checkpoint-postgres>=3.0,<4",
+    "deepagents>=0.6,<0.7",
+    "langchain-openai>=1.2,<2",
+    "psycopg[binary]>=3.2,<4",
+    "redis>=5.2,<7",
+    "dramatiq[redis]>=1.17,<3",
+    "boto3>=1.35,<2",
 ]
 
 [project.optional-dependencies]

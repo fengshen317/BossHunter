@@ -1,9 +1,16 @@
 """AI 助手的会话、消息与长期记忆持久化。"""
 
 import json
+import hashlib
+import re
 import sqlite3
 import uuid
 from typing import Any
+
+from bosshunter.assistant.context_budget import estimate_text_tokens
+
+
+_MEMORY_KEY_PATTERN = re.compile(r"[^a-z0-9_.-]+")
 
 
 def init_assistant_tables(conn: sqlite3.Connection) -> None:
@@ -35,12 +42,32 @@ def init_assistant_tables(conn: sqlite3.Connection) -> None:
 			id TEXT PRIMARY KEY,
 			user_id TEXT NOT NULL,
 			memory_type TEXT NOT NULL,
+			memory_key TEXT,
+			category TEXT NOT NULL DEFAULT 'profile',
 			content TEXT NOT NULL,
+			value_json TEXT NOT NULL DEFAULT '{}',
+			source_type TEXT NOT NULL DEFAULT 'explicit',
+			source_conversation_id TEXT,
+			source_message_id TEXT,
+			source_excerpt TEXT NOT NULL DEFAULT '',
+			supersedes_id TEXT,
 			metadata_json TEXT NOT NULL DEFAULT '{}',
 			confidence REAL NOT NULL DEFAULT 1.0,
 			status TEXT NOT NULL DEFAULT 'active',
 			created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 			updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+		);
+
+		CREATE TABLE IF NOT EXISTS assistant_conversation_contexts (
+			conversation_id TEXT PRIMARY KEY,
+			summary_text TEXT NOT NULL DEFAULT '',
+			summary_token_count INTEGER NOT NULL DEFAULT 0,
+			summarized_through_message_id TEXT,
+			pending_digest_json TEXT NOT NULL DEFAULT '[]',
+			pending_intent_json TEXT NOT NULL DEFAULT '{}',
+			active_goal_json TEXT NOT NULL DEFAULT '{}',
+			updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+			FOREIGN KEY (conversation_id) REFERENCES assistant_conversations(id)
 		);
 
 		CREATE TABLE IF NOT EXISTS assistant_bad_cases (
@@ -73,13 +100,41 @@ def init_assistant_tables(conn: sqlite3.Connection) -> None:
 		);
 
 		CREATE INDEX IF NOT EXISTS idx_assistant_messages_conversation
-		ON assistant_messages(conversation_id, created_at);
+		ON assistant_messages(conversation_id, created_at, id);
 		CREATE INDEX IF NOT EXISTS idx_assistant_memories_user
 		ON assistant_memories(user_id, status, updated_at);
 		CREATE INDEX IF NOT EXISTS idx_assistant_bad_cases_status
 		ON assistant_bad_cases(status, created_at);
 	""")
+	_migrate_sqlite_assistant_tables(conn)
 	conn.commit()
+
+
+def _migrate_sqlite_assistant_tables(conn: Any) -> None:
+	"""为已有 SQLite 数据库补充上下文和版本化记忆字段。"""
+	if not isinstance(conn, sqlite3.Connection):
+		return
+	columns = {row[1] for row in conn.execute("PRAGMA table_info(assistant_memories)").fetchall()}
+	definitions = {
+		"memory_key": "TEXT",
+		"category": "TEXT NOT NULL DEFAULT 'profile'",
+		"value_json": "TEXT NOT NULL DEFAULT '{}'",
+		"source_type": "TEXT NOT NULL DEFAULT 'explicit'",
+		"source_conversation_id": "TEXT",
+		"source_message_id": "TEXT",
+		"source_excerpt": "TEXT NOT NULL DEFAULT ''",
+		"supersedes_id": "TEXT",
+	}
+	for name, definition in definitions.items():
+		if name not in columns:
+			conn.execute(f"ALTER TABLE assistant_memories ADD COLUMN {name} {definition}")
+	conn.execute(
+		"UPDATE assistant_memories SET memory_key = 'legacy.' || id WHERE memory_key IS NULL OR memory_key = ''"
+	)
+	conn.execute(
+		"CREATE UNIQUE INDEX IF NOT EXISTS idx_assistant_memories_active_key "
+		"ON assistant_memories(user_id, memory_key) WHERE status = 'active'"
+	)
 
 
 def create_conversation(conn: sqlite3.Connection, title: str = "新的求职对话") -> dict[str, Any]:
@@ -102,6 +157,35 @@ def create_conversation(conn: sqlite3.Connection, title: str = "新的求职对�
 	return {"id": conversation_id, "title": title[:60] or "新的求职对话"}
 
 
+def ensure_conversation_row(
+	conn: sqlite3.Connection,
+	conversation_id: str,
+	title: str = "恢复的会话",
+) -> None:
+	"""确保会话行存在（幂等），不存在时补建空会话。
+
+	前端可能携带历史会话 ID（数据库迁移 / 清库前浏览器 localStorage 的
+	残留），直接写入消息会触发 assistant_messages 的外键约束。这里在写
+	消息前补建会话行，让旧 ID 自愈为空会话而不是报错。
+
+	Args:
+		conn: 业务数据库连接。
+		conversation_id: 会话 ID。
+		title: 补建时使用的会话标题。
+	"""
+	init_assistant_tables(conn)
+	exists = conn.execute(
+		"SELECT 1 FROM assistant_conversations WHERE id = ?",
+		(conversation_id,),
+	).fetchone()
+	if exists is None:
+		conn.execute(
+			"INSERT INTO assistant_conversations (id, title) VALUES (?, ?)",
+			(conversation_id, title[:60] or "恢复的会话"),
+		)
+		conn.commit()
+
+
 def list_conversations(conn: sqlite3.Connection) -> list[dict[str, Any]]:
 	"""按最近更新时间列出会话。
 
@@ -115,7 +199,7 @@ def list_conversations(conn: sqlite3.Connection) -> list[dict[str, Any]]:
 	rows = conn.execute("""
 		SELECT c.id, c.title, c.created_at, c.updated_at,
 			(SELECT content FROM assistant_messages m
-			 WHERE m.conversation_id = c.id ORDER BY m.created_at DESC, m.rowid DESC LIMIT 1) AS preview
+			 WHERE m.conversation_id = c.id ORDER BY m.created_at DESC, m.id DESC LIMIT 1) AS preview
 		FROM assistant_conversations c
 		ORDER BY c.updated_at DESC
 	""").fetchall()
@@ -160,7 +244,14 @@ def add_message(
 		"""INSERT INTO assistant_messages
 		(id, conversation_id, role, content, message_type, metadata_json)
 		VALUES (?, ?, ?, ?, ?, ?)""",
-		(message_id, conversation_id, role, content, message_type, json.dumps(metadata or {}, ensure_ascii=False)),
+		(
+			message_id,
+			conversation_id,
+			role,
+			content,
+			message_type,
+			json.dumps(metadata or {}, ensure_ascii=False, default=str),
+		),
 	)
 	conn.execute(
 		"UPDATE assistant_conversations SET updated_at = CURRENT_TIMESTAMP WHERE id = ?",
@@ -201,7 +292,7 @@ def list_messages(conn: sqlite3.Connection, conversation_id: str) -> list[dict[s
 	rows = conn.execute(
 		"""SELECT id, conversation_id, role, content, message_type, metadata_json, created_at
 		FROM assistant_messages WHERE conversation_id = ?
-		ORDER BY created_at, rowid""",
+		ORDER BY created_at, id""",
 		(conversation_id,),
 	).fetchall()
 	result = []
@@ -215,7 +306,120 @@ def list_messages(conn: sqlite3.Connection, conversation_id: str) -> list[dict[s
 	return result
 
 
-def remember(conn: sqlite3.Connection, content: str, user_id: str = "local") -> dict[str, Any]:
+def list_message_page(
+	conn: Any,
+	conversation_id: str,
+	*,
+	before: str | None = None,
+	limit: int = 40,
+) -> dict[str, Any]:
+	"""按游标读取一页消息，返回顺序始终为从旧到新。"""
+	init_assistant_tables(conn)
+	page_limit = max(1, min(int(limit), 100))
+	params: list[Any] = [conversation_id]
+	boundary = ""
+	if before:
+		cursor = conn.execute(
+			"SELECT created_at, id FROM assistant_messages WHERE conversation_id = ? AND id = ?",
+			(conversation_id, before),
+		).fetchone()
+		if cursor is None:
+			raise ValueError("消息游标无效或不属于当前会话")
+		boundary = " AND (created_at < ? OR (created_at = ? AND id < ?))"
+		params.extend([cursor["created_at"], cursor["created_at"], cursor["id"]])
+	params.append(page_limit + 1)
+	rows = conn.execute(
+		f"""SELECT id, conversation_id, role, content, message_type, metadata_json, created_at
+		FROM assistant_messages WHERE conversation_id = ?{boundary}
+		ORDER BY created_at DESC, id DESC LIMIT ?""",
+		params,
+	).fetchall()
+	has_more = len(rows) > page_limit
+	page_rows = list(rows[:page_limit])
+	page_rows.reverse()
+	items: list[dict[str, Any]] = []
+	for row in page_rows:
+		item = dict(row)
+		try:
+			item["metadata"] = json.loads(item.pop("metadata_json"))
+		except (json.JSONDecodeError, TypeError):
+			item["metadata"] = {}
+		items.append(item)
+	return {
+		"items": items,
+		"next_cursor": items[0]["id"] if has_more and items else None,
+		"has_more": has_more,
+	}
+
+
+def get_conversation_context(conn: Any, conversation_id: str) -> dict[str, Any]:
+	"""读取会话滚动摘要和结构化进行中状态。"""
+	init_assistant_tables(conn)
+	row = conn.execute(
+		"""SELECT conversation_id, summary_text, summary_token_count,
+		summarized_through_message_id, pending_digest_json, pending_intent_json,
+		active_goal_json, updated_at FROM assistant_conversation_contexts
+		WHERE conversation_id = ?""",
+		(conversation_id,),
+	).fetchone()
+	if row is None:
+		return {
+			"conversation_id": conversation_id,
+			"summary_text": "",
+			"summary_token_count": 0,
+			"summarized_through_message_id": None,
+			"pending_digest": [],
+			"pending_intent": {},
+			"active_goal": {},
+		}
+	item = dict(row)
+	for field in ("pending_digest_json", "pending_intent_json", "active_goal_json"):
+		try:
+			item[field.removesuffix("_json")] = json.loads(item.pop(field) or "{}")
+		except (json.JSONDecodeError, TypeError):
+			item[field.removesuffix("_json")] = [] if field == "pending_digest_json" else {}
+	return item
+
+
+def save_conversation_summary(
+	conn: Any,
+	conversation_id: str,
+	*,
+	summary_text: str,
+	summary_token_count: int,
+	summarized_through_message_id: str,
+) -> None:
+	"""原子更新会话滚动摘要游标，避免重复压缩同一批消息。"""
+	init_assistant_tables(conn)
+	conn.execute(
+		"""INSERT INTO assistant_conversation_contexts (
+		conversation_id, summary_text, summary_token_count, summarized_through_message_id
+		) VALUES (?, ?, ?, ?)
+		ON CONFLICT(conversation_id) DO UPDATE SET
+			summary_text = excluded.summary_text,
+			summary_token_count = excluded.summary_token_count,
+			summarized_through_message_id = excluded.summarized_through_message_id,
+			updated_at = CURRENT_TIMESTAMP""",
+		(conversation_id, summary_text, summary_token_count, summarized_through_message_id),
+	)
+	conn.commit()
+
+
+def save_pending_intent(conn: Any, conversation_id: str, intent: dict[str, Any] | None) -> None:
+	"""保存或清空等待用户补充的结构化意图。"""
+	init_assistant_tables(conn)
+	conn.execute(
+		"""INSERT INTO assistant_conversation_contexts (conversation_id, pending_intent_json)
+		VALUES (?, ?)
+		ON CONFLICT(conversation_id) DO UPDATE SET
+			pending_intent_json = excluded.pending_intent_json,
+			updated_at = CURRENT_TIMESTAMP""",
+		(conversation_id, json.dumps(intent or {}, ensure_ascii=False, default=str)),
+	)
+	conn.commit()
+
+
+def remember(conn: Any, content: str, user_id: str = "local") -> dict[str, Any]:
 	"""保存用户明确要求记住的信息。
 
 	Args:
@@ -227,22 +431,109 @@ def remember(conn: sqlite3.Connection, content: str, user_id: str = "local") -> 
 		新记忆记录。
 	"""
 	init_assistant_tables(conn)
+	normalized = " ".join(content.split())[:1000]
+	digest = hashlib.sha256(normalized.encode("utf-8")).hexdigest()[:20]
+	return upsert_memory(
+		conn,
+		memory_key=f"explicit.{digest}",
+		category="profile",
+		content=normalized,
+		value=normalized,
+		source_type="explicit",
+		confidence=1.0,
+		user_id=user_id,
+	)
+
+
+def upsert_memory(
+	conn: Any,
+	*,
+	memory_key: str,
+	category: str,
+	content: str,
+	value: Any,
+	source_type: str,
+	confidence: float,
+	user_id: str = "local",
+	source_conversation_id: str | None = None,
+	source_message_id: str | None = None,
+	source_excerpt: str = "",
+) -> dict[str, Any]:
+	"""以不可变版本写入记忆，并自动替换同键旧值。"""
+	init_assistant_tables(conn)
+	key = _normalize_memory_key(memory_key)
+	category_value = category if category in {"profile", "preference", "constraint", "workflow", "ongoing_goal"} else "profile"
+	content_value = " ".join(str(content).split())[:1000]
+	value_json = json.dumps(value, ensure_ascii=False, default=str)
+	current = conn.execute(
+		"""SELECT id, value_json FROM assistant_memories
+		WHERE user_id = ? AND memory_key = ? AND status = 'active' LIMIT 1""",
+		(user_id, key),
+	).fetchone()
+	if current and str(current["value_json"]) == value_json:
+		conn.execute(
+			"""UPDATE assistant_memories SET content = ?, confidence = ?, source_type = ?,
+			source_conversation_id = ?, source_message_id = ?, source_excerpt = ?,
+			updated_at = CURRENT_TIMESTAMP WHERE id = ?""",
+			(
+				content_value,
+				max(0.0, min(float(confidence), 1.0)),
+				source_type,
+				source_conversation_id,
+				source_message_id,
+				source_excerpt[:500],
+				current["id"],
+			),
+		)
+		conn.commit()
+		return {"id": current["id"], "memory_key": key, "content": content_value, "operation": "unchanged"}
+	if current:
+		conn.execute(
+			"UPDATE assistant_memories SET status = 'superseded', updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+			(current["id"],),
+		)
 	memory_id = str(uuid.uuid4())
 	conn.execute(
-		"""INSERT INTO assistant_memories
-		(id, user_id, memory_type, content, metadata_json)
-		VALUES (?, ?, 'explicit', ?, ?)""",
-		(memory_id, user_id, content[:1000], '{"source":"explicit_user_statement"}'),
+		"""INSERT INTO assistant_memories (
+		id, user_id, memory_type, memory_key, category, content, value_json,
+		source_type, source_conversation_id, source_message_id, source_excerpt,
+		supersedes_id, metadata_json, confidence, status
+		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active')""",
+		(
+			memory_id,
+			user_id,
+			source_type,
+			key,
+			category_value,
+			content_value,
+			value_json,
+			source_type,
+			source_conversation_id,
+			source_message_id,
+			source_excerpt[:500],
+			current["id"] if current else None,
+			json.dumps({"source": source_type}, ensure_ascii=False),
+			max(0.0, min(float(confidence), 1.0)),
+		),
 	)
 	conn.commit()
-	return {"id": memory_id, "content": content[:1000], "memory_type": "explicit"}
+	return {
+		"id": memory_id,
+		"memory_key": key,
+		"category": category_value,
+		"content": content_value,
+		"memory_type": source_type,
+		"operation": "superseded" if current else "created",
+		"supersedes_id": current["id"] if current else None,
+	}
 
 
 def search_memories(
-	conn: sqlite3.Connection,
+	conn: Any,
 	query: str,
 	user_id: str = "local",
 	limit: int = 8,
+	max_tokens: int = 2_048,
 ) -> list[dict[str, Any]]:
 	"""检索与当前问题相关的长期记忆。
 
@@ -253,33 +544,66 @@ def search_memories(
 		limit: 最大返回数量。
 
 	Returns:
-		相关记忆；关键词未命中时返回最近记忆。
+		按中文相关性排序的记忆；无相关结果时返回空列表。
 	"""
 	init_assistant_tables(conn)
-	terms = [term for term in query.replace("，", " ").replace("。", " ").split() if len(term) >= 2][:5]
-	if terms:
-		conditions = " OR ".join("content LIKE ?" for _ in terms)
-		params: list[Any] = [user_id, *[f"%{term}%" for term in terms], limit]
-		rows = conn.execute(
-			f"""SELECT id, memory_type, content, confidence, updated_at
-			FROM assistant_memories
-			WHERE user_id = ? AND status = 'active' AND ({conditions})
-			ORDER BY updated_at DESC LIMIT ?""",
-			params,
-		).fetchall()
-		if rows:
-			return [dict(row) for row in rows]
 	rows = conn.execute(
-		"""SELECT id, memory_type, content, confidence, updated_at
+		"""SELECT id, memory_type, memory_key, category, content, value_json,
+		source_type, source_conversation_id, source_message_id, source_excerpt,
+		confidence, status, created_at, updated_at
 		FROM assistant_memories
 		WHERE user_id = ? AND status = 'active'
-		ORDER BY updated_at DESC LIMIT ?""",
-		(user_id, limit),
+		ORDER BY updated_at DESC LIMIT 500""",
+		(user_id,),
 	).fetchall()
-	return [dict(row) for row in rows]
+	query_normalized = _normalize_search_text(query)
+	query_bigrams = _bigrams(query_normalized)
+	scored: list[tuple[float, dict[str, Any]]] = []
+	for row in rows:
+		item = dict(row)
+		candidate = _normalize_search_text(f"{item.get('memory_key', '')} {item.get('content', '')}")
+		candidate_bigrams = _bigrams(candidate)
+		overlap = len(query_bigrams & candidate_bigrams)
+		score = overlap / max(1, len(query_bigrams))
+		if item.get("category") in {"constraint", "workflow"}:
+			score += 0.2
+		if str(item.get("memory_key", "")) in query_normalized:
+			score += 1.0
+		if overlap or item.get("category") in {"constraint", "workflow"}:
+			scored.append((score, item))
+	scored.sort(key=lambda pair: (pair[0], str(pair[1].get("updated_at", ""))), reverse=True)
+	selected: list[dict[str, Any]] = []
+	used_tokens = 0
+	for _, item in scored:
+		item_tokens = max(1, estimate_text_tokens(str(item.get("content", ""))))
+		if selected and used_tokens + item_tokens > max_tokens:
+			continue
+		selected.append(item)
+		used_tokens += item_tokens
+		if len(selected) >= max(1, limit):
+			break
+	return selected
 
 
-def list_memories(conn: sqlite3.Connection, user_id: str = "local") -> list[dict[str, Any]]:
+def _normalize_memory_key(value: str) -> str:
+	"""生成可用于唯一索引的稳定记忆键。"""
+	normalized = _MEMORY_KEY_PATTERN.sub("_", str(value).strip().lower()).strip("._-")
+	return normalized[:120] or f"memory.{uuid.uuid4().hex[:20]}"
+
+
+def _normalize_search_text(value: str) -> str:
+	"""移除中文检索中的无意义分隔符。"""
+	return re.sub(r"[^a-z0-9\u3400-\u9fff]+", "", str(value).lower())
+
+
+def _bigrams(value: str) -> set[str]:
+	"""生成无需外部分词器的字符二元组。"""
+	if len(value) < 2:
+		return {value} if value else set()
+	return {value[index : index + 2] for index in range(len(value) - 1)}
+
+
+def list_memories(conn: Any, user_id: str = "local", status: str = "active") -> list[dict[str, Any]]:
 	"""列出当前用户的长期记忆。
 
 	Args:
@@ -290,13 +614,73 @@ def list_memories(conn: sqlite3.Connection, user_id: str = "local") -> list[dict
 		有效记忆列表。
 	"""
 	init_assistant_tables(conn)
+	where = "status = 'active'" if status == "active" else "status IN ('active', 'superseded', 'deleted')"
 	rows = conn.execute(
-		"""SELECT id, memory_type, content, confidence, created_at, updated_at
-		FROM assistant_memories WHERE user_id = ? AND status = 'active'
+		f"""SELECT id, memory_type, memory_key, category, content, value_json,
+		source_type, source_conversation_id, source_message_id, source_excerpt,
+		supersedes_id, confidence, status, created_at, updated_at
+		FROM assistant_memories WHERE user_id = ? AND {where}
 		ORDER BY updated_at DESC""",
 		(user_id,),
 	).fetchall()
 	return [dict(row) for row in rows]
+
+
+def edit_memory(
+	conn: Any,
+	memory_id: str,
+	content: str,
+	*,
+	user_id: str = "local",
+) -> dict[str, Any] | None:
+	"""以新版本修改一条有效记忆，保留原记录用于审计。"""
+	init_assistant_tables(conn)
+	row = conn.execute(
+		"""SELECT memory_key, category FROM assistant_memories
+		WHERE id = ? AND user_id = ? AND status = 'active'""",
+		(memory_id, user_id),
+	).fetchone()
+	cleaned = " ".join(content.split())[:1000]
+	if row is None or not cleaned:
+		return None
+	return upsert_memory(
+		conn,
+		memory_key=str(row["memory_key"]),
+		category=str(row["category"]),
+		content=cleaned,
+		value=cleaned,
+		source_type="explicit_edit",
+		confidence=1.0,
+		user_id=user_id,
+		source_excerpt=cleaned,
+	)
+
+
+def restore_memory(conn: Any, memory_id: str, user_id: str = "local") -> dict[str, Any] | None:
+	"""把历史版本恢复成新的有效版本，不篡改旧审计记录。"""
+	init_assistant_tables(conn)
+	row = conn.execute(
+		"""SELECT memory_key, category, content, value_json FROM assistant_memories
+		WHERE id = ? AND user_id = ?""",
+		(memory_id, user_id),
+	).fetchone()
+	if row is None:
+		return None
+	try:
+		value = json.loads(row["value_json"])
+	except (json.JSONDecodeError, TypeError):
+		value = row["content"]
+	return upsert_memory(
+		conn,
+		memory_key=str(row["memory_key"]),
+		category=str(row["category"]),
+		content=str(row["content"]),
+		value=value,
+		source_type="explicit_restore",
+		confidence=1.0,
+		user_id=user_id,
+		source_excerpt=str(row["content"]),
+	)
 
 
 def forget_memory(conn: sqlite3.Connection, memory_id: str, user_id: str = "local") -> bool:
@@ -365,9 +749,9 @@ def create_bad_case(
 		raise ValueError("被评价的助手消息不存在")
 	user_row = conn.execute(
 		"""SELECT id, content FROM assistant_messages
-		WHERE conversation_id = ? AND role = 'user' AND rowid < (
-			SELECT rowid FROM assistant_messages WHERE id = ?
-		) ORDER BY rowid DESC LIMIT 1""",
+		WHERE conversation_id = ? AND role = 'user' AND created_at <= (
+			SELECT created_at FROM assistant_messages WHERE id = ?
+		) ORDER BY created_at DESC, id DESC LIMIT 1""",
 		(conversation_id, assistant_message_id),
 	).fetchone()
 	try:
@@ -408,8 +792,8 @@ def create_bad_case(
 			feedback.strip()[:2000],
 			str(user_row["content"] if user_row else ""),
 			str(row["content"]),
-			json.dumps(intent, ensure_ascii=False),
-			json.dumps(routing, ensure_ascii=False),
+			json.dumps(intent, ensure_ascii=False, default=str),
+			json.dumps(routing, ensure_ascii=False, default=str),
 		),
 	)
 	conn.commit()

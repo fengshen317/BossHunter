@@ -183,7 +183,7 @@ export function ImportJobPanel({ activeTask, refresh }: ImportJobPanelProps) {
 				<div className="flex items-center gap-2">
 					<span className="inline-block w-1.5 h-1.5 rounded-full bg-primary" />
 					<span className="text-sm font-semibold text-foreground">定向采集岗位</span>
-					<span className="text-[11px] text-text-tertiary">手机端看到心仪岗位，粘贴 URL 或按公司+职位精准导入</span>
+					<span className="text-xs text-text-tertiary">手机端看到心仪岗位，粘贴 URL 或按公司+职位精准导入</span>
 				</div>
 				{expanded
 					? <ChevronUp className="h-4 w-4 text-text-tertiary" />
@@ -330,7 +330,7 @@ export function ImportJobPanel({ activeTask, refresh }: ImportJobPanelProps) {
 						</div>
 					)}
 
-					<p className="text-[11px] text-text-tertiary">
+					<p className="text-xs text-text-tertiary">
 						提示：定向采集会跳过 AI 评分和关键词过滤（你已手动选定）。岗位入库后状态为「待确认」，仍需你确认后才会发送。
 					</p>
 				</div>

@@ -1,0 +1,174 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:122c811b05a27d27a8cf906246ad32e70f5ccc3c910741fe05d5a4cf22299b69",
+  "claims": [
+    {
+      "id": "claim_2f4fd6eafacd4c1f94a58070a2851490",
+      "statement": "pyproject.toml registers two console scripts — bosshunter -> bosshunter.main:cli and bosshunter-server -> bosshunter.backend:main — while python -m bosshunter runs the same backend through src/bosshunter/__main__.py and python -m bosshunter.main runs the CLI group.",
+      "evidence": [
+        {
+          "resource": "repo://pyproject.toml#L35-L37",
+          "version": "repo-lines-v1:sha256:5e923846f96c6c3615d8b13f3ad1422a94dcec26227bed1d5af22fcab2e39a25:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNGVhYjRlYzYzZGU1MTdkYTRjZDhlNWM4MzA3ZmIyYzc3MzdkMzkxOTBhYjY5ZjMyYTVlOWVmODFlYTQ0MTZkZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMWNmNDMxNGM0MGM1M2NiMjljOWQzYTI1ZmY5MzU1OGVhYmU3ZTU0ODhhMWQ3YzM3YmM2MzNmODI0OWY2ODJlNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMGNmYWNjNzc0NTVmNmE0NzNjYTVkY2QyN2E5Y2IwOTljYjY1ODA0ODRlYTRjN2VjYjIwZTk4ODNjMTkwZmE5ZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDU1NWEzOWU0YWI3YjljYjJiMDYwMDBkMGM5YTJmODA0MWE2N2E4MmU5ZjAxMjUwMjBhZGU4ZDgxYWZiMDgyZiJ9"
+        },
+        {
+          "resource": "repo://src/bosshunter/__main__.py#L1-L7",
+          "version": "repo-lines-v1:sha256:be2aa9c48ac15d6841c289145043435a9919d790d8725f07dee745634fd2829b:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzUxNzYxNmQ1MDY4YzBkZjU3ZTBiZDcxZDBhNzAwOTJkNDFkMmM1ZDZjZDY3YjM4ODlkNWY0NzAwYTk4MjE2ZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTFiNTZlM2M5NDQyMGY5NTFjMmZmZDBiYjlkYTVjYzFmMWQzMjExNzdkNjE4OTBlN2E1YWEyZTM3NWYzYjllYyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        },
+        {
+          "resource": "repo://src/bosshunter/main.py#L382-L383",
+          "version": "repo-lines-v1:sha256:96971a3fabe6e774b5503f63c4d4adfa05cca41bfb39874088d88bc21ae72c7c:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjQ4NmZmNWNmOTM2M2I0NDI5MzM2ODAzYjJjOTYwZTczZGE4YzQ3ZmEwYzZmNjc2NThkMTRiMzIzY2QyMmQzNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTlkODA3YmU1NzJkYmFiOTJjOGIzODFmMmJlYzgxOTljZjJlZGQzNGFhNDZjZDBlM2FmZmIyYjBkMzZlYWRmNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTM5OTVjZDQ4ZmEyZmY1ODIwZTg3ZGQ0NDgwOWRmMjM2NmZhMTlkMWUyYTUzNDkyNjZlMTA1YTQ1ZjkyZGM0OCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_3409174c16df462a834ac0b79efd355a",
+      "statement": "The cli Click group callback runs on every invocation, resolves the base dir via _runtime_base_dir, changes into it, loads config.yaml through load_config, and calls configure so commands and the browser runtime share one configuration.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/main.py#L77-L92",
+          "version": "repo-lines-v1:sha256:dda9cdd2de17709fb1ec3de30c3972a6e29f999b60229b8b220fec65ebc94329:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYzNDk2ZmEzMmMyZWQ0NDJmYjU0ZWZhOTczZmQ0OTQ1YjVkOTM3ZGFkZWVmYjIyZWI1ZDRjZjM5NGVlZDBiYjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ0MzYwMDQ1Mzk2NTY1OGU1MjJlYTFhNGI2NjNhODI1NjI4NjNhNmE3OTg2MjcxOGIzYWZmMjNlNzUxMGYzZmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg2YTFhN2U0ZTg1NDRhMTliMDQzM2ZhNzhlMWQ3ZDEyZjkyNDQ2YmQ4MjZmODk1ZTljYzJlMTU5N2RkNTc5YzgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM1MDM2MGQxYWUzNTc2ZTRlNzlmMmJiYTFiYjJkNmUzMzFjN2FkY2NjNTMzMmQ1YzhlNzc3YWNkZGY4NWZhZDQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_1fd94cd24131437580453b192cbd9412",
+      "statement": "CLI base-dir resolution (_runtime_base_dir) prefers the parent of an explicit --config path, then the installed project root if it contains config.yaml, then the current working directory.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/main.py#L22-L36",
+          "version": "repo-lines-v1:sha256:54d474ca8e0ece70575dfcf0f778fecd22968f53969437e421692da06af7d01b:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcxZmRmYjJhMzJhZDE2NTkxOWI3ODNkMmU4ZDM1ZGUzM2ViOGFjNjgxNjU5MTk4ZWEzOTdkMmZmMzU4ZTNkZjAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVlNjViY2FjZTBlNThkZDkwYTlhNmFmY2IzODQ2NjhhOTcwZDg3MWY1NWJjMTcyNGNjYTZiOGQ2ZGFhODkyN2UiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE2YTQwYWZjYTk0YjUwZjg3M2NkNTNiOGUzZGEyMjg4M2RhYWFmZDMyZWRhYmUwMjk5NDNhNWQ0Y2ZkMTJkYjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgyM2YyMjMzZDc3MDI1MjBkNDBkYThjMzhjYjVlYTE1OWM0MmNmY2U3MmQ5ZTA4OWQ3NDI3YmUxZjZlNmQxYTYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_a38d5fd05fa744d084297fed508156f4",
+      "statement": "The backend's resolve_base_dir prefers an explicit value argument, then the BOSSHUNTER_BASE_DIR environment variable, then the source root if it contains config.yaml, then the current working directory.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/backend.py#L16-L32",
+          "version": "repo-lines-v1:sha256:b5c17486e5edc47c20e390726ce020022a17295607160d842cd340b74052c750:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQyYzNmNjc3YTIxYWEwM2Y5MzU1NTVhZTQ0NjMxOGJlOTE1MmQ1NjUxMWFmMzRmZmUyNWEyYmZlYTJkZTYxMzkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNhMTRlOGJmNjk4Mzg1ZDUzZjljYTZlNDdkM2ViZjViODAyZGQxMmIzNDY2NTc1MTM2OWU4Mzc2NzllNWFiODIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJkMTNlZmEyYmRhZjA5ZGM3Y2E0Mjc2YzYzMzc5ZjcxMDFhMGQwZGEyODJhMDAzMGY4MTdiYzE3MzY3YmRjM2UiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU5M2ViMzYwOWJlOTI0MWJkNDFiNGM2MWNjNjg5OWY0NTEyM2VjZDcxMmQyY2QxY2IzNGU1Yjc3ZmJhOGI5NWMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_0c43b41dc5674b59ab31e1767a6b7f82",
+      "statement": "run_backend loads the instance .env before importing the web server, sets the web base dir, calls configure(load_config(config.yaml)), and starts run_server — enforcing one configuration for the browser runtime and the web API.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/backend.py#L35-L59",
+          "version": "repo-lines-v1:sha256:94ba2025fd572aa34835eb10e50fe1ead783369718dbb82a1f32e2c420db6b60:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgzYzMzYmU5NGQ3OTMxMjllN2MwNGRhODE2ZDhkMTNmZGU5Njk0ZGRiMDk0NTlhOWZhNGJjNzdjMmQ0ZDhhNjgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhZjFkMzkzN2IyNTU0NTdkNmEwMmVhNjk4ZTBlYzcwN2I0NGFhNzE3MjZiNzljYzFkNmNlMWI0MDc3NzQzMDAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE3OTRmODlhOTU3ZTE3Mjc2MjIwYzUxNWM0NDAzMWIxYTNmYTUyMzFmYzUxY2MxNDRiMDY5NmExNzVjM2I3OTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY4NzhlYjQyOTc4MDFjZTFlY2I0OGJmNmIxYzk3YTZmNDQ5ZTI4M2Y5ODQxYTUxZTJlMjNjMmQ0NjEyODY5NjEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_4ffb70bf39b24dbda24eda8cd15f1745",
+      "statement": "backend.main derives its process config from BOSSHUNTER_HOST, BOSSHUNTER_PORT, and BOSSHUNTER_OPEN_BROWSER with defaults 127.0.0.1, 8686, and false.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/backend.py#L62-L68",
+          "version": "repo-lines-v1:sha256:d0a5e68f62f29a717f8ba20cce8825f486dccfb8e1e761b339686f75da52b836:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzBiYzUxMjY1ZGEzYzQ5NGJkZDI5NDA4YzBlMTc3NjY1YmZlYWQ2ZmQyNzkzNmYwNTlkMmM1NTdiMTlhM2NlMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDg5ZDkwZjU4Mjc3MjE3NjA0NWZmYzVhMDQ4YjYxZWJlZGI4ZDY3YWE2MGVlNWM5ZGExNzVlZjk0ZDU1MGI0NSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjJhMzIwYWQ5ZTk4MDNkZjY3OGUxYjlhYzI5MzAyNWNiYjRmODc4NDE4YmNmYjRiNWQ4OGUxZmJiNmZiYWQ2YSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiM2Q0MTM0MGNjMjM5YTE1OWNlOWI2MDIyZTlmNjMyMjgzMmUyZWFkNzZjYWU5ZTQ3NTRkMjEwZWI4ZmI2ZDVlOCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_e15ac86f31c4443693b4a6ac1ea7a1fc",
+      "statement": "The CLI exposes run, scrape, score, confirm, greet, send, monitor, resume, status, web, start, connect, and reenrich, each delegating to an owned domain function rather than implementing the work inline.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/main.py#L104-L379",
+          "version": "repo-lines-v1:sha256:5beef6d728948ceb2542135d3d4052f28218901b7b205e514b167652ff04ee27:eyJzZWxlY3RlZExpbmVDb3VudCI6Mjc2LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJkZDQ3YjZmYWU2MGE1MzA2MjQxNTU1ZTk2ODE3MGNmZTE0MGZmZWMzMmI5MjI5ZDc2MzVlMmVjNzFjMmQ1ZDA3IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0Yzg3MDRhYmFjZGM0MjEzZWU4M2YwNjI0NGY2M2VlMWExNTM5Yjc2M2NkYjY3M2ZhNDcwYzM5NDI3NzhmYzMyIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlOTViYzQ5NzY3ZjkxMzY3M2Y4MWE3YWU3ZDk3OTc1N2RiM2RkYzUyYmFiYTAwZjgwMjM4ZTU5Y2Q3YTE4NTBjIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIzZDQxMzQwY2MyMzlhMTU5Y2U5YjYwMjJlOWY2MzIyODMyZTJlYWQ3NmNhZTllNDc1NGQyMTBlYjhmYjZkNWU4In0"
+        }
+      ]
+    },
+    {
+      "id": "claim_64f0ccc1590447bcbcd7169672586078",
+      "statement": "Bare bosshunter with no subcommand prints a first-run setup prompt when config.yaml is absent and a ready hint otherwise, driven by _is_first_run and _prompt_setup.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/main.py#L52-L74",
+          "version": "repo-lines-v1:sha256:523a486d0caa453cd46120312b82c9aaa1158ad641cb360dbe4ce47f177b5a80:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNkNGNkOWMyYTBmNDE4MzViODIzZTlhMzc0YmI4OWU5ODkwNjlhMzZjN2VlZGY3NzUyNTAzNTBhNjA3MjAxNzIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjliN2U1ZWIxNWNmZWUwYjI2NjViYTgwYmYwZjVjNGUxNWIxNDRhOWE3OWRmOWRiODViZDU0ZDE5NTQ1MDI5NWUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZhMjhmMzA0MGRmYmViNjhjYzk0NjA4NDdiODVkYjU5ZDNlMGFkNzA5Nzk5NzFhNzM0YzQ5NWEyMTBiOWViN2QiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjcwNWU0OGFiZGFhMTE2MjYwMjYwM2JmNThjNGE4OTFiNDY4N2VkMmIzYzI1NmE4MzczOGQxMzdkMmY2OTcxNmQifQ"
+        },
+        {
+          "resource": "repo://src/bosshunter/main.py#L94-L101",
+          "version": "repo-lines-v1:sha256:2c800163620af753e50278be90bcc17031f6ac73d14bad2ee2642243b2450fc3:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzJkMTM5Y2MxZmI0NTljZjk1Y2JkZDg1ZjMxMTNjNDQ4OTNkZDIxMGNhMjkyMTE3MzQxNDViNmM1ZWRhNzBmYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTk4OGQzMzlmYWQ3NmY4ZmNlNjVlMjJiM2E0YjcwYTQzNmQ5MTZkNTRkYjcxZTgxYzRiYTdmNzY3MzA4ZTY4NCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDA3OTllMzZkMWY1ZjQ4ZTBiM2UwMTBlZjkzODU1YmE1YjcxZDg3MDFiZjg5MWQ2MzhiOWQ2MDgwZWMzZjNiNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZjA0ZDAxOGZhZmMyNWFjYjRhOGRlOGMxY2RhM2IwMDVkMWFkNGQ1NDkyMjEyNDk2MGNkODY0YTE0ZWYyMTYwYSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_8138fc47b69d4c2c87e4003e04c78f74",
+      "statement": "load_local_environment reads simple KEY=VALUE files without overwriting already-set process variables, and is called at package import time so LangGraph/LangSmith tracing environment is available before other modules import.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/__init__.py#L6-L10",
+          "version": "repo-lines-v1:sha256:89339e8e95c86776286abce463384c8854ec6dca36f8d7fc369dd5f6f49d514d:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTU3OWM5MjNmMTJmZThiZTUzZmY5MzA1MjNkYmFiZGMyZGRjNDMxNjE4ZjY3YWYxZjYwMjYyNDU0ZTFmMWU0OCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNzZlOGVkMDdjNDgwY2VlZjU5YjU3MjAyMjM4ODFjM2YyYmY0NDFjMDllNTY2YmM2MTc4Y2IwY2YzNDMwZGE3OCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZWZiNWJhYzgxZjNlNmU0OWZkYmNkNmY3YmYxY2UyM2IwZTNmNGJlM2I1MmIyNmY0YzFlYzNmYjc5YWFhOTU4NiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTRjOWY2ODlkZGEwOTJjNjA1NGI0YzRjMzc2NzVkOWY0MWVkOTFjMmY1MzY3NWU1N2IyNjUxMTM2NzVhNjJhOCJ9"
+        },
+        {
+          "resource": "repo://src/bosshunter/environment.py#L17-L37",
+          "version": "repo-lines-v1:sha256:23519f7fd92b84650fe83119635fdba4abd089d919018a8252e092ff1a720fc7:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkyMjAzNWU0M2U0MDZhNjdmMjVhY2Q0NmFjODcyOGJhNGQxMjBjYjY1ZTk2NDRkODlmYjRmZjkyYjg2NjQxNWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU5YWM2ZmE5Njk5NDY0NjRjZjE0ODlhZTc3Y2I1ZmQyZjk2OTEyYTQzNmNmZDc0ZTM0OWY4NjIxMGQ5Mzc4NjYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUxNDgyNTg1MWEwZGFkN2NhYjkxZThlYWNlZGE5YjBhNTNiM2U1NWZlMmVhMzUwMDc2MTMyODMzNjI3OTEwYWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE0ZTIzMzI1NmViZmUxMWNiODQzOGJhN2U1NzRlMzJjYzlkN2M4ZGMwMWZjMDJlMGZlZDg2OWM2NDc0OWVjOGIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_dfa5114a07b34b3da75d5d58c269338d",
+      "statement": "start-bosshunter.cmd guards port 8686 against a second instance, sets BOSSHUNTER_BASE_DIR, and launches bosshunter start --port 8686 via the venv console script or python -m bosshunter.main; 启动BossHunter.bat forwards to it.",
+      "evidence": [
+        {
+          "resource": "repo://start-bosshunter.cmd",
+          "version": "repo-file-v1:sha256:52ff0254342a59d361946bf27e9ac6f91150d84c832dad3f6a9c4bb0e5f88c46"
+        },
+        {
+          "resource": "repo://%E5%90%AF%E5%8A%A8BossHunter.bat",
+          "version": "repo-file-v1:sha256:205f3abe1c8fce0c4be83aa33f2be722cdc1ee172a75f3bb558dfae8b0f11b19"
+        }
+      ]
+    },
+    {
+      "id": "claim_0a77406cd7b24a4bb194613f9d935d23",
+      "statement": "run.py is the development launcher that starts the backend via python -m bosshunter and the Vite frontend via npm run dev with shared environment variables and default ports 8686 and 5174.",
+      "evidence": [
+        {
+          "resource": "repo://run.py#L144-L189",
+          "version": "repo-lines-v1:sha256:42ac46fd01861f1fd6737b1951b441851ce90238068287edfc17897d2b63a0a5:eyJzZWxlY3RlZExpbmVDb3VudCI6NDYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYyMjcxNmRjYTRkNjM4MGUzY2VjYWZhOTg0NjBhZDJkODNkNWNiNWNjZDhkYTIwNWQ3ZjczMTlkZWZjOWFmMDgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRhMjQ4Y2NkMDMxZWQ5NDZkNmRjOTI1MWRkYzNmOTU1YTI2NzA0MTllZGE2ZWE2YzUxNGY2MDkxZTA4NTE1MGQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjEyYzZlZGM3M2Y4ZjlhNWI0NjNlZTY1Y2FjYzg4ZmRhOGM5ODkzYTBlMmExMWQ4OTA4ZmY1Y2NlOTJkNGYyNGYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU0OGQ3NDgzZDA2MGYxNzIyZTI0NTM2ODg4MzM0MjU2YjU0OTBlOGJiZTg2OTgyMDY3NmNhOWVhZjM1MDljYzkifQ"
+        },
+        {
+          "resource": "repo://run.py#L55-L73",
+          "version": "repo-lines-v1:sha256:da99c7b370e96d7eddc28da5d0fabefc928e093fc602a0e2b1bb2dcccf60758a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgxNDI0OTM4N2MzZWMzZDE4MmFiOTg3YTlmYjgyYTQxZmZlOGJmOTdmNTYxNTQ3N2IwZWNmMDkxZDYwMzRkZjEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNiODVmNmViN2QwYTliNGYxN2JhYmIxNjZiMzdhMGZhYjhmMmFhYTM5YzNjOTM0NGJlMmVkZmZiMDg1MDExMTIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdjOGYzYmY3NjBkYjliMjRiOTM3YmIwNTBlY2ViNDk5ZTk5NGU4OGNlNWZmOTcyZGJmZjg5ZDQzMWVjNmRiODciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVmZDVlNDQ5ZDBiYjgxODc3OGY3ZWNhZDA5OGU3MjU1MzZlYmM5NGFjYmMxYjE4NGY4ZmE5MmE4OGRlZjAyYTMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_57786447a1a14f5ab2c923188abfcdcd",
+      "statement": "web and start both call set_base_dir and run_server on 127.0.0.1; start additionally resolves a browser executable and schedules launch_browser on a timer so the browser opens after the HTTP server starts.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/main.py#L307-L379",
+          "version": "repo-lines-v1:sha256:aefb3a3e5b8ef8d9af2b68959194116b6f5fae9db23278643873e98ee39d2cd4:eyJzZWxlY3RlZExpbmVDb3VudCI6NzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRkNDdiNmZhZTYwYTUzMDYyNDE1NTVlOTY4MTcwY2ZlMTQwZmZlYzMyYjkyMjlkNzYzNWUyZWM3MWMyZDVkMDciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRjODcwNGFiYWNkYzQyMTNlZTgzZjA2MjQ0ZjYzZWUxYTE1MzliNzYzY2RiNjczZmE0NzBjMzk0Mjc3OGZjMzIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBhNDE0MGFjYzliYmMwNWQ2MDg3MDYzMjM4YTc2MDY1MWU4MWU5ZDFlOWFlNDUwYWM5MDZkNmE1Njc5NzBhZDMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNkNDEzNDBjYzIzOWExNTljZTliNjAyMmU5ZjYzMjI4MzJlMmVhZDc2Y2FlOWU0NzU0ZDIxMGViOGZiNmQ1ZTgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_2aa4e5a7fd664d2fb7c16213a4ad7216",
+      "statement": "_hint_star_support interpolates GITHUB_URL, which is neither imported nor defined in main.py, so commands that reach that line on a fresh checkout raise NameError after completing their main work.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/main.py#L39-L49",
+          "version": "repo-lines-v1:sha256:592fe1568f1a114e01b88389925097e28c38e0d593a26a9eaf8bda0e810dfe22:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg3MmJmNTZkZDQzOWE0NjkyNTdmYjZhYmE2NWM1ZDRlM2JmYjgxNTMxNDlmMWZhYTgzNzliODZhMzBkOTJjN2YiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYwNjJlNThlYTBiMGZkMTk1YmEwNzY2MTNiNjMwZDU5ZTY3YmQ0NzBiYjE5ZTk3YTIwYzkwMjM2NmU1YmEwZTYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdmODNmMzg3ZDc5NWJlZDE0ZGQxMWQ2MGExYzU0MmYzYjJjOTUyZGE1Y2M2MGUxOGM3MzMyZjkzZTBjMDc2ODIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjExODRhYWZiMGZiNzY4ZmJkMzJjZjRjNzU3ZTkyNzM0YmM3NzI2MTJkNjk3YjM1OWUzNDQ5M2M2YzZmZWQ3MDMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_7ded89a7fcd94c70be5872292a938a5b",
+      "statement": "connect raises SystemExit(1) when print_browser_diagnostics reports failure, giving scripts a non-zero exit code on a failed connection check.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/main.py#L104-L117",
+          "version": "repo-lines-v1:sha256:810dd4ffc9114cfa8d13b9e63fb684b7e3ee8990843b9f5c0f41cbeb317a4aa0:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRkNDdiNmZhZTYwYTUzMDYyNDE1NTVlOTY4MTcwY2ZlMTQwZmZlYzMyYjkyMjlkNzYzNWUyZWM3MWMyZDVkMDciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA1NmQzMDJhYjNmODdlNDZlZjc5OWE1ZTRkZjUzNDczYmZjYzAzOTQ2NGM2MWY2MzI3YzdmYmNmZjRiNWEwMjkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU5NWJjNDk3NjdmOTEzNjczZjgxYTdhZTdkOTc5NzU3ZGIzZGRjNTJiYWJhMDBmODAyMzhlNTljZDdhMTg1MGMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYwNGQwMThmYWZjMjVhY2I0YThkZThjMWNkYTNiMDA1ZDFhZDRkNTQ5MjIxMjQ5NjBjZDg2NGExNGVmMjE2MGEifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.5.2",
+    "at": "2026-09-16T06:31:53.644Z"
+  }
+}

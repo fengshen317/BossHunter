@@ -1,6 +1,7 @@
 """复杂任务规划和 DAG 构造。"""
 
-from bosshunter.assistant.models import CapabilityMatch, IntentResult, PlanEvaluation, PlanStep
+from bosshunter.assistant.dag_scheduler import DagStep
+from bosshunter.assistant.models import CapabilityMatch, CapabilitySpec, IntentResult, PlanEvaluation, PlanStep
 from bosshunter.assistant.policy import ACTION_TO_CAPABILITY, enabled_steps
 
 
@@ -60,6 +61,34 @@ def build_plan(intent: IntentResult, matches: list[CapabilityMatch]) -> list[Pla
 	"""
 	if intent["intent_type"] == "pipeline_run":
 		return [dict(step) for step in _PIPELINE_STEPS]  # type: ignore[misc]
+	companies = intent.get("entities", {}).get("company")
+	if intent["intent_type"] == "company_research" and isinstance(companies, list):
+		company_names = list(dict.fromkeys(str(company).strip() for company in companies if str(company).strip()))
+		if len(company_names) > 1:
+			research_steps: list[PlanStep] = [
+				{
+					"id": f"company_{index}",
+					"label": f"并行研究：{company}",
+					"capability": "company_analysis",
+					"depends_on": [],
+					"status": "pending",
+					"requires_approval": False,
+					"arguments": {"company": company},
+				}
+				for index, company in enumerate(company_names, start=1)
+			]
+			return [
+				*research_steps,
+				{
+					"id": "company_synthesis",
+					"label": f"汇总比较 {len(company_names)} 家公司",
+					"capability": "company_analysis",
+					"depends_on": [step["id"] for step in research_steps],
+					"status": "pending",
+					"requires_approval": False,
+					"arguments": {"mode": "synthesis"},
+				},
+			]
 	intent_steps = enabled_steps(intent)
 	if intent_steps:
 		matches_by_capability = {match["capability"]: match for match in matches}
@@ -94,6 +123,7 @@ def build_plan(intent: IntentResult, matches: list[CapabilityMatch]) -> list[Pla
 					"depends_on": resolve_dependencies(step["depends_on"]),
 					"status": "approval_required" if match["requires_approval"] else "pending",
 					"requires_approval": match["requires_approval"],
+					"arguments": dict(match["arguments"]),
 				}
 			)
 		return plan
@@ -109,6 +139,7 @@ def build_plan(intent: IntentResult, matches: list[CapabilityMatch]) -> list[Pla
 				"depends_on": [previous_id] if previous_id else [],
 				"status": "approval_required" if match["requires_approval"] else "pending",
 				"requires_approval": match["requires_approval"],
+				"arguments": dict(match["arguments"]),
 			}
 		)
 		previous_id = step_id
@@ -167,4 +198,40 @@ def rebuild_plan(
 	return new_plan
 
 
-__all__ = ["build_plan", "evaluate_plan", "rebuild_plan"]
+def build_dag_steps(
+	plan: list[PlanStep],
+	matches: list[CapabilityMatch],
+	registry: dict[str, CapabilitySpec],
+) -> list[DagStep]:
+	"""把展示计划转换为参数已冻结的调度计划。
+
+	Args:
+		plan: 已通过结构校验的展示计划。
+		matches: 本轮能力匹配结果。
+		registry: 能力注册表，用于读取超时和审批元数据。
+
+	Returns:
+		可直接交给通用 DAG 调度器的步骤。
+	"""
+	matches_by_capability = {match["capability"]: match for match in matches}
+	dag_steps: list[DagStep] = []
+	for step in plan:
+		spec = registry.get(step["capability"])
+		match = matches_by_capability.get(step["capability"])
+		arguments = dict(match["arguments"]) if match else {}
+		arguments.update(step.get("arguments", {}))
+		dag_steps.append(
+			{
+				"id": step["id"],
+				"label": step["label"],
+				"capability": step["capability"],
+				"depends_on": list(step["depends_on"]),
+				"arguments": arguments,
+				"requires_approval": step["requires_approval"] or bool(spec and spec["requires_approval"]),
+				"timeout_seconds": float(step.get("timeout_seconds") or (spec["timeout_seconds"] if spec else 30)),
+			}
+		)
+	return dag_steps
+
+
+__all__ = ["build_dag_steps", "build_plan", "evaluate_plan", "rebuild_plan"]

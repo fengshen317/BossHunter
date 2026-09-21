@@ -1,0 +1,264 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:613ad7bdba0c5f3d64193cc37efe427c07aea6f38b5e5f95cc4fa8dfa2f16be3",
+  "claims": [
+    {
+      "id": "claim_4a977dc7b6d74d94988ca843598481ef",
+      "statement": "The AI layer supports exactly two providers, `anthropic` and `openai_compatible`; `load_config` fails fast with `ValueError` for any other `ai.provider`, and the shared helpers dispatch `anthropic` to the Anthropic SDK Messages API and `openai_compatible` to an `httpx` chat-completions call.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/ai/credentials.py#L210-L236",
+          "version": "repo-lines-v1:sha256:143c01a91dbbe9790df2a7f851da0b291045167224b84a51ca95946248a24aea:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxNzUyNDJlNTg1OWJmMDhjZjQ1NTUyMDQ3ZmFkODNkNWQyNTc4MzVlNTcwY2MxYzg0Yjc5YmIyMTIxYjA3M2IiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJkMDExMzFkNDQ4NWE3ZGE0NzlkZGIzZGU2MTliMjBjNmJkYTZlNTcxZmY2ZGU1NGM5NzZkNGU2ZWU2NTU3NDYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBlODU0ZTdiNTdlYWE5NWNiM2Q5ZWEzZDAzODA3NWE4YWRhMWJiY2FhOTVlZjhlYmE1Y2U3NGZjMTRiZDc2YTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUwNzE2YTgwZjI3NWY1MGM3MjQ3MDQ4ZDdiMGU2NGZjYzJkMWNhZTQxNDQ1ZTMzMWZhYTA5MWRmZTJjNjhjMDQifQ"
+        },
+        {
+          "resource": "repo://src/bosshunter/ai/credentials.py#L421-L461",
+          "version": "repo-lines-v1:sha256:8cc7504fa3253ec2445099db8f440bda118026e972683c215eb17c511e063873:eyJzZWxlY3RlZExpbmVDb3VudCI6NDEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ0OWY4MDQ1NzExZjM5OTkzYTFjMTU3ZGViMzE3ZjBjNWVhYjFkYzQ1Y2VkZWRlZDA0OTg5MWZiMzFmNDk0NTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3M2ZmY2EzZTRiNTNhZmE5ZGU1OTM5NjlhOWNhNWRiZTYxYTM4ZTM5YzdjNTU4OGI2MWI4NjdiMjYyN2M1ODUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFhZWEzMTg1MjQzNTI5NjE3NDc0MDk3OTQzYWZhYWNjZWE0OWI5OTU0Zjk1OTY5MzI1NWEzYmNlYzBlZDVkOWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjYwMzJkZjM5MDMyYjFjNmUwZTc3Y2M5M2ExYjM1OTViMGM1NjM0MjAwMTRjYmJkNTBiMDExZDlkNmJmNDZiYzQifQ"
+        },
+        {
+          "resource": "repo://src/bosshunter/config.py#L161-L165",
+          "version": "repo-lines-v1:sha256:32a0bd384790549d212e4606312ebb9cdc51a48cdea4dae34901e59c7c098aaa:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzdmOTQ5YjY2ZDYxYWQzZTZiMmQ0MGE0YTQxMWYxNDEwNmEwMWI3NzVmOGIzOWNlNGFhZTU5MWMzNTJmZDc2ZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDViMTQzMjdhNGZkZDYyNGVhNGE5ODQxY2MyZTFjNTA0ZTA2YTg0NmRiZjU5ODk1Y2I2NTI2MmZhMjUyODkxNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMWY0NGYxYjg2ODg4NGM3ZGJhMzc4YTZhNmU5NzQxNzU1NDBmOGVlMWI0NWRhMjUxM2QyNGMzZjg3ZWE2OGI0ZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjM3MmI5NjY3YzE4NjdhMzM2OTY3OTBmNmRiMzRlMTI4YTQ0MmI1Mzc2OGFjYmYxYjM4YzRhNTgxNjRjMTgyMiJ9"
+        },
+        {
+          "resource": "repo://src/bosshunter/config.py#L34-L34",
+          "version": "repo-lines-v1:sha256:8712e8291445b5d15aae25df9f3ac05cf9aed5a451db2bd2d72ba0efa85e9ed4:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODcxMmU4MjkxNDQ1YjVkMTVhYWUyNWRmOWYzYWMwNWNmOWFlZDVhNDUxZGIyYmQyZDcyYmEwZWZhODVlOWVkNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODcxMmU4MjkxNDQ1YjVkMTVhYWUyNWRmOWYzYWMwNWNmOWFlZDVhNDUxZGIyYmQyZDcyYmEwZWZhODVlOWVkNCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDlmOTMwODNjMTk3MTIxYjk4MjcwMGJhOGFmYWJkMTcyMmNmMWQzZTc0MDQ1MDllODBlZmEyNzI0N2Y2MmYwNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTE5OGJjNmJkODNiYWIwMzU1ODg4YTI0NzljNmU1MTU0MGYzOGY2NWYyYTEyMmY4ZTkyOWVjOTIxNzg1MGVkOSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_af233a7492ab4ff0985e22ed1dc63f2a",
+      "statement": "Credential resolution is environment-first: `get_anthropic_api_key` resolves `ANTHROPIC_API_KEY` then `ANTHROPIC_AUTH_TOKEN` then `ai.api_key` then `ai.auth_token`, while the OpenAI-compatible helpers resolve `OPENAI_API_KEY` then `ANTHROPIC_API_KEY` then `ai.api_key`.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/ai/credentials.py#L116-L124",
+          "version": "repo-lines-v1:sha256:8a57f341f75942302edce8a495cfa7251e873133e04c770f3f92ef53d206818a:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjBiMmVmZjJiMjYzZDg4YWVhODZkZjIwYTU1Yzc2MDM5NGE0ZDUwZDdiMzExZTZiYWVmMzRkZmY2ZDQzNGU2OCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMzBjMWYxODhmMTQyZWQ3YTgyNDY4MGIyMDcxNzJjNTUxOWJjNjE0YTQ4ZmRhN2NmMTY3ZWRiOGRkZjc5OTU2YyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYWFlYTMxODUyNDM1Mjk2MTc0NzQwOTc5NDNhZmFhY2NlYTQ5Yjk5NTRmOTU5NjkzMjU1YTNiY2VjMGVkNWQ5YyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZjRjYTkwMWQ3YTcxYTZhYzFlOWI1ZTY0OGIzMzJmNDNjMzI0NzVjYTFiYjhhYzg4OTQ2MmI5MDRhZDJmZDU5NCJ9"
+        },
+        {
+          "resource": "repo://src/bosshunter/ai/credentials.py#L254-L255",
+          "version": "repo-lines-v1:sha256:f1b6ed4d5a27096441094d3dcc2b6f7fc3c81e21e617ca86c22f8ba0871078d8:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiN2M3MWFlY2E2YmZmZGUxYTBjOTNjZWJjZWE5NDZiNWUyMWM2ZDRjZTBhYWU3ZDQzZWFjMDkyMTY4NmQ3MTJlNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYmY2ZjFhZWU5OWY5Mjg5ZjkyNTU4YjIyNzRkODU3Yjg5NjMyOTUzZmE1ZGFlN2ZjYjU3YjUwYzM1YThkZjg3YSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDc5YWQ4OWU4ZDE0OTEyMWUyODFlMWFlMWFmZGE5N2YwZWYyMTZjZDVkMWRlNjEyZDFkNzE0ZWQ4Nzg1NjY1MCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjdmYjdjYWU4M2FkM2M1ODQwM2I5MjlhNWEwNTZjYjQ3YTNmMjVjMzZmMzA4NzZmMjEwOWNkNzdmNDg2ZGEwOSJ9"
+        },
+        {
+          "resource": "repo://src/bosshunter/ai/credentials.py#L427-L428",
+          "version": "repo-lines-v1:sha256:f1b6ed4d5a27096441094d3dcc2b6f7fc3c81e21e617ca86c22f8ba0871078d8:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiN2M3MWFlY2E2YmZmZGUxYTBjOTNjZWJjZWE5NDZiNWUyMWM2ZDRjZTBhYWU3ZDQzZWFjMDkyMTY4NmQ3MTJlNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYmY2ZjFhZWU5OWY5Mjg5ZjkyNTU4YjIyNzRkODU3Yjg5NjMyOTUzZmE1ZGFlN2ZjYjU3YjUwYzM1YThkZjg3YSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDI0OGNmNWNiNjYzZDQ5Nzc0ZTQ3OTcyNTBmOTFjYTM0OTlhZGFkMjYyNmVlM2Q3MTZjZjNkODNlZDRiYjdkMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZGJkZTEyYzgyNjNmMGMyODI0NTBhNDc2MmYxMzU5ZmU2M2IyMzA0NWYyMmViNjI0MGQwY2RmYjUzNWZmN2UyOSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_4456d78df19b40f1a44182495f0c1fe0",
+      "statement": "All base URLs come from environment (`OPENAI_BASE_URL` / `ANTHROPIC_BASE_URL`) or `ai.base_url`; no compatible-service domain is hardcoded in the dispatch code, and model defaults such as `claude-sonnet-4-6` and `deepseek-chat` are identifiers rather than endpoints.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/ai/credentials.py#L139-L141",
+          "version": "repo-lines-v1:sha256:d1c51df28f0bba36be60a922b374279d96875231d6f8e1e028797c75469b7b27:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMGIwN2NjZjZmYTdhOWI3ZDNiZjQ5NTg1ZDkwNTY2NWMwODlkZDExM2IzOTZmNjNmNzVkZmU4NGQxM2RlNGRmYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYzczM2NlYTNmZjU3MWNhNzM5M2E1ZWQ1YmM0MDgyMWQ0OWEzZWM1YzgzZDQwNDU4Zjk1NGM5ZjAzMmViYjRmMSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzRiNjZhN2NhOTE5NDBmM2I0YmQwYmNjMDRiNjk4NmViODY4MDM2YmU2ZjAyMGU2ZWQwZjlmOGY2OTEyNTVlNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDQ4NTUxNWM3N2EzMDFjNDE5ODUxMmIzYWZhMDg1YTQxMTg3NjNjMjljY2FkMGRkYTA4YWQzNDhjOTVkYmU2OCJ9"
+        },
+        {
+          "resource": "repo://src/bosshunter/ai/credentials.py#L254-L255",
+          "version": "repo-lines-v1:sha256:f1b6ed4d5a27096441094d3dcc2b6f7fc3c81e21e617ca86c22f8ba0871078d8:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiN2M3MWFlY2E2YmZmZGUxYTBjOTNjZWJjZWE5NDZiNWUyMWM2ZDRjZTBhYWU3ZDQzZWFjMDkyMTY4NmQ3MTJlNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYmY2ZjFhZWU5OWY5Mjg5ZjkyNTU4YjIyNzRkODU3Yjg5NjMyOTUzZmE1ZGFlN2ZjYjU3YjUwYzM1YThkZjg3YSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDc5YWQ4OWU4ZDE0OTEyMWUyODFlMWFlMWFmZGE5N2YwZWYyMTZjZDVkMWRlNjEyZDFkNzE0ZWQ4Nzg1NjY1MCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjdmYjdjYWU4M2FkM2M1ODQwM2I5MjlhNWEwNTZjYjQ3YTNmMjVjMzZmMzA4NzZmMjEwOWNkNzdmNDg2ZGEwOSJ9"
+        },
+        {
+          "resource": "repo://src/bosshunter/ai/credentials.py#L333-L334",
+          "version": "repo-lines-v1:sha256:f1b6ed4d5a27096441094d3dcc2b6f7fc3c81e21e617ca86c22f8ba0871078d8:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiN2M3MWFlY2E2YmZmZGUxYTBjOTNjZWJjZWE5NDZiNWUyMWM2ZDRjZTBhYWU3ZDQzZWFjMDkyMTY4NmQ3MTJlNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYmY2ZjFhZWU5OWY5Mjg5ZjkyNTU4YjIyNzRkODU3Yjg5NjMyOTUzZmE1ZGFlN2ZjYjU3YjUwYzM1YThkZjg3YSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTZiMDVlY2RkOGRiN2FiYjk3YWQ0NzhhZmE4MjgwYzE4ODYzNzE5NGRhOGFlNTRhMTk3ZDQ2YzI2MDBhNjM5ZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzQyZTdhMDFmMzM1OTc0MTgyNjVmYjg4OTE3NTdhODcxYzY2NzI5MDNjY2U4ODNhZjUzNzBmMTZhM2Q5ZmZhYiJ9"
+        },
+        {
+          "resource": "repo://src/bosshunter/ai/credentials.py#L427-L429",
+          "version": "repo-lines-v1:sha256:39ad2a84c828ba19704989cb9db126d0ab0502aaea24552aa4b3471f978deed1:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiN2M3MWFlY2E2YmZmZGUxYTBjOTNjZWJjZWE5NDZiNWUyMWM2ZDRjZTBhYWU3ZDQzZWFjMDkyMTY4NmQ3MTJlNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjFlMzE1M2ViY2YzZGIzNDBlYWNlOTFhODFjNDY3YmEyMGI0YmIyNjQyNDFjZjliZDMzZDkwYjUwZjE2ZTVmMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDI0OGNmNWNiNjYzZDQ5Nzc0ZTQ3OTcyNTBmOTFjYTM0OTlhZGFkMjYyNmVlM2Q3MTZjZjNkODNlZDRiYjdkMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOTZkYWU0OGU4Nzg3ZWY3ODY0ZjVkN2FhYWY3Mzg1NWI3MjIzNjFmNGQwODM0YzQ1MzA3MWE1ZTZiOGFiZGQ4OCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_4fab1893433a4dacb2eb9f854fba3ec8",
+      "statement": "Request timeout defaults to 180 seconds, clamps to [10, 600], and falls back to the default on invalid values; `_anthropic_client` always injects the timeout and a retry cap into the Anthropic SDK client, while `build_anthropic_client_kwargs` only injects timeout when `ai.request_timeout` is explicitly set.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/ai/credentials.py#L143-L148",
+          "version": "repo-lines-v1:sha256:fd2d25b1855a43211a684b4d848be054ab199d109ae384751d0886bcb399e0fc:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjQ1NmM4N2FhMjc3YTYwNDM0ZDkxMWEzMDI2ZjA1ZTRkOWI5ZDg0MmRhYTM3ZTVmNjI0NzUxNjU4YTg0YmQwZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDNiODc2NjFjNTg1MzFiYWZhZWE4MDFmNzliYjVhZWNlMzY1OGRhNjM4Mjk5YzNiYzBmMjQ2MTVjNzhiNjM5NyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTg1ZTNkOWE4OTU1OGQzZDViNThjYjI2MjgwYTljOTNkYjY0MTdkYTk3NDAwMzBkMDFmOGQ5MGRjYjZhZWY0OCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiN2YyNTlkM2VmOTg3NzM4MTllY2U4Nzg2ZDJmMDYwMjdlODNkMWNjMmE2OWRmNzA4ZjhiYTMwN2I5ZjMyNjU0NiJ9"
+        },
+        {
+          "resource": "repo://src/bosshunter/ai/credentials.py#L193-L207",
+          "version": "repo-lines-v1:sha256:a7985f9806108823c7c23aee6ac5913bbd94455e5eb3232a356035d640123b84:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkyNmY2OWY5Yjg2ZDVhMWE0MGEyZWM3YjhiM2I1ZTkyOGFkMzY3MjNmNjcwY2EzM2NlMDQxMjIzZDIwZDQ4NTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY2MzNmNmFlZDQ5OGMxYzA3YzBmZDYwYTQ3ODA0ZWNlN2M2ODVmYzNmYjc1YTJmNTc4YmRjYmY5ZTk4OTY2NTUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM3OGRhNjNiOGI4ZjMyM2Q4Mjg2ZmQwNTkxNWY5ZjNmNzU0NmY2MTMwMzk2NzM4YjcxZDBkMDljZGFkZmNhNDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk0OWQzZDc1Mjk3YTEzMDRhMTE0ZDM0MTYzNGZiM2FjMmViNTI0ZjJhOTM5MTExNzc4MzhkMTk3NGI5MGEwZTIifQ"
+        },
+        {
+          "resource": "repo://src/bosshunter/ai/credentials.py#L20-L38",
+          "version": "repo-lines-v1:sha256:d23eebd79422f4d5c9f2e2965166f626b01517f646221875e2e4c46cc45974eb:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI2Y2MyNjVjOGFkZjcyZDRiZTA5MzRmNmVjOTZhMDI4Mzk0YzA5YWM4Mjc2ZThkNmJhZjdhNjIwMWVmYjBmZGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAzNjMxMmM5OWZmNDY2ODU0ZTYwODUyMjk4YmMxZWJhYWUzNjU3YzgyZmMyMmNiMTgwMDM3MjUzM2U2NGM3OWEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImVkN2FlNzU3Mzc2ZGU4MTBiZjI3ZTE0NTUyY2JkNTQ4NjQ1MGM0MThjZWY4OGJlNjUzNGUyNDBlMTgwYzQ5NmUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjcyMTI0MGNlMzQ1MzJjYjNhZDUyMDdmYTE3YTdjNjRkNDZmNjNkZmJkNTA3NWEwNjFiNTA3M2JhZjUxNzhjZDUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_d65032c862614fc99ed331eb65fa2719",
+      "statement": "OpenAI-compatible HTTP calls retry `429` and `500/502/503/504` plus `httpx` transport and timeout errors with exponential backoff and jitter, clamped to `http_max_retries` in [0,5] (default 3); non-retryable statuses such as `404`, `401`, and `403` are re-raised immediately.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/ai/credentials.py#L41-L113",
+          "version": "repo-lines-v1:sha256:4b3e20c3ad8c9c48b6b48bf37300bf6fefb112bbfbb92836129e0f7769ea4d12:eyJzZWxlY3RlZExpbmVDb3VudCI6NzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJjYTQxNDA2Yzk5MjAxMmUwNTEzYTlhZDYxYjg5MDgwMWY5NzY2OGMyYThlMmZkNmUzODMzYjdhNDdlNmNmZjAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZiMmE0YWZlZDAxMjlkYTNmZTgwNjZhYjUyM2YwMzIwZGE0YWQxNDYyNjczN2JhNDAyZjJmMDMyMjYzYmUzY2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFjZDJlZWI4ZjExNmI2Y2ZlY2I1MmQxYTBiYjRiNDViODUwMWQ0NWIwZDc3ZjBmMThiMzBmMmY3N2E2NTNmYTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjUzZjcwODU3MDYyMTNhZTUyOThlODc4NjlkMWI2YzJlYTVhYmU4MTRjMWYyNzUwZmUxYWQxMTI4NTZkMjFhOTYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_e3845e17ff734f218cccad227fcb3016",
+      "statement": "The Anthropic Messages path always sends `max_tokens` (default 8192) because the API requires it, while the OpenAI-compatible chat-completions path intentionally omits `max_tokens` and `max_completion_tokens` so provider defaults apply.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/ai/credentials.py#L210-L236",
+          "version": "repo-lines-v1:sha256:143c01a91dbbe9790df2a7f851da0b291045167224b84a51ca95946248a24aea:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxNzUyNDJlNTg1OWJmMDhjZjQ1NTUyMDQ3ZmFkODNkNWQyNTc4MzVlNTcwY2MxYzg0Yjc5YmIyMTIxYjA3M2IiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJkMDExMzFkNDQ4NWE3ZGE0NzlkZGIzZGU2MTliMjBjNmJkYTZlNTcxZmY2ZGU1NGM5NzZkNGU2ZWU2NTU3NDYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBlODU0ZTdiNTdlYWE5NWNiM2Q5ZWEzZDAzODA3NWE4YWRhMWJiY2FhOTVlZjhlYmE1Y2U3NGZjMTRiZDc2YTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUwNzE2YTgwZjI3NWY1MGM3MjQ3MDQ4ZDdiMGU2NGZjYzJkMWNhZTQxNDQ1ZTMzMWZhYTA5MWRmZTJjNjhjMDQifQ"
+        },
+        {
+          "resource": "repo://src/bosshunter/ai/credentials.py#L26-L28",
+          "version": "repo-lines-v1:sha256:635a4578b00429cd15ea8cc38921044e878dfd2b50f2109cb85c20d81edd121b:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMWYzOWI0YjFjM2RiMWE4ZGJlOWRhMzRkM2E5YmE3N2Y0ODkxNWJhZWQxMzcwMGQ2NWM1MWJmMTRlZTY5NzBkZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTMzNDBmYTg1MzBjODMwZGZkOTg1MTZlZGFjOGYxMzQ4OGYyMTlkNDdlMzEzMDFkZDdmYjRiMTVkZmE2YWVjZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMTkxNGE3NTQ2MmRiMGZiZjExYzZlNDdlNDM2YzliMjgzMGQ2ODkyMWEyYmFjNTYyODViOWYyOWFmN2I3MTExNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiY2RkMzQ1OGFhMzRmYTBkZDM1ZWZmM2FjYzc2NmI3YjAzODY2OTYyZjBkYzY3ZjNhOGM1NmZhYjBjZDVlZjY4YyJ9"
+        },
+        {
+          "resource": "repo://src/bosshunter/ai/credentials.py#L421-L461",
+          "version": "repo-lines-v1:sha256:8cc7504fa3253ec2445099db8f440bda118026e972683c215eb17c511e063873:eyJzZWxlY3RlZExpbmVDb3VudCI6NDEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ0OWY4MDQ1NzExZjM5OTkzYTFjMTU3ZGViMzE3ZjBjNWVhYjFkYzQ1Y2VkZWRlZDA0OTg5MWZiMzFmNDk0NTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3M2ZmY2EzZTRiNTNhZmE5ZGU1OTM5NjlhOWNhNWRiZTYxYTM4ZTM5YzdjNTU4OGI2MWI4NjdiMjYyN2M1ODUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFhZWEzMTg1MjQzNTI5NjE3NDc0MDk3OTQzYWZhYWNjZWE0OWI5OTU0Zjk1OTY5MzI1NWEzYmNlYzBlZDVkOWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjYwMzJkZjM5MDMyYjFjNmUwZTc3Y2M5M2ExYjM1OTViMGM1NjM0MjAwMTRjYmJkNTBiMDExZDlkNmJmNDZiYzQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_17bbbb565b4c48ef87a0f87b0362ec01",
+      "statement": "When an Anthropic `base_url` is configured, `resolve_anthropic_model` probes `GET /v1/models`, fuzzy-matches the configured model against returned IDs, and caches only successful resolutions under a key containing a SHA-256 fingerprint of the credential rather than the raw secret, guarded by a lock against concurrent probe stampedes.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/ai/credentials.py#L151-L190",
+          "version": "repo-lines-v1:sha256:b0a4d4236cfca39bed00deaf0e135389c3a48b2f823c282d8fa65709eb9c5ffd:eyJzZWxlY3RlZExpbmVDb3VudCI6NDAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgxZjY5MWMwYzdhZDNkNDkwMzAwNGVlZWVkY2ZjYzIzZmYwOTIwMTBhMjQ3YjRjYTc3ZDM3N2RhN2Q1YzgwMTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5NDI5NmZjMWEyNjBiOGU2ZjQ0MTc4ZWJiYTUyMmY2OTMxMDlhMDZkYjY0ODI5MGEzMDBiOGQxY2ViOGQxMzAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI1ZjVkOTU1NTQ0NTZjNDdhZDNjM2VhODZlOGEwMDc3YmIxMzlmOGViODc3ODZhMGJjYTQ3MDlmOWIxYjIwYjIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg2ZDM3Zjc5NTMyOTU2ZGRjNGMzY2Q3ZGFjMzNmYzQ0MGNkNTEwZjEwNWQzNjRlYzMxYzRlMjcyMjYwNDBiNDYifQ"
+        },
+        {
+          "resource": "repo://src/bosshunter/ai/credentials.py#L464-L495",
+          "version": "repo-lines-v1:sha256:4fea54a38afd4027798d4acf693e40f38d9900e2ea6df50d8cf41a645118ae08:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdkOGFjZDJhNGIxZWNjMmU2YjkzOWQ2ODYyYjk0NDUyNzRhNjk0N2E1YWZjNDcwNDMxYmUyYWUzMDM2YmUxYjciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJmYWI0OTk4YmM2OWE0MzUyZTdhODk0Mzc4ZmRlMjNiMGY4MTY5YTRmYmU1NjQwZTY0NzRlODI0NTQxZTEwN2EiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE2NWMyZmVjZDkzYTdhMzM2NTBmMTFhMmRlMTUxMTdlOGQ3MTE1NjU4MjZlZmM5NWRhNDVlMjI1MTcxNjc5ZTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_37d93a069f6644dd9ca4fccfce37d8ee",
+      "statement": "For OpenAI-compatible streaming, `stream_ai_text` forwards each SSE content delta to the caller as it arrives, counts `reasoning_content` separately, retries an empty completion once, and never retries after any content has already been emitted.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/ai/credentials.py#L325-L418",
+          "version": "repo-lines-v1:sha256:709073d31acf9730a568e5d4f1d28d6c858122e9247ccc5b87974d2574a07890:eyJzZWxlY3RlZExpbmVDb3VudCI6OTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJhMmNkMGQzZWZjNjhjZTFmMWFkOGJhMGFjZmY5MjJlNTE0YTdjZDBkMTUyY2QzOGQ4NGU1OTcyODg0ZmIzNWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZiMmE0YWZlZDAxMjlkYTNmZTgwNjZhYjUyM2YwMzIwZGE0YWQxNDYyNjczN2JhNDAyZjJmMDMyMjYzYmUzY2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU0OGI0MDU4MDRmZjEwZWQ1M2RiYmU0Yjk1MTRjOGI0NmFmYjg0NjAxYmQ2NDBlYzAyOTgyYjU3NGZmYTdiNDgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMwODFjMjVmMmQ2OTM0NjhkOGVhNjU0NTZhYjhjZGI5YmRkNzg3NjJiNmRjYTQxYjRmZGQ1YTA1YWU1NWUyZGEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_7faa6a9a1e1f4d369cb8e3a492cfbff3",
+      "statement": "`call_ai_with_tools` normalizes OpenAI-compatible `tool_calls` into `{id, name, arguments}` and returns plain text with an empty `tool_calls` list on the Anthropic path.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/ai/credentials.py#L239-L288",
+          "version": "repo-lines-v1:sha256:c68edbe7a43ec5435928b29eb9f3d97d347fb6794fa14745d335c4bab2f2b7a3:eyJzZWxlY3RlZExpbmVDb3VudCI6NTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUwNTJiYTIwYjE1MzFkNzc3MzQ2MGQ0NTkyNzdiMjM2OTU3NDVlNmEwZDYxZjgyNjZiYzQ2YWQ1NzZjMTVmZTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA2MjljOWJlZmI3ZDkxZTk5ZWI5OTVkYWYyNThiYjA3ZTRjNzM1YTNhN2U4ZjcyMzEyMmNjNWI4NWJmNDA2N2EiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjcxMzQyOWFiZTU2ODJiMTEzZDczYjhiNTg1NTgxMzFiMTVmMDI1ZDdmNDhlZGEwY2Q5ODkwZWM1NjcxZmEyNmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVkMDYzYWYxMGQ2MzM5ZGJhYzI3YWM2MDRiOTFmZTJmN2UwMzI2YzJhYzdiMDgyM2Q3OTM1MzRmYTQyYjhiNzYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_c416ebc004204d5996582efb32200768",
+      "statement": "The scorer, greeter, tailored-resume generator, and HR reply monitor all generate text through the shared `call_anthropic_text` helper, isolating provider transport differences in the credentials module.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/ai/greeter.py#L109-L112",
+          "version": "repo-lines-v1:sha256:3294c52769dea52f4e155f87f32026750bb22cad2724df6728877226e56a9a84:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOTk0N2M0ODA4MTk2ZTVhMmU2ZGY3ZWYzMGNlYWE3MWJmYmVkNTgxZDhiNDI0YjUwNDM3NmUzZTkwMjBjOTE3NSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOGU0YmU1YjM1YWJkZTA3NmVmMDg3N2M3Y2E5MDFhZjEzZWExNjNkYzJmNTE4NTc0OGYzMDM5MWVmYWVmNTg0ZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYWM1N2Q4NTQwMzJlOTE4MDEzNzNiMzExOGVlNzdlNzgwNzdiOGMyMTM4N2E3MTJhNGVhNWNjYTc3MzM0MGExMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMjNjYmI0ODliNzY0NDcwNGE0ODRiNjFlYzdmYWQ4NWIyMGViZjg2NmI1NWRiM2U0ZTU0MWRiYTkwZmUyNDRjZiJ9"
+        },
+        {
+          "resource": "repo://src/bosshunter/ai/greeter.py#L11-L11",
+          "version": "repo-lines-v1:sha256:fc93ad512f72525c6d7310446879c2bb38bb37a0c63e2cb3e122a9dde2b7de33:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZmM5M2FkNTEyZjcyNTI1YzZkNzMxMDQ0Njg3OWMyYmIzOGJiMzdhMGM2M2UyY2IzZTEyMmE5ZGRlMmI3ZGUzMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZmM5M2FkNTEyZjcyNTI1YzZkNzMxMDQ0Njg3OWMyYmIzOGJiMzdhMGM2M2UyY2IzZTEyMmE5ZGRlMmI3ZGUzMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYzBjMGNiNDk3NDI1Nzc1NGY5MDY3NjU2MWI3MWIwOTlkZDAzY2NkNTQ3MDY4ODI4ZDIxMzQ0YzI5NmYyZWQxNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZmNlMDQwZmYxN2VmYTA0YTBjMzEyMDNhMWE4NDZhYmY3N2MyZmY4N2U0ZWM1ZDk2Mjg5OWI0MDBjODJjNDMzOCJ9"
+        },
+        {
+          "resource": "repo://src/bosshunter/ai/resume.py#L10-L10",
+          "version": "repo-lines-v1:sha256:fc93ad512f72525c6d7310446879c2bb38bb37a0c63e2cb3e122a9dde2b7de33:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZmM5M2FkNTEyZjcyNTI1YzZkNzMxMDQ0Njg3OWMyYmIzOGJiMzdhMGM2M2UyY2IzZTEyMmE5ZGRlMmI3ZGUzMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZmM5M2FkNTEyZjcyNTI1YzZkNzMxMDQ0Njg3OWMyYmIzOGJiMzdhMGM2M2UyY2IzZTEyMmE5ZGRlMmI3ZGUzMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTVmMTc4ZjczMjFkYWUzMzZhYjI1ZjcyYjdmMjJlZjg1NmU0OWEwNTQ0NGI4YTg5MDNmOTVmZmQ5ZjFlMTdhMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMjQ0MmU3NTI4YWVmY2JjM2QzNGY1ZTFiOGI0MGZiMTc4NzZiYjUxZWEyYWIyNDlhNmExOWQ3YjNhMDc1OGQ2YyJ9"
+        },
+        {
+          "resource": "repo://src/bosshunter/ai/resume.py#L395-L400",
+          "version": "repo-lines-v1:sha256:d0158b7fc8038bfa4c10476239fa9e1d7e0ae68a9c7ddda62d0b9a5a3984a245:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOTk0N2M0ODA4MTk2ZTVhMmU2ZGY3ZWYzMGNlYWE3MWJmYmVkNTgxZDhiNDI0YjUwNDM3NmUzZTkwMjBjOTE3NSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOGU0YmU1YjM1YWJkZTA3NmVmMDg3N2M3Y2E5MDFhZjEzZWExNjNkYzJmNTE4NTc0OGYzMDM5MWVmYWVmNTg0ZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMGNlY2ZlNmJkY2QyMTQ2ODg3ZmE1MThhZWJkYTNiYzc3YTk5MTQwMTc1YzI1NjUwMTEwMzFmMTk4NDQ1N2IzYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZmI3YmFmY2I3MGYxOWExMDc1NTBlMjEyY2EwZjliNGIzMjFjNTI1NjIzNzIwYTY1OTc5OWMyNDU0OWYzMDAyYyJ9"
+        },
+        {
+          "resource": "repo://src/bosshunter/ai/scorer.py#L12-L12",
+          "version": "repo-lines-v1:sha256:067ee039470547a1fe605050e5be04e6ee726aed6637b41850599189e7a5e6b1:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDY3ZWUwMzk0NzA1NDdhMWZlNjA1MDUwZTViZTA0ZTZlZTcyNmFlZDY2MzdiNDE4NTA1OTkxODllN2E1ZTZiMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDY3ZWUwMzk0NzA1NDdhMWZlNjA1MDUwZTViZTA0ZTZlZTcyNmFlZDY2MzdiNDE4NTA1OTkxODllN2E1ZTZiMSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYzBjMGNiNDk3NDI1Nzc1NGY5MDY3NjU2MWI3MWIwOTlkZDAzY2NkNTQ3MDY4ODI4ZDIxMzQ0YzI5NmYyZWQxNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTZjNzIyZDU4YTkxY2FlZGYyMjA3ODRmOTdhNzMyZjk0NTVjZDhkZjAwYTU5YzYzMDc3YmY4Yjk5OWM2NmIxNyJ9"
+        },
+        {
+          "resource": "repo://src/bosshunter/ai/scorer.py#L158-L165",
+          "version": "repo-lines-v1:sha256:d28d0895de035b1393dae51bde32e181ef3d08748e2cabc08ef662002eb9b531:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOTk0N2M0ODA4MTk2ZTVhMmU2ZGY3ZWYzMGNlYWE3MWJmYmVkNTgxZDhiNDI0YjUwNDM3NmUzZTkwMjBjOTE3NSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTM5NGJmZDU5NTJlNjdiNDNlOTY0OGM2Y2VjNTRmYzdhOTM5MDdkMDA0OGJlZDVhZjk0ZWIxNjgwZDg4YzIzZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMTg3MmE5YTkwZTZiZjk4YmJlMjBiZDg2ZTZkZTExZDZjZmY2OTg5MTdhMmNmZjlkMTFlZjQwNDQwZWY0MjU1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZmVkZGFhYTlmMzBhYWE1MmM4MjNlM2E2NWUwNTIwYWE3OGU1MWI5MjIyYjdmYWU4MzUxNDQ2MmI4MjEyMmEyYiJ9"
+        },
+        {
+          "resource": "repo://src/bosshunter/executor/monitor.py#L298-L304",
+          "version": "repo-lines-v1:sha256:c039003a488195f4af9a0c7063cfe84bdafcc0be7aed44be31448c6b97a20b16:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOTk0N2M0ODA4MTk2ZTVhMmU2ZGY3ZWYzMGNlYWE3MWJmYmVkNTgxZDhiNDI0YjUwNDM3NmUzZTkwMjBjOTE3NSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZWU3Yzk1N2JjYjQ0ZmI2NzNjOThiMDA1MGE3NWQzODA4MmRiODFkOTE4ZGUzMTNhM2YwN2MxMjM1MzA2ZDdlYyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzhhZTYwYTA5YTc4NGI0N2VhMDg1MzE2YmZmOTJjNjgwMTFkZDY3MGQ4OWYyOGRhZjVkYTliYjZhZTQxYmM0MiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjkwZWRmMGNlZDZiOGI0YTcyNjJiMjQ4MmIyNjk0YjM1NDljOWFmMzVjZGNhODUxMzM5MDkzOWJhZTFmMzAyZCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_078a363a2dfc4442aac5bfd896de1ca1",
+      "statement": "Greeting generation runs only the blocking AI calls in a `ThreadPoolExecutor` sized by `ai.greeting_concurrency` (default 4, minimum 1), while SQLite writes and progress updates stay on the caller thread.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/ai/greeter.py#L16-L26",
+          "version": "repo-lines-v1:sha256:b63c8425687f823f2a77084e23eb6277379cd22cd6fb855112e7bbabf2f705fa:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI4YjliMGEzMDMzYjc2ODgzYjBmZTM4YWU0N2ZmMTFhMmU2YWMyZGI1ZDA3ZTI1YzBmYTVmZGEyZmU1MzU5NGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEyMWNkY2QyZGIxNTQ1OGE5MzdmMzJmN2JiOGE4NWJkNzliZjc3Y2M4ZGRiNGViNDNhYjA1NDAwOWRiMzQzYzIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM1MGZjMjY5OGE0NGE4Mjc3ZGVhODA3NjI2MWJmNjMyOTE1OThhNDY1YjI1OTQyN2U2NWY1MWQyOTljZGMzN2YiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZmMWIxNGEzOGI0ZmRiZDNkNzRmOGJjZTY2N2I0YWRhNzIzNDJkZDQwZDNmOGY4MzI0MDA1MDA1OWE1ODBjMmQifQ"
+        },
+        {
+          "resource": "repo://src/bosshunter/ai/greeter.py#L279-L321",
+          "version": "repo-lines-v1:sha256:04d6ad0d20a2d54cc875f9d638ba1b59b134fb658ad44ca10dfb3cac8fa180af:eyJzZWxlY3RlZExpbmVDb3VudCI6NDMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEzZGIyODhjMjg5MmRlYWVkNzgxZDc3MjQ2NGY4NWU1NDQ2MDEzNTkzMzY5MmJiYjVjMTY3OGY0MzU0OTcwZDciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcwZTRmYjRkNDIzZWMzZTYwYTFkMDNkYjA4OGU1N2U4YjM1MjIxZDkxMzg0OTM2YTg4ZmQ5Mzg5NzllZDlkOTYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM5ZDE1YmZkZWVmMzg1NmJjNzEyZmFhMmU5NjEyMzBjODYxNzQ2YjlkOWNlZTUzOGQzMGU1NTE4ZTU0NTk3ZTciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVjMTQ1MDExMmY0Y2ZlNGU1ZGNlMTY5Zjc3ZmYyY2MyYjI2MWY4MTBmYjhlYTg0YmIxNDExNGUzMmQzZGI0YTIifQ"
+        },
+        {
+          "resource": "repo://src/bosshunter/ai/greeter.py#L360-L374",
+          "version": "repo-lines-v1:sha256:c71e08c4000de2e7d496f5a01a152a95abb487f830648e4fdc51369fa67a40b6:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBjYWFlMjY5NjUyYjk0NjQ4Yjk5MjhlNTgwNjlmZTFjMzE0OTJhOTc4OWM1YzYxZTg3OWI0ZjY3ODY3OTg3ZWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM1MGY3MzcwMjhiMzRmYjRkODg5NzZlMjI1NGVlMTZlM2VmZjk1OTM4Mjg0YWRjODhkNDViYzNmNTM2YTgzNDgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVhNzA5MjE0MjJkNDk0ZDJmM2FhYjBjYjllZDM3YjU1MTQ2MGJjZGM5NTAyNzQzODgwOTZiYzVmNGEzZGQ3MTIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_a89578c430ed4423b9818143d6e6302a",
+      "statement": "Deep scoring bounds AI concurrency to `scoring.concurrency` clamped to [1,5] (default 3) and adds a single application-level retry with a 2-second backoff on API failure, without retrying JSON parse failures.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/ai/scorer.py#L136-L155",
+          "version": "repo-lines-v1:sha256:f641366432b2e702ee0377bb1b5b73cd7b452b554f72d8f89826cec3e2b5f8ca:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQwNzFlODEzN2M2ZDNmZDI4OWU0MmEwYmJmZGJiMzFhMDM1NGQyZTZlMzg0ODg1ZGVlNDZkMTQ2ZDY2ZmQ0YWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmMzBkYzBlODU4NTk5ZTQ3NWQ5YTE2YTZmMDBmMDI4MTc1MDRmMjEwMjIxOTJmMDg5YmI2Y2NlNDk2NjFhZWUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUxYzQ2NGYwN2ZhMjhmM2RkZmE4YmZlNGEzMTg3ZjhkZWMxMDhhNTIzYTg4MDIxNTA4NDE5OGQyNjYwNTE1MjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ2ZDJjZTk4OGY0OWFjYzY4YTEzMzg0MWRmZjZkZjQ0NDA0ZTFiNDk5YzcwZjZkYmFkODU3NGEwNzMwMzYwMDcifQ"
+        },
+        {
+          "resource": "repo://src/bosshunter/ai/scorer.py#L366-L371",
+          "version": "repo-lines-v1:sha256:b2d10525224423b4dc33d51f37b6fc4aaf71ce1f608974daec546bc94bb4f663:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTAzMzNhOGEzMTllZTg5MDZlNDljYmUyMWJjZDZjNDY4ZWQ1ZGFkOTEzNGJmYjQ0NjU2ZWRkZjU1ZjlkZDYxNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNmQ4MmNlMDUyY2M4MTEwNmNlYjMxZjRmZDVkMzdhMmE0YTEzMTg0ZTRhODNkM2E4NjZhMGU4MDMwMDY3YmUyZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzdmY2NhODIyNjdkYmE1N2VhYmNmNDhmN2NjODQwYWM0MDg4YjI0YWNjZGY3MDQwNGJiODdmNTIxY2JlNDg4NyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjhkM2Y0N2ZiNTZkYjY2MWQyYmU1YmFjMzBlNDlkMDczYmE4MWUzN2QwNzRlMGFmMjc5YTBmYjlhYjg4ZDNjYSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_e538dd418f1145b7b87fb22d64a9c3f9",
+      "statement": "The web dashboard replaces raw `ai.api_key` and `ai.auth_token` with masked display values for `/api/config` and `/api/config/download`, and `_sanitize_config_for_write` preserves existing secrets when a client posts blank or already-masked values.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/web/server.py#L1867-L1923",
+          "version": "repo-lines-v1:sha256:50e2b15fff93b5276c99b3996b96e31d414ea2e6a6a9c23404ff4fecd5e81791:eyJzZWxlY3RlZExpbmVDb3VudCI6NTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI4ZjUxZDNmOTcxNDU3MWI3YjM0NWRhZGI3NGE4NTMyYzIzZjQzZThkZmZlYTY2M2VkYjkxNjJmZTY0ZWZmNjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVhZGZhNGUyMzY0M2M2Njg3OTY4ODc3YmY5MGEzZDFjZDVhMTA1ZmFhODU3ODhjM2YxMjViMGIzMmNkNzQyNWMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU2NTRhNmEwMDJjMDRmNzAxN2M3ZDc4ZDRjOGI0NTFhZTJiYzMxOWFiYWVmOGI2M2UwYjMxMmZlMjY5MjE0NjMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhlMGJhYzFhYTMyZjU3ZjQyMDU4OTY4NDUzYTBhMjc0ZWFjZTZmMTMzN2Q3NTMxMGE5MDY5OTE3YTc5MzQzOWQifQ"
+        },
+        {
+          "resource": "repo://src/bosshunter/web/server.py#L221-L286",
+          "version": "repo-lines-v1:sha256:a9d1f0dce5d439fb39bf30733a4236678aa9504f03b1bcab959d73c6bc05fb86:eyJzZWxlY3RlZExpbmVDb3VudCI6NjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI2MDA1OTU0YjBhYjM4MTU4YmQ2ZGE4ZDBlNjczZDVlM2M1NGNlNDU3MWM4MzBlNzU0NGY4ZWRjYmNlYzJkMGEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMwN2M3Zjg5OGZkN2UxMzUzYzczYTE3MjU5NjNiMWEyYWRiYzY4NDY3NmNmZmFjMDZiYmNkZGNlNDJlNmUyZGMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk4OGVhMjAyYzlmMjhmMmZmNDFhMzc3ZjFhZWIwNjhkNzFmODFkNjM1ODlmMzM3ZGZmNzQ4OWJhM2E5NzNjYzEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImIwMmVkNTYzODI2ZjdmYmIzNGIzMzhlYzIzMTJiYzFjOGVhMjE4NDljYzY1OGIxZjRjNWNiYWUwZWY0MWZhZDEifQ"
+        },
+        {
+          "resource": "repo://tests/test_web_config_api.py#L11-L19",
+          "version": "repo-lines-v1:sha256:9f116497f63797748a4a625a0b73757c195beb79b15c9ba3bd43da751dcb037a:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiY2Q4ZjBjOGIxNTFlOWNjNDdjMjNjZWNjZWRkOWI4NGViMDRiNTcyNzEyZjM0ZThlZWM4YTNhOWIzOGNiNGMxNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTExNjQxZjczMzAwMTM5ODlmNjI0NjYzNjk4NDJjZjg3YTRkNjFhNjMxZjU2OTM0YzkwYjQwN2ZlZWY4YjRmYyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDgzZTlmYmE3ZTMxYzNiYjllZWU1ZWE1ZTk2NjlkNDc0OGRkYzQ0ZGVkZGFmYzZhY2IwYzEwNzZhMDY5YzdkZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDM5MmI2NGFkZTk1ZmJkYTFmMmY1MDJiMjY4MTdkYzdlZDZhZTE5MDEwODIwODZjZTcxNGQ1NTM3MjZiZDNmMCJ9"
+        },
+        {
+          "resource": "repo://tests/test_web_config_api.py#L111-L118",
+          "version": "repo-lines-v1:sha256:aa59ffdcc0edbdb3b76990ceecb9b2a2b8ea10c9af004e7a5d0086b6ca694492:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDIwZjY3YWEyNDIyOGM4NDQ1Y2NhMWIwMmQ3N2MzYTgxOGVhZDljMGU5ZjVhOWU5MjQ0YzRmYjQ4N2ZhMzU3MCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiN2VjNTVlYzE1ZDE2ZjlmNDliMGEwNzU5OGFkYzFlZjJkZmE1MjZiOTIwOGI4YTk4NzEzNjJlOTcyZmJkMWE1MCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzdjODU1MTFmZjQxYzkzMjE3ZGYwZmI0NmM2ZDZmNDAyYWUwZjExYjk0N2M4NWI0NmQxOGFlOWMxMzFjMTg0YiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTY2N2E3YjEyMWEyZWNkMGE5OGRhMWZhMzE1MDkwOTJjYjMzOGMxNDI1Zjk1OTI3YzFjZDIwOWQxNGQ0OGJkZCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_3c681873eb6a4fff9326320b29462b03",
+      "statement": "Credential-layer tests mock `os.environ`, `httpx` request functions, and the `anthropic.Anthropic` client, so no test makes a real provider network call or uses a real credential.",
+      "evidence": [
+        {
+          "resource": "repo://tests/test_ai_credentials.py#L10-L503",
+          "version": "repo-lines-v1:sha256:acfeea721a5a444634136bbaf8919db3471c982e5c16b1b955178cd3d27c12e6:eyJzZWxlY3RlZExpbmVDb3VudCI6NDk0LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI0MjgzOGFhMTczMmYxMDAwODBjNTYyYmQ2Nzg1ZmE4ODU5NDc0OTljYjczZmJmM2MxZDQwODc4Nzk1ZWYwMDJjIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJkZTkzZDg5MzkwNmVlYWYyY2FkY2M2NTU4NTk3YmQ5MzMwZTJlYjY5ZGZiNjBhOWM4MTc1MjE4NTI3ZTcyNjgxIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlMmQ4MGIyNjRmYmE4ZmZjZWEzZTA0ZWM5NTBkNDlkZmJiMmFkNDQyN2FkNjA1M2MxNDg5ZDZjOGQzM2I0NDFhIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MCwiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1In0"
+        }
+      ]
+    },
+    {
+      "id": "claim_8129729df8de4225992e356df3dd0191",
+      "statement": "Streaming request logs emit only non-secret metadata such as model name, attempt number, and emitted/reasoning character counts, never API keys or full request headers.",
+      "evidence": [
+        {
+          "resource": "repo://src/bosshunter/ai/credentials.py#L348-L348",
+          "version": "repo-lines-v1:sha256:30badd89e67323dfc32ef53d2f18e25c730528a472c98903583876994122a2e3:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzBiYWRkODllNjczMjNkZmMzMmVmNTNkMmYxOGUyNWM3MzA1MjhhNDcyYzk4OTAzNTgzODc2OTk0MTIyYTJlMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMzBiYWRkODllNjczMjNkZmMzMmVmNTNkMmYxOGUyNWM3MzA1MjhhNDcyYzk4OTAzNTgzODc2OTk0MTIyYTJlMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTA5NGJlNmRkZGE2ZDFkM2RlOGI5OGJmODM1ZGZhNTBmMDQ5MTM5MTI1MWE2MDVlMWIzYjYyY2UxZmMzMzczOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMjJlZDAzYTU1NGJiNmFmMWVmNzI0MDhhN2MxZGI1ODU3Mzc4ODAzZTI2Mjk1ZmI1YmQ0YzdmNzFkZjg3NmY1OSJ9"
+        },
+        {
+          "resource": "repo://src/bosshunter/ai/credentials.py#L401-L404",
+          "version": "repo-lines-v1:sha256:97e03ccc19a0f1ae65b24a03e4e2839b770cbaee7f1cd715516a26b0f53ea782:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZTA3M2E0YjdjMDU0Y2ZhNTVlOGE1Njc3YTAyNTBkZmZiMTYyYTdmODBhNzM3YjFkNmZlYTQ5NzQ2ZWQwMWY1MSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTRhOTFjN2FkYWQyNjE1YjZiNmFjOWE3NjhhYmMzY2M0YWNjNTM2YWNjNjJmOGY1MDhiNmIwZWFkZjVhMzMyZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYjM5YTdhMTQ5MDE0MjcwODE4MzhjMmJkNWZjODc2ZDRlMmQ2M2Y2MWZhZDVmMzQ5MmY4MmZmN2FmMTllMjNmZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYmRlNTZlNzBmZjQzODU1MzZlNWU3MmIwMjAyODU4MjAxYWU3YTk5YTdjODczY2Q2MTBjZGQ0NTgxOWY5Mzg5OCJ9"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.5.2",
+    "at": "2026-09-16T06:31:53.644Z"
+  }
+}

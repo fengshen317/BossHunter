@@ -298,7 +298,10 @@ class DashboardPageTests(unittest.TestCase):
         self.assertIn("rejectSelectedJobs", self.source)
         self.assertIn("/api/workbench/reject", self.source)
         self.assertIn("放弃已选", self.source)
-        self.assertIn("确定放弃这", self.source)
+        # 放弃是破坏性动作：确认必须走无障碍对话框、说清后果，并使用危险语气。
+        self.assertIn("title: `放弃 ${count} 个岗位`", self.source)
+        self.assertIn("wont: ['不会向 HR 发送任何消息']", self.source)
+        self.assertIn("if (!confirmed) return", self.source)
         self.assertIn("setSelected(prev => prev.filter", self.source)
 
     def test_dashboard_sends_ready_greetings_without_second_confirmation(self):
@@ -429,9 +432,12 @@ class HeaderTests(unittest.TestCase):
         ).read_text(encoding="utf-8")
 
     def test_header_version_metadata_right_side_omits_duplicate_console_label(self):
+        # 状态指示必须由真实探测驱动：写死的绿点会在后端已经挂掉时继续显示正常。
         # Act / Assert
         self.assertNotIn("v2.0 · 本地控制台", self.source)
-        self.assertIn("本地服务运行中", self.source)
+        self.assertIn("useBackendHealth", self.source)
+        self.assertIn("后端在线", self.source)
+        self.assertIn("后端离线", self.source)
 
 
 class ConfigPageTests(unittest.TestCase):
