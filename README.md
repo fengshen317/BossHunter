@@ -147,6 +147,24 @@ chrome.exe --remote-debugging-port=9222
 
 > 更完整的日常操作、停止恢复和排障流程见 [操作手册](docs/操作手册.md)；架构、测试、发布及功能冻结规则见 [技术手册](docs/技术手册.md)。
 
+### Windows + Docker Desktop 一键部署（推荐）
+
+该部署方式目前**仅支持 Windows 10/11 + Docker Desktop**。应用与 PostgreSQL 在 Docker 中运行，Chrome/Edge 仍运行在 Windows 宿主机，因此可以正常扫码、输入验证码并保留登录状态。
+
+1. 安装并启动 Docker Desktop。
+2. 从 Release 下载完整 ZIP 并解压（源码压缩包不包含 Browser Connector EXE）。
+3. 双击 `docker-start.cmd`。
+4. 在自动打开的独立 Chrome/Edge 中登录招聘平台，然后访问 `http://127.0.0.1:8686` 完成配置。
+
+常用入口：
+
+- `docker-start.cmd`：生成本机随机密码和 Token、启动 Browser Connector、PostgreSQL 与应用。
+- `docker-status.cmd`：检查容器及浏览器连接状态。
+- `docker-logs.cmd`：查看应用和数据库日志。
+- `docker-stop.cmd`：停止服务，但保留数据库卷、浏览器和登录 Profile。
+
+> Token 是 Docker 内应用连接 Windows Browser Connector 的随机鉴权凭据，**不是 AI API Key**。真实值保存在 `.env.docker`，不要上传或提交。不要把 8686、3456、9222 端口暴露到公网。
+
 ### 一、安装
 
 ```bash
@@ -284,7 +302,7 @@ bosshunter status --full        # 完整仪表盘
 BossHunter/
 ├── SKILL.md              # Skill 行为定义（Claude Code 加载）
 ├── README.md             # 本文件
-├── LICENSE               # MIT License
+├── LICENSE               # BossHunter NonCommercial License
 ├── config.example.yaml   # 配置模板（脱敏）
 ├── pyproject.toml        # Python 包定义
 ├── .gitignore            # 安全排除规则
@@ -373,4 +391,4 @@ https://github.com/powerycy/BossHunter
 
 ## License
 
-[MIT License](LICENSE)
+[BossHunter NonCommercial License](LICENSE)（`LicenseRef-BossHunter-NonCommercial`）。源码可查看、学习和按许可证用于非商业用途；商业使用需另行获得授权。
