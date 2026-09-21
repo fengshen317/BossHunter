@@ -17,10 +17,8 @@ from bottle import Bottle, ServerAdapter, request, response, static_file, HTTPEr
 
 from bosshunter import __version__
 from bosshunter.config import load_config, CITY_CODES
+from bosshunter.environment import allows_trusted_local_port_publish
 
-# 从 .env 加载的本地环境变量（BOSSHUNTER_AUTH_TOKEN 等）在导入期即可用，
-# 因此这里必须走真实环境，不能复用 _load_web_env 的覆盖逻辑。
-_AUTH_TOKEN = os.environ.get("BOSSHUNTER_AUTH_TOKEN") or ""
 from bosshunter.db import (
 	add_history,
 	count_unresolved_monitor_items,
@@ -41,6 +39,10 @@ from bosshunter.db import (
 	update_job_status,
 )
 from bosshunter.web.tasks import TaskAlreadyRunningError, WorkbenchTask, WorkbenchTaskRunner
+
+# 从 .env 加载的本地环境变量（BOSSHUNTER_AUTH_TOKEN 等）在导入期即可用，
+# 因此这里必须走真实环境，不能复用 _load_web_env 的覆盖逻辑。
+_AUTH_TOKEN = os.environ.get("BOSSHUNTER_AUTH_TOKEN") or ""
 
 app = Bottle()
 task_runner = WorkbenchTaskRunner()
@@ -123,7 +125,7 @@ def _is_loopback_host(host: str) -> bool:
 
 def _host_requires_auth(host: str) -> bool:
 	"""非回环绑定但未配置鉴权 token 时，拒绝提供未授权 Web 服务。"""
-	return not _is_loopback_host(host) and not _AUTH_TOKEN
+	return not _is_loopback_host(host) and not _AUTH_TOKEN and not allows_trusted_local_port_publish()
 
 
 def _unauthorized() -> HTTPError:
@@ -2147,7 +2149,7 @@ class ThreadedWSGIRefServer(ServerAdapter):
 	"""
 
 	def run(self, app):
-		from socket import AF_INET
+		from socket import AF_INET, AF_INET6
 		from socketserver import ThreadingMixIn
 		from wsgiref.simple_server import WSGIRequestHandler, WSGIServer, make_server
 
