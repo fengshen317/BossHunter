@@ -3,7 +3,7 @@
 .idea
 .vscode
 .venv
-__pycache__
+**/__pycache__/
 *.pyc
 *.db
 .env*
@@ -11,8 +11,8 @@ config.yaml
 data
 docker-data
 dist
-node_modules
-.test-tmp
+**/node_modules/
+.test-tmp/
 docs
 tests
 tools

@@ -37,9 +37,10 @@ def test_start_script_checks_docker_then_starts_connector_then_compose() -> None
 
 	docker_check = source.index("docker info")
 	connector_start = source.index('"%CONNECTOR%" start')
+	connector_health = source.index('"%CONNECTOR%" health')
 	compose_start = source.index("docker compose --env-file .env.docker up")
 	health_check = source.index("curl.exe -fsS")
-	assert docker_check < connector_start < compose_start < health_check
+	assert docker_check < connector_start < connector_health < compose_start < health_check
 	assert "taskkill" not in source.lower()
 
 

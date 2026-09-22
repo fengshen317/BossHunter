@@ -3,11 +3,19 @@
 from __future__ import annotations
 
 import os
+import socket
 import subprocess
 from pathlib import Path
 
 
 CONNECTOR = Path(__file__).parents[1] / "src" / "bosshunter" / "browser" / "runtime" / "browser-connector.mjs"
+
+
+def free_port() -> int:
+	"""分配一个不会与本机 Connector 冲突的测试端口。"""
+	with socket.socket() as sock:
+		sock.bind(("127.0.0.1", 0))
+		return int(sock.getsockname()[1])
 
 
 def run_connector(tmp_path: Path, command: str, *args: str) -> subprocess.CompletedProcess[str]:
@@ -51,7 +59,9 @@ def test_init_does_not_overwrite_existing_credentials(tmp_path: Path) -> None:
 
 def test_start_reports_missing_browser_without_leaking_token(tmp_path: Path) -> None:
 	(tmp_path / ".env.docker").write_text(
-		"POSTGRES_PASSWORD=test\nBOSSHUNTER_BROWSER_PROXY_TOKEN=top-secret-token\n",
+		"POSTGRES_PASSWORD=test\n"
+		"BOSSHUNTER_BROWSER_PROXY_TOKEN=top-secret-token\n"
+		f"BOSSHUNTER_BROWSER_PROXY_PORT={free_port()}\n",
 		encoding="utf-8",
 	)
 
@@ -67,5 +77,6 @@ def test_connector_source_uses_isolated_profile_and_does_not_kill_port_owner() -
 
 	assert "path.join(dataDir, 'browser-profile')" in source
 	assert "端口 ${proxyPort} 已被占用，不会结束现有进程" in source
+	assert "已被其他程序占用，但不是可用的浏览器 CDP" in source
 	assert "browser.unref()" in source
 	assert "process.kill(pid)" in source

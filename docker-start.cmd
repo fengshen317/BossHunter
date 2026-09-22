@@ -24,7 +24,15 @@ if not exist ".env.docker" "%CONNECTOR%" init
 if errorlevel 1 exit /b 1
 
 start "BossHunter Browser Connector" /min "%CONNECTOR%" start
-timeout /t 2 /nobreak >nul
+for /l %%I in (1,1,30) do (
+  timeout /t 1 /nobreak >nul
+  "%CONNECTOR%" health >nul 2>nul && goto connector_ready
+)
+echo [BossHunter] Browser Connector 未就绪。
+echo 如 9222 端口被占用，请在 .env.docker 中设置 BOSSHUNTER_CHROME_PORT=9333 后重试。
+exit /b 1
+
+:connector_ready
 
 docker compose --env-file .env.docker up -d --build
 if errorlevel 1 (

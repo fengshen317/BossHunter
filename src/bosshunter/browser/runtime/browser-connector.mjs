@@ -100,7 +100,12 @@ async function startConnector(args) {
   const browserPath = browserCandidates(explicitPath).find((candidate) => candidate && fs.existsSync(candidate));
   if (!browserPath) throw new Error('未找到 Chrome 或 Edge；可使用 --browser-path 指定浏览器路径。');
 
-  if (await portAvailable(chromePort)) {
+  const existingCdp = await requestJson(`http://127.0.0.1:${chromePort}/json/version`);
+  const cdpReady = existingCdp?.statusCode === 200 && existingCdp.body?.webSocketDebuggerUrl;
+  if (!cdpReady) {
+    if (!(await portAvailable(chromePort))) {
+      throw new Error(`端口 ${chromePort} 已被其他程序占用，但不是可用的浏览器 CDP；不会结束现有进程。`);
+    }
     fs.mkdirSync(profileDir, { recursive: true });
     const browser = spawn(browserPath, [
       `--remote-debugging-port=${chromePort}`,
@@ -111,7 +116,9 @@ async function startConnector(args) {
     ], { detached: true, stdio: 'ignore' });
     browser.unref();
   }
-  if (!(await waitForCdp(chromePort))) throw new Error(`浏览器 CDP 端口 ${chromePort} 未就绪。`);
+  if (!cdpReady && !(await waitForCdp(chromePort, 30000))) {
+    throw new Error(`浏览器 CDP 端口 ${chromePort} 未在 30 秒内就绪。`);
+  }
 
   fs.mkdirSync(dataDir, { recursive: true });
   fs.writeFileSync(pidFile, String(process.pid), 'utf8');
