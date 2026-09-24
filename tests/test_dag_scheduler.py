@@ -5,10 +5,12 @@ import json
 from pathlib import Path
 from unittest.mock import patch
 
+import pytest
 import yaml
 
 from bosshunter.assistant.dag_scheduler import DagScheduler, DagStep
 from bosshunter.assistant.service import AssistantService
+from conftest import local_runtime_store
 
 
 def _step(step_id: str, dependencies: list[str] | None = None, **overrides: object) -> DagStep:
@@ -130,14 +132,23 @@ def test_scheduler_enforces_step_timeout() -> None:
 	assert result["steps"]["slow"]["error"] == "步骤执行超时"
 
 
-def test_langgraph_executes_multi_company_plan_through_generic_dag(tmp_path: Path) -> None:
+@pytest.fixture
+def base_dir(tmp_path: Path):
+	"""带最小配置的运行目录 + 纯本地依赖（不依赖 PostgreSQL）。"""
+	(tmp_path / "config.yaml").write_text(
+		yaml.safe_dump(
+			{"profile": {"resume_path": "./resume.md"}, "ai": {"provider": "anthropic", "model": "test-model", "api_key": "test"}},
+			allow_unicode=True,
+		),
+		encoding="utf-8",
+	)
+	(tmp_path / "resume.md").write_text("# 项目经历\n使用 LangGraph 开发求职 Agent。", encoding="utf-8")
+	with local_runtime_store(tmp_path):
+		yield tmp_path
+
+
+def test_langgraph_executes_multi_company_plan_through_generic_dag(base_dir: Path) -> None:
 	"""复杂公司研究应经过通用 DAG，而不是专用串行 ReAct 分支。"""
-	config = {
-		"profile": {"resume_path": "./resume.md"},
-		"ai": {"provider": "anthropic", "model": "test-model", "api_key": "test"},
-	}
-	(tmp_path / "config.yaml").write_text(yaml.safe_dump(config, allow_unicode=True), encoding="utf-8")
-	(tmp_path / "resume.md").write_text("# 简历", encoding="utf-8")
 	intent_json = json.dumps(
 		{
 			"goal": "对比甲公司和乙公司",
@@ -164,7 +175,7 @@ def test_langgraph_executes_multi_company_plan_through_generic_dag(tmp_path: Pat
 		running -= 1
 		return [{"company": companies[0], "topics": []}]
 
-	service = AssistantService(tmp_path, tmp_path / "config.yaml")
+	service = AssistantService(base_dir, base_dir / "config.yaml")
 	conversation_id = service.ensure_conversation()
 	try:
 		with (

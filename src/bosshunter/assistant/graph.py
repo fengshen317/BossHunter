@@ -21,6 +21,7 @@ from langgraph.graph import END, START, StateGraph
 from langgraph.types import Command, interrupt
 
 from bosshunter.ai.credentials import call_ai_with_tools, call_anthropic_text, stream_ai_text
+from bosshunter.config import load_config
 from bosshunter.db import get_business_db
 from bosshunter.assistant.capabilities import CAPABILITY_REGISTRY, complete_missing_fields, match_capabilities
 from bosshunter.assistant.answer_context import compact_answer_inputs, compact_job_context
@@ -738,6 +739,28 @@ def _extract_explicit_memory(text: str) -> str:
 	"""只提取用户明确要求保存的记忆，避免把模型推断当事实。"""
 	match = re.search(r"(?:请)?记住[：:，,\s]*(.+)", text, re.DOTALL)
 	return match.group(1).strip()[:1000] if match else ""
+
+
+async def create_checkpointer(config_path: Path) -> tuple[AsyncConnection[Any], AsyncPostgresSaver]:
+	"""在目标事件循环内部创建 PostgreSQL checkpoint 保存器。
+
+	生产环境强制要求 PostgreSQL：SQLite/内存 checkpoint 无法在重启后恢复
+	人工确认会话，静默降级会让"等待审批"的任务凭空消失。
+
+	测试直接 patch 本函数注入 ``InMemorySaver``，而不是放宽这条约束。
+	"""
+	database_url = str(load_config(config_path).get("database", {}).get("url") or "").strip()
+	if not database_url.startswith(("postgresql://", "postgresql+psycopg://")):
+		raise RuntimeError("LangGraph checkpoint 要求配置 PostgreSQL database.url")
+	connection = await AsyncConnection.connect(
+		database_url.replace("postgresql+psycopg://", "postgresql://"),
+		autocommit=True,
+		prepare_threshold=0,
+		row_factory=dict_row,
+	)
+	checkpointer = AsyncPostgresSaver(connection)
+	await checkpointer.setup()
+	return connection, checkpointer
 
 
 def build_assistant_graph(
@@ -2022,22 +2045,7 @@ def build_assistant_graph(
 	if event_loop is None:
 		raise ValueError("异步助手图需要持久事件循环")
 
-	async def create_checkpointer() -> tuple[AsyncConnection[Any], AsyncPostgresSaver]:
-		"""在目标事件循环内部创建 PostgreSQL checkpoint 保存器。"""
-		database_url = str(load_config(config_path).get("database", {}).get("url") or "").strip()
-		if not database_url.startswith(("postgresql://", "postgresql+psycopg://")):
-			raise RuntimeError("LangGraph checkpoint 要求配置 PostgreSQL database.url")
-		connection = await AsyncConnection.connect(
-			database_url.replace("postgresql+psycopg://", "postgresql://"),
-			autocommit=True,
-			prepare_threshold=0,
-			row_factory=dict_row,
-		)
-		checkpointer = AsyncPostgresSaver(connection)
-		await checkpointer.setup()
-		return connection, checkpointer
-
-	checkpoint_connection, checkpointer = event_loop.run_until_complete(create_checkpointer())
+	checkpoint_connection, checkpointer = event_loop.run_until_complete(create_checkpointer(config_path))
 	return builder.compile(checkpointer=checkpointer), checkpoint_connection
 
 

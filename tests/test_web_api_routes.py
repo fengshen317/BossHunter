@@ -22,6 +22,7 @@ from bosshunter.web import server
 from threading import Event
 
 from bosshunter.web.tasks import TaskAlreadyRunningError, WorkbenchTask, WorkbenchTaskRunner
+from conftest import web_db_from_base_dir
 
 
 def _poll_task_status(runner: WorkbenchTaskRunner, task_id: str, want: str, timeout: float = 1.5) -> dict | None:
@@ -33,6 +34,16 @@ def _poll_task_status(runner: WorkbenchTaskRunner, task_id: str, want: str, time
                 return task
         time.sleep(0.02)
     return None
+
+
+def _noop_score(task, config):
+    """替换全流程内置的 AI 评分。
+
+    _execute_full 是 采集 → 评分 → 确认 → 投递 → 监测；这些用例只关心确认之后的
+    编排，评分必须被替换掉，否则会真的调用评分器并写共享数据库。
+    """
+    task.context["scored"] = 0
+    task.context["filtered"] = 0
 
 
 def _job(job_id: str) -> dict:
@@ -57,9 +68,12 @@ class WebApiRouteTests(unittest.TestCase):
     def setUp(self):
         # Arrange
         self.original_base_dir = server.BASE_DIR
+        self._web_db_patcher = patch.object(server, "_get_web_db", side_effect=web_db_from_base_dir)
+        self._web_db_patcher.start()
 
     def tearDown(self):
         # Cleanup
+        self._web_db_patcher.stop()
         server.set_base_dir(self.original_base_dir)
 
     def _request(self, path: str, method: str = "GET"):
@@ -94,6 +108,16 @@ class WebApiRouteTests(unittest.TestCase):
             for chunk in server.app(environ, start_response)
         ).decode("utf-8")
         return status_headers["status"], status_headers["headers"], body
+
+    def test_config_cities_api_returns_complete_city_mapping(self):
+        """城市选择器接口应返回完整码表，供前端动态生成多选项。"""
+        status, headers, body = self._request("/api/config/cities")
+
+        payload = json.loads(body)
+        self.assertTrue(status.startswith("200"))
+        self.assertIn("application/json", headers["Content-Type"])
+        self.assertGreaterEqual(len(payload), 300)
+        self.assertEqual(payload["齐齐哈尔"], "101050200")
 
     def test_web_api_missing_api_route_returns_json_404_not_spa_html(self):
         # Arrange
@@ -210,7 +234,10 @@ class WebApiRouteTests(unittest.TestCase):
     def test_web_api_activity_returns_json_without_runtime_name_error(self):
         # Arrange
         with tempfile.TemporaryDirectory() as tmp:
-            server.set_base_dir(Path(tmp))
+            base_dir = Path(tmp)
+            # 显式准备空业务库：接口会经 _get_web_db 读 BASE_DIR 下的这个文件。
+            get_db(base_dir / "data" / "bosshunter.db").close()
+            server.set_base_dir(base_dir)
 
             # Act
             status, headers, body = self._request("/api/activity?days=7")
@@ -283,7 +310,8 @@ class WebApiRouteTests(unittest.TestCase):
                 db.close()
             server.set_base_dir(base_dir)
 
-            with patch.object(server, "_execute_collect", side_effect=fake_collect):
+            with patch.object(server, "_execute_collect", side_effect=fake_collect), \
+                 patch.object(server, "_execute_score", side_effect=_noop_score):
                 task = runner.start("full", {})
                 for _ in range(20):
                     status = runner.status()
@@ -469,24 +497,36 @@ class WebApiRouteTests(unittest.TestCase):
         def fake_collect(task, config):
             calls.append("collect")
 
+        def fake_score(task, config):
+            calls.append("score")
+            _noop_score(task, config)
+
         runner = WorkbenchTaskRunner()
         runner._executors["full"] = lambda task, config: server._execute_full(task, config)
 
         # Act
         with tempfile.TemporaryDirectory() as tmp:
-            server.set_base_dir(Path(tmp))
-            with patch.object(server, "_execute_collect", side_effect=fake_collect):
+            base_dir = Path(tmp)
+            # 准备一个没有任何岗位的空业务库，模拟"本轮没有岗位待确认"。
+            get_db(base_dir / "data" / "bosshunter.db").close()
+            server.set_base_dir(base_dir)
+            with patch.object(server, "_execute_collect", side_effect=fake_collect), \
+                 patch.object(server, "_execute_score", side_effect=fake_score):
                 task = runner.start("full", {})
                 runner.wait(timeout=1)
                 status = runner.status()
                 last_task = status["last_task"]
 
         # Assert
-        self.assertEqual(calls, ["collect"])
+        self.assertEqual(calls, ["collect", "score"])
         self.assertIsNone(status["active"])
         self.assertEqual(last_task["id"], task["id"])
         self.assertEqual(last_task["status"], "completed")
-        self.assertIn("没有待确认岗位，流程结束", last_task["logs"])
+        # 结束语会带上本轮评分的通过/过滤数，这里按子串匹配以免被后缀影响。
+        self.assertTrue(
+            any("没有待确认岗位，流程结束" in log for log in last_task["logs"]),
+            last_task["logs"],
+        )
 
     def test_web_api_deliver_hands_selected_jobs_to_waiting_full_task(self):
         # Arrange
@@ -622,6 +662,10 @@ class WebApiRouteTests(unittest.TestCase):
         def fake_monitor(task, config):
             calls.append("monitor")
 
+        def fake_score(task, config):
+            calls.append("score")
+            _noop_score(task, config)
+
         runner = WorkbenchTaskRunner()
         runner._executors["full"] = lambda task, config: server._execute_full(task, config)
 
@@ -638,6 +682,7 @@ class WebApiRouteTests(unittest.TestCase):
             server.set_base_dir(base_dir)
 
             with patch.object(server, "_execute_collect", side_effect=fake_collect), \
+                 patch.object(server, "_execute_score", side_effect=fake_score), \
                  patch.object(server, "_execute_deliver", side_effect=fake_deliver), \
                  patch.object(server, "_execute_monitor", side_effect=fake_monitor):
                 task = runner.start("full", {})
@@ -652,7 +697,7 @@ class WebApiRouteTests(unittest.TestCase):
                 runner.wait(timeout=1)
 
         # Assert
-        self.assertEqual(calls, ["collect", ("deliver", ["ready-a", "ready-b"]), "monitor"])
+        self.assertEqual(calls, ["collect", "score", ("deliver", ["ready-a", "ready-b"]), "monitor"])
 
     def test_web_api_workbench_reject_marks_selected_ready_jobs_rejected(self):
         # Arrange

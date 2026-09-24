@@ -144,7 +144,9 @@ class GenerateGreetingsDbIntegrationTests(unittest.TestCase):
     def setUp(self):
         self._tmp = tempfile.TemporaryDirectory()
         self.db_path = Path(self._tmp.name) / "test.db"
-        # 用 monkeypatch 把 db.DB_PATH 指向临时库，保证 get_db() 走测试库。
+        # patch 消费方模块里的 get_db，让 greeter 的并发写库落到临时库。
+        # 注意不能 patch bosshunter.db.DB_PATH：无参 get_db() 迁移到 PostgreSQL 后
+        # 走配置里的 database.url，已经不看 DB_PATH 了。
         self._patcher = mock.patch.object(greeter, "get_db", lambda: get_db(self.db_path))
         self._patcher.start()
         db = get_db(self.db_path)

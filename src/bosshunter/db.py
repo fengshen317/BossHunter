@@ -210,7 +210,8 @@ def _init_tables(conn: sqlite3.Connection) -> None:
             created_at TEXT NOT NULL,
             updated_at TEXT NOT NULL,
             deadline_at TEXT,
-            stop_reason TEXT
+            stop_reason TEXT,
+            stage TEXT
         );
 
         CREATE INDEX IF NOT EXISTS idx_jobs_status ON jobs(status);
@@ -278,6 +279,19 @@ def _init_tables(conn: sqlite3.Connection) -> None:
     """)
     conn.commit()
     _migrate_v1_1(conn)
+    _migrate_workbench_stage(conn)
+
+
+def _migrate_workbench_stage(conn: sqlite3.Connection) -> None:
+    """为 workbench_tasks 补 stage 列。
+
+    stage 由后端在执行器推进阶段时显式写入，前端据此渲染流程进度，
+    不再靠匹配日志文案（文案一改进度条就失效）。
+    """
+    cols = {row[1] for row in conn.execute("PRAGMA table_info(workbench_tasks)").fetchall()}
+    if "stage" not in cols:
+        conn.execute("ALTER TABLE workbench_tasks ADD COLUMN stage TEXT DEFAULT NULL")
+    conn.commit()
 
 
 def job_exists(conn: sqlite3.Connection, job_id: str) -> bool:

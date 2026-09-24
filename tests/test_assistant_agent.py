@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from unittest.mock import patch
 
+import pytest
 import yaml
 
 from bosshunter.assistant.repository import (
@@ -25,6 +26,19 @@ from bosshunter.assistant.graph import (
 )
 from bosshunter.assistant.service import AssistantService
 from bosshunter.db import get_db, insert_job
+from conftest import local_runtime_store, web_db_from_base_dir
+
+
+@pytest.fixture
+def base_dir(tmp_path: Path):
+	"""助手用例的运行目录：临时 SQLite + 内存 checkpoint，全程不碰 PostgreSQL。
+
+	用 fixture 而不是装饰器，是为了让补丁覆盖整个测试体（含 send_message
+	期间的业务库访问），同时保持测试函数签名不变。
+	"""
+	directory = _prepare_base_dir(tmp_path)
+	with local_runtime_store(directory):
+		yield directory
 
 
 def _prepare_base_dir(tmp_path: Path) -> Path:
@@ -115,9 +129,8 @@ def test_casual_greeting_has_local_fast_answer() -> None:
 	assert _direct_smalltalk_answer("分析我的岗位") == ""
 
 
-def test_assistant_persists_multi_turn_messages_and_explicit_memory(tmp_path: Path) -> None:
+def test_assistant_persists_multi_turn_messages_and_explicit_memory(base_dir: Path) -> None:
 	"""多轮消息和用户明确记忆应分别持久化。"""
-	base_dir = _prepare_base_dir(tmp_path)
 	service = AssistantService(base_dir, base_dir / "config.yaml")
 	conversation_id = service.ensure_conversation()
 	try:
@@ -148,9 +161,8 @@ def test_assistant_persists_multi_turn_messages_and_explicit_memory(tmp_path: Pa
 		service.close()
 
 
-def test_readonly_job_query_runs_through_react_observation_loop(tmp_path: Path) -> None:
+def test_readonly_job_query_runs_through_react_observation_loop(base_dir: Path) -> None:
 	"""只读岗位查询应执行 ReAct 工具观察，并在获得结果后停止循环。"""
-	base_dir = _prepare_base_dir(tmp_path)
 	service = AssistantService(base_dir, base_dir / "config.yaml")
 	conversation_id = service.ensure_conversation()
 	execution_events: list[dict[str, str]] = []
@@ -200,9 +212,8 @@ def test_readonly_job_query_runs_through_react_observation_loop(tmp_path: Path) 
 		service.close()
 
 
-def test_hr_reply_uses_langgraph_interrupt_and_resume(tmp_path: Path) -> None:
+def test_hr_reply_uses_langgraph_interrupt_and_resume(base_dir: Path) -> None:
 	"""HR 回复草稿必须暂停，只有结构化确认后才能恢复。"""
-	base_dir = _prepare_base_dir(tmp_path)
 	service = AssistantService(base_dir, base_dir / "config.yaml")
 	conversation_id = service.ensure_conversation()
 	try:
@@ -394,7 +405,10 @@ def test_confirmed_job_details_are_promoted_and_scoring_starts(tmp_path: Path) -
 		db.close()
 	server.set_base_dir(base_dir)
 	try:
-		with patch.object(server.task_runner, "start", return_value={"id": "task-1", "mode": "score"}) as start:
+		with (
+			patch.object(server, "_get_web_db", side_effect=web_db_from_base_dir),
+			patch.object(server.task_runner, "start", return_value={"id": "task-1", "mode": "score"}) as start,
+		):
 			result = server._start_assistant_action(
 				{
 					"type": "complete_job_details",

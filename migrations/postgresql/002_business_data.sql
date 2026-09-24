@@ -21,7 +21,7 @@ CREATE TABLE IF NOT EXISTS risk_events (
 CREATE TABLE IF NOT EXISTS workbench_tasks (
     id TEXT PRIMARY KEY, mode TEXT NOT NULL, label TEXT NOT NULL, status TEXT NOT NULL,
     logs TEXT NOT NULL DEFAULT '[]', error TEXT, created_at TEXT NOT NULL, updated_at TEXT NOT NULL,
-    deadline_at TEXT, stop_reason TEXT
+    deadline_at TEXT, stop_reason TEXT, stage TEXT
 );
 
 CREATE TABLE IF NOT EXISTS assistant_conversations (

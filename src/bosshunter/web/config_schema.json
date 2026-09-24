@@ -10,7 +10,10 @@
         {"key": "salary_min", "label": "最低薪资 (K)", "type": "number", "min": 0, "max": 200, "default": 0},
         {"key": "salary_max", "label": "最高薪资 (K)", "type": "number", "min": 0, "max": 200, "default": 0},
         {"key": "deal_breakers", "label": "排除关键词", "type": "tags", "description": "含这些词的岗位自动跳过"},
-        {"key": "allow_internship", "label": "接受实习/管培岗位", "type": "switch", "default": false, "description": "关闭时自动过滤实习、intern、管培岗位"}
+        {"key": "allow_internship", "label": "接受实习/管培岗位", "type": "switch", "default": false, "description": "关闭时自动过滤实习、intern、管培岗位"},
+        {"key": "blocked_companies", "label": "外包公司黑名单", "type": "tags", "description": "按公司名子串匹配（忽略大小写），命中即淘汰。填短前缀即可——BOSS 常把公司名截断成「万宝盛华企业管理...」"},
+        {"key": "whitelist_companies", "label": "公司白名单", "type": "tags", "description": "命中的岗位跳过全部自动过滤（外包过滤、实习/薪资/注册资本预筛、AI 评分阈值），一律进入「待人工确认」。与黑名单冲突时白名单优先"},
+        {"key": "filter_agency_jobs", "label": "过滤 JD 自曝的外包岗", "type": "switch", "default": true, "description": "扫描 JD 里的「外包项目 / 人力外派 / 长期驻场 / 外派驻场」等特征，命中即淘汰；会剔除「非外包」这类否定语境，不误伤自研公司"}
       ]
     },
     {

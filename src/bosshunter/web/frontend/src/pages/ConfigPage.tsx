@@ -4,15 +4,10 @@ import { Input } from '@/components/ui/input'
 import { Switch } from '@/components/ui/switch'
 import { Slider } from '@/components/ui/slider'
 import { TagsInput } from '@/components/ui/tags-input'
+import { CityMultiSelect } from '@/components/ui/city-multi-select'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Save, RotateCcw, Upload, Trash2, ChevronDown, ChevronRight, Clock3, Plus, RefreshCw } from 'lucide-react'
 import { useState, useEffect } from 'react'
-
-const CITIES = [
-	'北京', '上海', '深圳', '广州', '杭州', '成都', '武汉', '南京',
-	'西安', '苏州', '天津', '重庆', '郑州', '长沙', '东莞', '佛山',
-	'合肥', '厦门', '青岛', '大连'
-]
 
 export default function ConfigPage() {
 	const { config, schema, loading, saving, dirty, error, message, updateConfig, saveConfig, resetConfig } = useConfig()
@@ -159,9 +154,19 @@ export default function ConfigPage() {
 							<ConfigNumberInput value={config.profile?.salary_max} defaultValue={0} onChange={value => updateConfig('profile.salary_max', value)} min={0} max={200} />
 						</Field>
 					</div>
-					<Field label="排除关键词">
-						<TagsInput value={config.profile?.deal_breakers || []} onChange={v => updateConfig('profile.deal_breakers', v)} placeholder="如：外包、996" />
+					<Field label="排除关键词" hint="只匹配岗位名称，不搜 JD 正文">
+						<TagsInput value={config.profile?.deal_breakers || []} onChange={v => updateConfig('profile.deal_breakers', v)} placeholder="如：996、夜班" />
 					</Field>
+					<Field label="外包公司黑名单" hint="按公司名子串匹配（忽略大小写），命中即淘汰。填短前缀即可——BOSS 常把公司名截断成「万宝盛华企业管理...」">
+						<TagsInput value={config.profile?.blocked_companies || []} onChange={v => updateConfig('profile.blocked_companies', v)} placeholder="如：中软国际、外企德科" />
+					</Field>
+					<Field label="公司白名单" hint="命中的岗位跳过全部自动过滤（外包过滤、实习/薪资/注册资本预筛、AI 评分阈值），一律进入「待人工确认」。与黑名单冲突时白名单优先">
+						<TagsInput value={config.profile?.whitelist_companies || []} onChange={v => updateConfig('profile.whitelist_companies', v)} placeholder="如：华为" />
+					</Field>
+					<div className="flex items-center justify-between">
+						<label className="text-xs text-text-tertiary">过滤 JD 自曝的外包岗</label>
+						<Switch checked={config.profile?.filter_agency_jobs ?? true} onChange={v => updateConfig('profile.filter_agency_jobs', v)} />
+					</div>
 					<div className="flex items-center justify-between">
 						<label className="text-xs text-text-tertiary">接受实习/管培岗位</label>
 						<Switch checked={config.profile?.allow_internship ?? false} onChange={v => updateConfig('profile.allow_internship', v)} />
@@ -233,26 +238,14 @@ export default function ConfigPage() {
 						<TagsInput value={config.search?.keywords || []} onChange={v => updateConfig('search.keywords', v)} />
 					</Field>
 					<Field label="城市">
-						<div className="flex flex-wrap gap-2">
-							{CITIES.map(city => {
-								const cities = (config.search?.cities?.length ? config.search.cities : config.profile?.target_cities) || []
-								const selected = cities.includes(city)
-								return (
-									<button
-										key={city}
-										type="button"
-										onClick={() => {
-											const newCities = selected ? cities.filter((c: string) => c !== city) : [...cities, city]
-											updateConfig('search.cities', newCities)
-											updateConfig('profile.target_cities', newCities)
-										}}
-										className={`px-2.5 py-1 text-xs rounded-lg border transition-all ${selected ? 'border-primary/40 bg-primary/10 text-primary' : 'border-card-border bg-surface-raised text-text-tertiary hover:border-primary/20 hover:text-foreground'}`}
-									>
-										{city}
-									</button>
-								)
-							})}
-						</div>
+						<CityMultiSelect
+							value={(config.search?.cities?.length ? config.search.cities : config.profile?.target_cities) || []}
+							onChange={cities => {
+								updateConfig('search.cities', cities)
+								updateConfig('profile.target_cities', cities)
+							}}
+						/>
+						<p className="mt-1.5 text-xs text-text-tertiary">支持搜索和多选，采集时会依次组合城市与岗位关键词。</p>
 					</Field>
 					<Field label="每关键词翻页数">
 						<ConfigNumberInput value={config.search?.max_pages} defaultValue={3} onChange={value => updateConfig('search.max_pages', value)} min={1} max={10} />
@@ -412,11 +405,12 @@ function SectionCard({ title, sectionKey, expanded, toggle, children }: {
 	)
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function Field({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
 	return (
 		<div>
 			<label className="block text-xs text-text-tertiary mb-1.5">{label}</label>
 			{children}
+			{hint && <p className="mt-1.5 text-xs leading-5 text-text-tertiary">{hint}</p>}
 		</div>
 	)
 }

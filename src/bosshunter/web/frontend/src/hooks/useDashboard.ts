@@ -55,6 +55,9 @@ interface JobsPage {
 	missing_company_info_count: number
 }
 
+/** 流程阶段 key，与后端 bosshunter.web.tasks.PIPELINE_STAGE_KEYS 保持一致。 */
+export type PipelineStage = 'collect' | 'score' | 'confirm' | 'greet' | 'send'
+
 interface WorkbenchTask {
   id: string
   mode: 'full' | 'collect' | 'score' | 'reenrich' | 'greeting' | 'monitor' | 'deliver' | 'reply' | 'import'
@@ -64,6 +67,8 @@ interface WorkbenchTask {
   error?: string
   deadline_at?: string
   stop_reason?: string
+  /** 当前所处流程阶段，由后端显式下发；null 表示尚未进入已知阶段。 */
+  stage?: PipelineStage | null
   stop_requested: boolean
 }
 

@@ -10,9 +10,20 @@ profile:
   target_cities: ["北京"]
   salary_min: 15  # K
   salary_max: 25  # K
+  # 排除关键词：匹配"岗位名称"（不是 JD 正文），如 ["996", "夜班"]
+  deal_breakers: ["996"]
   allow_internship: false
-  deal_breakers: ["外包", "996"]
-  allow_internship: false
+  # 公司白名单：按子串匹配公司名（忽略大小写）。命中的岗位跳过全部自动过滤
+  # （外包过滤、实习/薪资/注册资本预筛、AI 评分阈值），一律进入「待人工确认」。
+  # 与 blocked_companies 互为反面，两者都命中时白名单优先。
+  whitelist_companies: []
+  # 外包/人力/猎头公司黑名单：按子串匹配公司名（忽略大小写），命中即淘汰。
+  # 用来兜住 JD 写得跟甲方一样、靠关键词抓不到的外包公司（如中软国际、外企德科）。
+  # BOSS 常把公司名截断成"万宝盛华企业管理..."，用短前缀比写全名更可靠。
+  blocked_companies: []
+  # JD 扫描：命中「外包项目 / 人力外派 / 长期驻场 / 外派驻场」等特征即淘汰。
+  # 只匹配高精度短语并剔除"非外包"这类否定语境，不会误伤自研公司。
+  filter_agency_jobs: true
   # 可选：个人亮点（用于招呼语生成）
   extra_highlights:
     - "你的核心竞争力描述"

@@ -2,7 +2,12 @@
 
 import re
 
-from bosshunter.job_filters import is_agency_company, matching_deal_breaker, parse_registered_capital_wan
+from bosshunter.job_filters import (
+    is_agency_job,
+    is_whitelisted_company,
+    matching_deal_breaker,
+    parse_registered_capital_wan,
+)
 
 
 _INTERNSHIP_KEYWORDS = ("实习", "intern", "internship", "管培")
@@ -14,14 +19,21 @@ def quick_score(job: dict, config: dict) -> tuple[int, str]:
     deal_breakers = profile.get("deal_breakers", [])
     title = job.get("title") or ""
 
+    # 白名单公司跳过全部自动预筛（外包过滤、实习、薪资、注册资本、一票否决词），
+    # 直接进入待人工确认由用户判断。放在最前面：用户显式说"要"优先于所有关键词推断。
+    if is_whitelisted_company(job.get("company"), config):
+        return 100, "白名单公司（跳过预筛）"
+
     breaker = matching_deal_breaker(title, deal_breakers)
     if breaker:
         return 0, f"触发排除词: {breaker}"
 
-    # 代招/猎头/外包：公司名模糊（"某大型XX公司"）或直接命名为人力/咨询类。
-    # 采集阶段可能因公司名缺失漏掉，评分时用补全后的 company 再拦一道。
-    if is_agency_company(job.get("company") or ""):
-        return 0, "代招/猎头公司"
+    # 代招/猎头/外包：公司黑名单、模糊占位公司名（"某大型XX公司"），
+    # 以及 JD 自曝外包/驻场的岗位。采集阶段只有列表卡片、拿不到 JD，
+    # 这里在详情页补全后再拦一道。
+    agency_reason = is_agency_job(job, config)
+    if agency_reason:
+        return 0, agency_reason
 
     if not profile.get("allow_internship", False) and _contains_internship_signal(job):
         return 0, "实习/管培岗位"

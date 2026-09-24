@@ -76,7 +76,9 @@ class AssistantService:
 
 	def close(self) -> None:
 		"""关闭 checkpoint 连接。"""
-		self._event_loop.run_until_complete(self._checkpoint_connection.close())
+		# 注入内存 checkpoint 时（测试）没有真实连接需要关闭。
+		if self._checkpoint_connection is not None:
+			self._event_loop.run_until_complete(self._checkpoint_connection.close())
 		self._event_loop.close()
 
 	def _business_db(self) -> Any:
