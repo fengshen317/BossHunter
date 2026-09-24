@@ -37,4 +37,20 @@ def load_local_environment(path: Path | None = None) -> None:
 		os.environ.setdefault(key, value)
 
 
-__all__ = ["load_local_environment"]
+def _is_truthy(value: str | None) -> bool:
+	"""判断环境变量是否使用明确的真值写法。"""
+	return str(value or "").strip().lower() in {"1", "true", "yes"}
+
+
+def allows_trusted_local_port_publish() -> bool:
+	"""判断是否允许容器通过宿主机回环映射提供未鉴权 Web界面。
+
+	该开关只解决容器内必须绑定 ``0.0.0.0`` 的技术限制。调用方仍必须将
+	宿主机端口限制为 ``127.0.0.1``；普通主机进程不能使用该开关绕过鉴权。
+	"""
+	return _is_truthy(os.getenv("BOSSHUNTER_CONTAINER")) and _is_truthy(
+		os.getenv("BOSSHUNTER_TRUST_LOCAL_PORT_PUBLISH")
+	)
+
+
+__all__ = ["allows_trusted_local_port_publish", "load_local_environment"]

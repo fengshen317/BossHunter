@@ -37,3 +37,25 @@ def test_business_db_prefers_configured_postgresql(
 
 	assert connection is expected_connection
 	assert captured_urls == ["postgresql://user:pass@localhost/bosshunter"]
+
+
+def test_business_db_prefers_environment_database_url(
+	tmp_path: Path,
+	monkeypatch: pytest.MonkeyPatch,
+) -> None:
+	"""Docker 数据库 URL 应覆盖配置文件中的连接地址。"""
+	config_path = tmp_path / "config.yaml"
+	config_path.write_text("database:\n  url: postgresql://file-value\n", encoding="utf-8")
+	monkeypatch.setenv("BOSSHUNTER_DATABASE_URL", "postgresql://docker-value")
+	captured_urls: list[str] = []
+
+	def fake_postgres_connection(url: str) -> object:
+		"""记录最终连接 URL。"""
+		captured_urls.append(url)
+		return object()
+
+	monkeypatch.setattr("bosshunter.db.PostgresConnection", fake_postgres_connection)
+
+	get_business_db(config_path)
+
+	assert captured_urls == ["postgresql://docker-value"]

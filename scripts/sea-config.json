@@ -1,0 +1,7 @@
+{
+  "main": "dist/connector/browser-connector.bundle.cjs",
+  "output": "dist/connector/bosshunter-browser-connector.blob",
+  "disableExperimentalSEAWarning": true,
+  "useSnapshot": false,
+  "useCodeCache": false
+}

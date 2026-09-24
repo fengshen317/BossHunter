@@ -7,121 +7,146 @@ from typing import Any
 
 import httpx
 
-from bosshunter.browser.runtime import get_runtime_url
+from bosshunter.browser.runtime import get_runtime_headers, get_runtime_url
 
 
 class RuntimeClient:
-    """Small typed wrapper around Browser Runtime HTTP endpoints."""
+	"""Small typed wrapper around Browser Runtime HTTP endpoints."""
 
-    def __init__(self, config: dict[str, Any] | None = None) -> None:
-        self.base_url = get_runtime_url(config)
+	def __init__(self, config: dict[str, Any] | None = None) -> None:
+		self.base_url = get_runtime_url(config)
+		self.headers = get_runtime_headers(config)
+		self.last_error: str | None = None
 
-    def health(self) -> dict[str, Any] | None:
-        return self._get_json("/health", timeout=3)
+	def _request_kwargs(self, **kwargs: Any) -> dict[str, Any]:
+		"""Add authentication only when configured, preserving local compatibility."""
+		if self.headers:
+			kwargs["headers"] = self.headers
+		return kwargs
 
-    def targets(self) -> list[dict[str, Any]]:
-        data = self._get_json("/targets", timeout=5)
-        return data if isinstance(data, list) else []
+	def _remember_status(self, status_code: int) -> None:
+		"""Keep a redacted diagnostic for infrastructure failures."""
+		self.last_error = "browser_runtime_unauthorized" if status_code == 401 else None
 
-    def new_tab(self, url: str) -> str | None:
-        data = self._get_json("/new", params={"url": url}, timeout=15)
-        return data.get("targetId") if isinstance(data, dict) else None
+	def health(self) -> dict[str, Any] | None:
+		return self._get_json("/health", timeout=3)
 
-    def close_tab(self, target_id: str) -> bool:
-        return self._get_ok("/close", params={"target": target_id}, timeout=5)
+	def targets(self) -> list[dict[str, Any]]:
+		data = self._get_json("/targets", timeout=5)
+		return data if isinstance(data, list) else []
 
-    def navigate(self, target_id: str, url: str) -> bool:
-        return self._get_ok("/navigate", params={"target": target_id, "url": url}, timeout=15)
+	def new_tab(self, url: str) -> str | None:
+		data = self._get_json("/new", params={"url": url}, timeout=15)
+		return data.get("targetId") if isinstance(data, dict) else None
 
-    def back(self, target_id: str) -> bool:
-        return self._get_ok("/back", params={"target": target_id}, timeout=10)
+	def close_tab(self, target_id: str) -> bool:
+		return self._get_ok("/close", params={"target": target_id}, timeout=5)
 
-    def evaluate(self, target_id: str, expression: str, timeout: float = 30) -> Any:
-        try:
-            response = httpx.post(
-                f"{self.base_url}/eval",
-                params={"target": target_id},
-                content=expression,
-                timeout=timeout,
-                trust_env=False,
-            )
-            if response.status_code == 200:
-                if not response.content:
-                    return None
-                data = response.json()
-                return data.get("value") if isinstance(data, dict) else None
-            try:
-                return response.json()
-            except ValueError:
-                return None
-        except httpx.HTTPError:
-            return None
+	def navigate(self, target_id: str, url: str) -> bool:
+		return self._get_ok("/navigate", params={"target": target_id, "url": url}, timeout=15)
 
-    def click(self, target_id: str, selector: str) -> bool:
-        return self._post_ok("/click", params={"target": target_id}, content=selector, timeout=10)
+	def back(self, target_id: str) -> bool:
+		return self._get_ok("/back", params={"target": target_id}, timeout=10)
 
-    def click_at(self, target_id: str, selector_or_xy: str) -> bool:
-        return self._post_ok("/clickAt", params={"target": target_id}, content=selector_or_xy, timeout=10)
+	def evaluate(self, target_id: str, expression: str, timeout: float = 30) -> Any:
+		try:
+			response = httpx.post(
+				f"{self.base_url}/eval",
+				params={"target": target_id},
+				content=expression,
+				timeout=timeout,
+				**self._request_kwargs(trust_env=False),
+			)
+			self._remember_status(response.status_code)
+			if response.status_code == 200:
+				if not response.content:
+					return None
+				data = response.json()
+				return data.get("value") if isinstance(data, dict) else None
+			try:
+				return response.json()
+			except ValueError:
+				return None
+		except httpx.HTTPError:
+			return None
 
-    def type_text(self, target_id: str, text: str) -> bool:
-        return self._post_ok("/type", params={"target": target_id}, content=text, timeout=10)
+	def click(self, target_id: str, selector: str) -> bool:
+		return self._post_ok("/click", params={"target": target_id}, content=selector, timeout=10)
 
-    def set_files(self, target_id: str, selector: str, files: list[str]) -> bool:
-        try:
-            response = httpx.post(
-                f"{self.base_url}/setFiles",
-                params={"target": target_id},
-                json={"selector": selector, "files": files},
-                timeout=10,
-                trust_env=False,
-            )
-            return response.status_code == 200
-        except httpx.HTTPError:
-            return False
+	def click_at(self, target_id: str, selector_or_xy: str) -> bool:
+		return self._post_ok("/clickAt", params={"target": target_id}, content=selector_or_xy, timeout=10)
 
-    def scroll(self, target_id: str, y: int = 0, direction: str = "") -> bool:
-        params: dict[str, Any] = {"target": target_id}
-        if direction:
-            params["direction"] = direction
-        else:
-            params["y"] = y
-        return self._get_ok("/scroll", params=params, timeout=5)
+	def type_text(self, target_id: str, text: str) -> bool:
+		return self._post_ok("/type", params={"target": target_id}, content=text, timeout=10)
 
-    def screenshot(self, target_id: str, file_path: str | Path) -> bool:
-        return self._get_ok("/screenshot", params={"target": target_id, "file": str(file_path)}, timeout=15)
+	def set_files(self, target_id: str, selector: str, files: list[str]) -> bool:
+		try:
+			response = httpx.post(
+				f"{self.base_url}/setFiles",
+				params={"target": target_id},
+				json={"selector": selector, "files": files},
+				timeout=10,
+				**self._request_kwargs(trust_env=False),
+			)
+			self._remember_status(response.status_code)
+			return response.status_code == 200
+		except httpx.HTTPError:
+			return False
 
-    def print_pdf(self, target_id: str, file_path: str | Path) -> bool:
-        return self._get_ok("/pdf", params={"target": target_id, "file": str(file_path)}, timeout=30)
+	def scroll(self, target_id: str, y: int = 0, direction: str = "") -> bool:
+		params: dict[str, Any] = {"target": target_id}
+		if direction:
+			params["direction"] = direction
+		else:
+			params["y"] = y
+		return self._get_ok("/scroll", params=params, timeout=5)
 
-    def info(self, target_id: str) -> dict[str, Any] | None:
-        data = self._get_json("/info", params={"target": target_id}, timeout=5)
-        return data if isinstance(data, dict) else None
+	def screenshot(self, target_id: str, file_path: str | Path) -> bool:
+		return self._get_ok("/screenshot", params={"target": target_id, "file": str(file_path)}, timeout=15)
 
-    def _get_json(self, path: str, params: dict[str, Any] | None = None, timeout: float = 5) -> Any:
-        try:
-            response = httpx.get(f"{self.base_url}{path}", params=params, timeout=timeout, trust_env=False)
-            if response.status_code == 200:
-                return response.json()
-        except (httpx.HTTPError, ValueError):
-            return None
-        return None
+	def print_pdf(self, target_id: str, file_path: str | Path) -> bool:
+		return self._get_ok("/pdf", params={"target": target_id, "file": str(file_path)}, timeout=30)
 
-    def _get_ok(self, path: str, params: dict[str, Any] | None = None, timeout: float = 5) -> bool:
-        try:
-            response = httpx.get(f"{self.base_url}{path}", params=params, timeout=timeout, trust_env=False)
-            return response.status_code == 200
-        except httpx.HTTPError:
-            return False
+	def info(self, target_id: str) -> dict[str, Any] | None:
+		data = self._get_json("/info", params={"target": target_id}, timeout=5)
+		return data if isinstance(data, dict) else None
 
-    def _post_ok(self, path: str, params: dict[str, Any], content: str, timeout: float = 10) -> bool:
-        try:
-            response = httpx.post(
-                f"{self.base_url}{path}",
-                params=params,
-                content=content,
-                timeout=timeout,
-                trust_env=False,
-            )
-            return response.status_code == 200
-        except httpx.HTTPError:
-            return False
+	def _get_json(self, path: str, params: dict[str, Any] | None = None, timeout: float = 5) -> Any:
+		try:
+			response = httpx.get(
+				f"{self.base_url}{path}",
+				params=params,
+				**self._request_kwargs(timeout=timeout, trust_env=False),
+			)
+			self._remember_status(response.status_code)
+			if response.status_code == 200:
+				return response.json()
+		except (httpx.HTTPError, ValueError):
+			return None
+		return None
+
+	def _get_ok(self, path: str, params: dict[str, Any] | None = None, timeout: float = 5) -> bool:
+		try:
+			response = httpx.get(
+				f"{self.base_url}{path}",
+				params=params,
+				**self._request_kwargs(timeout=timeout, trust_env=False),
+			)
+			self._remember_status(response.status_code)
+			return response.status_code == 200
+		except httpx.HTTPError:
+			return False
+
+	def _post_ok(self, path: str, params: dict[str, Any], content: str, timeout: float = 10) -> bool:
+		try:
+			response = httpx.post(
+				f"{self.base_url}{path}",
+				params=params,
+				content=content,
+				timeout=timeout,
+				**self._request_kwargs(trust_env=False),
+			)
+			self._remember_status(response.status_code)
+			return response.status_code == 200
+		except httpx.HTTPError:
+			return False

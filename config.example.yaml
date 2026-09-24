@@ -119,6 +119,8 @@ browser:
   runtime: "builtin"
   proxy_host: "127.0.0.1"
   proxy_port: 3456
+  # Docker 模式通过 BOSSHUNTER_BROWSER_PROXY_TOKEN 注入，不要把真实 Token 提交到配置文件。
+  proxy_token: ""
   chrome_ports: [9222, 9229, 9333]
   # 一键启动优先使用 Chrome；找不到时自动尝试 Edge
   preferred_browser: "auto"
