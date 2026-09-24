@@ -21,6 +21,7 @@ from bosshunter.db import (
 )
 from bosshunter.ai.prefilter import quick_score
 from bosshunter.ai.greeter import generate_greetings_batch
+from bosshunter.job_filters import is_whitelisted_company
 
 console = Console()
 
@@ -314,7 +315,8 @@ def _score_jobs_sequential(config: dict) -> tuple[int, int]:
 
 			update_job_score(db, job["id"], score, full_reason)
 
-			if score >= threshold:
+			# 白名单公司不受阈值淘汰：分数照记，但一律进入待人工确认由用户决定。
+			if score >= threshold or is_whitelisted_company(job.get("company"), config):
 				update_job_status(db, job["id"], "ready")
 				# 评分通过：先收集，循环结束后批量并发生成招呼语（确认时用户可直接预览）。
 				passed_jobs.append(job)
@@ -437,7 +439,8 @@ def score_jobs(config: dict) -> tuple[int, int]:
 				else:
 					score, reason = _normalise_score(result)
 					update_job_score(db, job["id"], score, reason)
-					if score >= threshold:
+					# 同上：白名单公司不受阈值淘汰。
+					if score >= threshold or is_whitelisted_company(job.get("company"), config):
 						update_job_status(db, job["id"], "ready")
 						passed_jobs.append(job)
 						scored += 1

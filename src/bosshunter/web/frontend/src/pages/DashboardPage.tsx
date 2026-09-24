@@ -1,40 +1,42 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
-import { useDashboard, type HistoryItem, type Job, type WorkbenchTask } from '@/hooks/useDashboard'
+import { useDashboard, type HistoryItem, type Job, type PipelineStage, type WorkbenchTask } from '@/hooks/useDashboard'
 import { Button } from '@/components/ui/button'
+import { CityMultiSelect } from '@/components/ui/city-multi-select'
 import { useConfirm } from '@/components/confirm-dialog'
 import { JobsTable } from '@/components/dashboard/JobsTable'
 import { ImportJobPanel } from '@/components/dashboard/ImportJobPanel'
 import { parseHistoryDetail } from '@/lib/historyDetail'
 import { getActionLabel, getStatusLabel, STATUS_LABELS } from '@/lib/status'
 import { formatLocalDateTime } from '@/lib/utils'
-import { BrainCircuit, Check, ChevronLeft, ChevronRight, CircleDot, Clock3, Download, ListChecks, MapPin, MessageCircle, Play, RefreshCw, Search, ShieldCheck, Sparkles, Square, X } from 'lucide-react'
+import { BrainCircuit, Check, ChevronLeft, ChevronRight, CircleDot, Clock3, Download, ListChecks, MessageCircle, Play, RefreshCw, Search, ShieldCheck, Sparkles, Square, X } from 'lucide-react'
 
 type WorkbenchMode = 'full' | 'collect' | 'score' | 'monitor'
 type DashboardView = 'workbench' | 'jobs' | 'monitor'
 
-const TASK_STAGE_LABELS = [
-	'开始采集岗位',
-	'开始 AI 评分',
-	'等待前端确认投递',
-	'发送失败待处理',
-	'执行一轮监测',
-	'本轮监测完成，30 分钟后再次检查',
-]
+/** 阶段 key 由后端显式下发，顺序即流程条顺序。 */
+const PIPELINE_STAGE_ORDER: PipelineStage[] = ['collect', 'score', 'confirm', 'greet', 'send']
 
-function currentTaskStage(logs: string[] = []) {
-	for (const log of logs.slice().reverse()) {
-		const stage = TASK_STAGE_LABELS.find(label => log.includes(label))
-		if (stage) return stage
-	}
-	return '等待后端返回阶段'
+const PIPELINE_STAGE_LABELS: Record<PipelineStage, string> = {
+	collect: '采集岗位',
+	score: 'AI 评分',
+	confirm: '人工确认',
+	greet: '生成招呼语',
+	send: '发送与监测',
 }
 
 function taskStatusText(status: string) {
 	if (status === 'failed') return '运行失败'
-	if (status === 'completed') return '已结束'
+	if (status === 'completed') return '已完成'
 	if (status === 'stopped') return '已停止'
 	if (status === 'stopping') return '停止中'
 	return '运行中'
+}
+
+/** 终态任务（失败/停止/完成）的说明文案，失败时优先展示具体原因。 */
+function taskOutcomeText(task: WorkbenchTask) {
+	if (task.status === 'failed') return task.error || '任务执行失败，请检查浏览器连接与 AI 配置后重试。'
+	if (task.status === 'stopped') return task.stop_reason || '任务已停止。'
+	return ''
 }
 
 function taskStatusClass(status: string) {
@@ -43,9 +45,9 @@ function taskStatusClass(status: string) {
 	return 'border-primary/30 bg-primary/5'
 }
 
-function taskStatusTitle(status: string) {
-	if (status === 'completed' || status === 'stopped') return '最近任务状态'
-	return '当前阶段'
+/** 任务当前阶段的展示文案；后端未下发 stage 时返回空串，由调用方回退到原始日志。 */
+function taskStageLabel(task: WorkbenchTask) {
+	return task.stage ? PIPELINE_STAGE_LABELS[task.stage] ?? '' : ''
 }
 
 interface DashboardPageProps {
@@ -59,13 +61,25 @@ const modes: Array<{ mode: WorkbenchMode; title: string; description: string }> 
 	{ mode: 'monitor', title: '单独监测', description: '监测 HR 的未回复消息，并生成一条覆盖全部问题的回复建议。' },
 ]
 
-const pipelineSteps = [
-	{ label: '采集岗位', funnelKey: '采集总数' },
-	{ label: 'AI 评分', funnelKey: 'AI评分' },
-	{ label: '人工确认', funnelKey: '人工确认', protected: true },
-	{ label: '生成招呼语', funnelKey: '简历生成' },
-	{ label: '发送与监测', funnelKey: '' },
-]
+// 某些分组只在有内容时才渲染，流程条点击的锚点缺失时退回该步骤下最接近的分组。
+const QUEUE_ANCHOR_FALLBACKS: Record<string, string[]> = {
+	'queue-send': ['queue-send-errors', 'queue-greeting'],
+	'queue-greeting': ['queue-send-errors', 'queue-send'],
+	'queue-confirm': ['queue-greeting'],
+}
+
+interface PipelineStepView {
+	key: PipelineStage
+	label: string
+	/** 待处理数量；0 表示这一步当前没有需要用户参与的事项。 */
+	count: number
+	/** 数量的语义，避免只给一个光秃秃的数字。 */
+	countLabel: string
+	/** 点击后跳转的锚点 id；为空表示该步不可点。 */
+	anchor?: string
+	/** 该步是否必须由人工介入才能推进。 */
+	manual: boolean
+}
 
 interface CollectionOptions {
 	keywords: string[]
@@ -126,9 +140,8 @@ export default function DashboardPage({ view = 'workbench' }: DashboardPageProps
 	const [modePending, setModePending] = useState<WorkbenchMode | null>(null)
 	const [actionPending, setActionPending] = useState<string | null>(null)
 	const [collectionKeywords, setCollectionKeywords] = useState('')
-	const [collectionCities, setCollectionCities] = useState('')
+	const [collectionCities, setCollectionCities] = useState<string[]>([])
 	const [collectionLimit, setCollectionLimit] = useState(100)
-	const [runFullPipeline, setRunFullPipeline] = useState(true)
 	const [collectionConfigLoading, setCollectionConfigLoading] = useState(true)
 
 	useEffect(() => {
@@ -138,7 +151,7 @@ export default function DashboardPage({ view = 'workbench' }: DashboardPageProps
 			.then(config => {
 				if (cancelled) return
 				setCollectionKeywords((config.search?.keywords || []).join('、'))
-				setCollectionCities((config.search?.cities?.length ? config.search.cities : config.profile?.target_cities || []).join('、'))
+				setCollectionCities(config.search?.cities?.length ? config.search.cities : config.profile?.target_cities || [])
 				const maxPages = Number(config.search?.max_pages || 3)
 				setCollectionLimit(Math.max(20, Math.min(maxPages * 50, 500)))
 			})
@@ -334,8 +347,9 @@ export default function DashboardPage({ view = 'workbench' }: DashboardPageProps
 		}
 	}
 
-	const regenerateGreetings = async (ids: string[]) => {
-		if (!ids.length) return
+	// 返回是否真的提交了任务：用户取消确认时返回 false，调用方据此决定要不要清空勾选。
+	const regenerateGreetings = async (ids: string[]): Promise<boolean> => {
+		if (!ids.length) return false
 		const confirmed = await confirm({
 			title: `重新生成 ${ids.length} 条招呼语`,
 			description: '生成后仍需你在工作台确认才会发送。',
@@ -343,7 +357,7 @@ export default function DashboardPage({ view = 'workbench' }: DashboardPageProps
 			will: ['覆盖现有的招呼语草稿'],
 			wont: ['不会自动发送到 BOSS'],
 		})
-		if (!confirmed) return
+		if (!confirmed) return false
 		try {
 			setActionPending('regenerate')
 			setNotice(`正在提交 ${ids.length} 条招呼语的生成任务…`)
@@ -358,8 +372,10 @@ export default function DashboardPage({ view = 'workbench' }: DashboardPageProps
 			}
 			await refresh()
 			setNotice(`正在按新版规则重新生成 ${ids.length} 条招呼语，完成后请先查看再发送。`)
+			return true
 		} catch (err) {
 			setNotice(err instanceof Error ? err.message : '重新生成失败')
+			return false
 		} finally {
 			setActionPending(null)
 		}
@@ -453,14 +469,23 @@ export default function DashboardPage({ view = 'workbench' }: DashboardPageProps
 		.split(/[、,，\n]/)
 		.map(item => item.trim())
 		.filter(Boolean)
-	const startCollection = () => {
+	// 采集相关的模式（全流程 / 仅采集）共用同一套参数校验，避免提示文案分叉。
+	const collectOptions = (): CollectionOptions | null => {
 		const keywords = parseCollectionList(collectionKeywords)
-		const cities = parseCollectionList(collectionCities)
+		const cities = collectionCities
 		if (!keywords.length || !cities.length) {
 			setNotice(!keywords.length ? '请至少填写一个岗位关键词。' : '请至少填写一个目标城市。')
-			return
+			return null
 		}
-		void handleModeClick(runFullPipeline ? 'full' : 'collect', { keywords, cities, limit: collectionLimit })
+		return { keywords, cities, limit: collectionLimit }
+	}
+	const startCollection = () => {
+		const options = collectOptions()
+		if (options) void handleModeClick('full', options)
+	}
+	const startCollectOnly = () => {
+		const options = collectOptions()
+		if (options) void handleModeClick('collect', options)
 	}
 
 	return <WorkbenchControlCenter
@@ -481,9 +506,9 @@ export default function DashboardPage({ view = 'workbench' }: DashboardPageProps
 		setCollectionCities={setCollectionCities}
 		collectionLimit={collectionLimit}
 		setCollectionLimit={setCollectionLimit}
-		runFullPipeline={runFullPipeline}
-		setRunFullPipeline={setRunFullPipeline}
 		collectionConfigLoading={collectionConfigLoading}
+		pendingCount={pendingCount}
+		startCollectOnly={startCollectOnly}
 		modePending={modePending}
 		actionPending={actionPending}
 		notice={notice}
@@ -521,13 +546,13 @@ interface WorkbenchControlCenterProps {
 	toggleJob: (id: string) => void
 	collectionKeywords: string
 	setCollectionKeywords: (value: string) => void
-	collectionCities: string
-	setCollectionCities: (value: string) => void
+	collectionCities: string[]
+	setCollectionCities: (value: string[]) => void
 	collectionLimit: number
 	setCollectionLimit: (value: number) => void
-	runFullPipeline: boolean
-	setRunFullPipeline: (value: boolean) => void
 	collectionConfigLoading: boolean
+	/** 待 AI 评分的岗位数（status=pending），用于流程条。 */
+	pendingCount: number
 	modePending: WorkbenchMode | null
 	actionPending: string | null
 	notice: string
@@ -536,11 +561,12 @@ interface WorkbenchControlCenterProps {
 	refreshing: boolean
 	refresh: () => Promise<void>
 	startCollection: () => void
+	startCollectOnly: () => void
 	handleModeClick: (mode: WorkbenchMode) => Promise<void>
 	confirmDeliver: (ids: string[]) => Promise<void>
 	rejectSelectedJobs: (ids: string[]) => Promise<boolean>
 	sendReadyGreetings: (ids: string[]) => Promise<void>
-	regenerateGreetings: (ids: string[]) => Promise<void>
+	regenerateGreetings: (ids: string[]) => Promise<boolean>
 	regenerateGreeting: (id: string) => Promise<void>
 	openJobDetail: (job: Job) => Promise<void>
 	downloadResume: (job: Job) => void
@@ -554,22 +580,80 @@ function WorkbenchControlCenter(props: WorkbenchControlCenterProps) {
 	const {
 		workbench, activeTask, visibleTask, todayJobs, pendingGreetingJobs, needsGreetingJobs, pendingReplies,
 		selected, setSelected, toggleJob, collectionKeywords, setCollectionKeywords, collectionCities,
-		setCollectionCities, collectionLimit, setCollectionLimit, runFullPipeline, setRunFullPipeline,
-		collectionConfigLoading, modePending, actionPending, notice, error, preflightMessages, refreshing,
-		refresh, startCollection, handleModeClick, confirmDeliver, rejectSelectedJobs, sendReadyGreetings, regenerateGreetings,
+		setCollectionCities, collectionLimit, setCollectionLimit,
+		collectionConfigLoading, pendingCount, modePending, actionPending, notice, error, preflightMessages, refreshing,
+		refresh, startCollection, startCollectOnly, handleModeClick, confirmDeliver, rejectSelectedJobs,
+		sendReadyGreetings, regenerateGreetings,
 		regenerateGreeting, openJobDetail, downloadResume, markResumeSent, selectedJob, setSelectedJob,
 	} = props
 	const [selectedGreetingIds, setSelectedGreetingIds] = useState<string[]>([])
+	// 「待生成招呼语」与「待发送」是两组独立队列，各自维护勾选，避免互相串号。
+	const [selectedNeedsGreetingIds, setSelectedNeedsGreetingIds] = useState<string[]>([])
 	const queueTotal = todayJobs.length + pendingGreetingJobs.length + needsGreetingJobs.length
 		+ workbench.needs_resume.length + workbench.send_errors.length + pendingReplies.length
-	const taskStage = visibleTask ? currentTaskStage(visibleTask.logs) : ''
-	const activePipelineIndex = taskStage.includes('评分') ? 1
-		: taskStage.includes('确认') ? 2
-			: taskStage.includes('招呼') || taskStage.includes('发送') ? 3
-				: taskStage.includes('监测') ? 4 : 0
+	// 流程条的数字全部来自"待处理队列"，与下方"需要你处理"同源，
+	// 不再使用历史累计漏斗（那会把"曾经有过结果"渲染成"当前待办"）。
+	const sendStageCount = pendingGreetingJobs.length + workbench.send_errors.length
+		+ workbench.needs_resume.length + pendingReplies.length
+	const activeStageIndex = activeTask?.stage ? PIPELINE_STAGE_ORDER.indexOf(activeTask.stage) : -1
+	const pipelineSteps: PipelineStepView[] = [
+		{ key: 'collect', label: PIPELINE_STAGE_LABELS.collect, count: Number(workbench.funnel['采集总数'] || 0), countLabel: '库内岗位', manual: false },
+		{ key: 'score', label: PIPELINE_STAGE_LABELS.score, count: pendingCount, countLabel: '待评分', anchor: '/jobs', manual: false },
+		{ key: 'confirm', label: PIPELINE_STAGE_LABELS.confirm, count: todayJobs.length, countLabel: '待确认', anchor: 'queue-confirm', manual: true },
+		{ key: 'greet', label: PIPELINE_STAGE_LABELS.greet, count: needsGreetingJobs.length, countLabel: '待生成', anchor: 'queue-greeting', manual: false },
+		{ key: 'send', label: PIPELINE_STAGE_LABELS.send, count: sendStageCount, countLabel: '待处理', anchor: 'queue-send', manual: true },
+	]
+	const pipelineStepState = (index: number): 'idle' | 'active' | 'done' => {
+		// 只有任务真正在跑时才谈"走到第几步"；空闲时流程条只表达待办，不假装有进度。
+		if (!activeTask || activeStageIndex < 0) return 'idle'
+		if (index === activeStageIndex) return 'active'
+		return index < activeStageIndex ? 'done' : 'idle'
+	}
+	const scrollToQueue = (anchor: string) => {
+		const target = [anchor, ...(QUEUE_ANCHOR_FALLBACKS[anchor] ?? [])]
+			.map(id => document.getElementById(id))
+			.find(Boolean)
+		target?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+	}
+	// 失败/停止的最近任务提供原地重试；仅限工作台直接支持的模式，
+	// 其余模式（deliver/reply/import 等）由用户回到对应入口重新发起。
+	const retryableMode = (mode: string): WorkbenchMode | null =>
+		(['full', 'collect', 'score', 'monitor'] as WorkbenchMode[]).includes(mode as WorkbenchMode)
+			? mode as WorkbenchMode
+			: null
+	// 只在没有任务运行时回看上一次的结果，避免和正在跑的进度互相干扰。
+	const lastOutcome = visibleTask && !activeTask ? taskOutcomeText(visibleTask) : ''
+	const lastOutcomeFailed = !activeTask && visibleTask?.status === 'failed'
+	const retryMode = visibleTask && !activeTask ? retryableMode(visibleTask.mode) : null
+	// 运行记录的主标题：运行中看当前阶段，结束后看停在哪一步。
+	// 后端没下发 stage 时退回最后一条原始日志，不向用户暴露"等待后端返回阶段"这类内部状态。
+	const visibleStageLabel = visibleTask ? taskStageLabel(visibleTask) : ''
+	const lastLog = visibleTask?.logs.length ? visibleTask.logs[visibleTask.logs.length - 1] : ''
+	const runLogHeadline = activeTask
+		? (visibleStageLabel || lastLog || '任务启动中…')
+		: visibleStageLabel
+			? (visibleTask?.status === 'completed' ? `完成于「${visibleStageLabel}」` : `停在「${visibleStageLabel}」`)
+			: lastLog
 	const toggleGreeting = (id: string) => {
 		setSelectedGreetingIds(current => current.includes(id) ? current.filter(item => item !== id) : [...current, id])
 	}
+	const toggleNeedsGreeting = (id: string) => {
+		setSelectedNeedsGreetingIds(current => current.includes(id) ? current.filter(item => item !== id) : [...current, id])
+	}
+	const generateSelectedGreetings = async () => {
+		if (!selectedNeedsGreetingIds.length) return
+		// 生成失败时保留勾选，用户可直接重试而不必重新挑选。
+		if (await regenerateGreetings(selectedNeedsGreetingIds)) setSelectedNeedsGreetingIds([])
+	}
+	// 取消 = 这个岗位不生成招呼语了，标记为已拒绝，从工作台队列移出、落回岗位池。
+	// 复用放弃岗位的确认对话框（危险语气 + 说清不会联系 HR）。
+	const cancelNeedsGreetings = async (ids: string[]) => {
+		if (!ids.length) return
+		if (!(await rejectSelectedJobs(ids))) return
+		const cancelled = new Set(ids)
+		setSelectedNeedsGreetingIds(current => current.filter(id => !cancelled.has(id)))
+	}
+	const cancelSelectedGreetings = () => cancelNeedsGreetings(selectedNeedsGreetingIds)
 	const sendSelectedGreetings = async () => {
 		if (!selectedGreetingIds.length) return
 		const count = selectedGreetingIds.length
@@ -602,47 +686,52 @@ function WorkbenchControlCenter(props: WorkbenchControlCenterProps) {
 			</div>
 		</header>
 
-		<section className="overflow-hidden rounded-xl border border-card-border bg-surface shadow-card">
+		<section className="rounded-xl border border-card-border bg-surface shadow-card">
 			<div className="flex items-start gap-3 border-b border-card-border px-5 py-4 sm:px-6"><span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-primary-soft text-primary"><Search className="h-4 w-4" /></span><div><h3 className="text-base font-semibold text-foreground">采集控制台</h3><p className="mt-1 text-xs leading-5 text-text-secondary">本次参数只用于当前任务，不会覆盖配置页中的默认设置。</p></div></div>
-			<div className="grid gap-4 p-5 sm:p-6 lg:grid-cols-[minmax(15rem,1.4fr)_minmax(12rem,1fr)_9rem_minmax(13rem,0.9fr)] lg:items-end">
+			<div className="grid gap-4 p-5 sm:p-6 lg:grid-cols-[minmax(15rem,1.5fr)_minmax(12rem,1fr)_9rem_minmax(13rem,0.9fr)] lg:items-start">
 				<WorkbenchInput label="岗位关键词"><input value={collectionKeywords} onChange={event => setCollectionKeywords(event.target.value)} disabled={collectionConfigLoading || Boolean(activeTask)} placeholder="例如：产品经理、数据分析" className="workbench-input" /></WorkbenchInput>
-				<WorkbenchInput label="目标城市"><span className="relative block"><MapPin className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-tertiary" /><input value={collectionCities} onChange={event => setCollectionCities(event.target.value)} disabled={collectionConfigLoading || Boolean(activeTask)} placeholder="例如：深圳、上海" className="workbench-input pl-9" /></span></WorkbenchInput>
+				<WorkbenchInput label="目标城市"><CityMultiSelect value={collectionCities} onChange={setCollectionCities} disabled={collectionConfigLoading || Boolean(activeTask)} /></WorkbenchInput>
 				<WorkbenchInput label="最多采集"><input type="number" min={1} max={500} value={collectionLimit} onChange={event => setCollectionLimit(Math.max(1, Math.min(Number(event.target.value) || 1, 500)))} disabled={Boolean(activeTask)} className="workbench-input tabular-nums" /></WorkbenchInput>
-				<div className="space-y-3"><label className="flex min-h-12 cursor-pointer items-center justify-between gap-3 rounded-lg border border-card-border bg-surface-raised px-3"><span><span className="block text-xs font-semibold text-foreground">一键运行全流程</span><span className="mt-0.5 block text-xs text-text-tertiary">发送前仍需人工确认</span></span><input type="checkbox" checked={runFullPipeline} onChange={event => setRunFullPipeline(event.target.checked)} disabled={Boolean(activeTask)} className="h-4 w-4 accent-primary" /></label><Button className="h-10 w-full" disabled={collectionConfigLoading || Boolean(activeTask) || Boolean(modePending)} onClick={startCollection}><Play className="h-4 w-4" />{modePending ? '正在启动…' : runFullPipeline ? '运行全流程' : '开始采集'}</Button></div>
+				{/* pt-6 与其它列 label（16px 行高 + mb-2）对齐，items-start 让城市 chips 只撑高自己这一列 */}
+				<div className="space-y-2 lg:pt-6"><Button className="h-10 w-full" disabled={collectionConfigLoading || Boolean(activeTask) || Boolean(modePending)} onClick={startCollection}><Play className="h-4 w-4" />{modePending ? '正在启动…' : '运行全流程'}</Button><p className="text-center text-xs text-text-tertiary">发送前仍需人工确认</p></div>
 			</div>
-			<div className="flex flex-wrap items-center gap-2 border-t border-card-border bg-surface-raised px-5 py-3 sm:px-6"><span className="mr-1 text-xs text-text-tertiary">单独运行</span><Button variant="ghost" size="sm" disabled={Boolean(activeTask) || Boolean(modePending)} onClick={() => handleModeClick('score')}><BrainCircuit className="h-3.5 w-3.5" />仅评分</Button><Button variant="ghost" size="sm" disabled={Boolean(activeTask) || Boolean(modePending)} onClick={() => handleModeClick('monitor')}><MessageCircle className="h-3.5 w-3.5" />单独监测</Button><a href="/config" className="ml-auto inline-flex min-h-9 items-center gap-1 rounded-lg px-3 text-xs font-medium text-text-secondary transition hover:bg-surface hover:text-foreground">调整默认配置<ChevronRight className="h-3.5 w-3.5" /></a></div>
+			<div className="flex flex-wrap items-center gap-2 border-t border-card-border bg-surface-raised px-5 py-3 sm:px-6"><span className="mr-1 text-xs text-text-tertiary">单独运行</span><Button variant="ghost" size="sm" disabled={collectionConfigLoading || Boolean(activeTask) || Boolean(modePending)} onClick={startCollectOnly}><Search className="h-3.5 w-3.5" />仅采集</Button><Button variant="ghost" size="sm" disabled={Boolean(activeTask) || Boolean(modePending)} onClick={() => handleModeClick('score')}><BrainCircuit className="h-3.5 w-3.5" />仅评分</Button><Button variant="ghost" size="sm" disabled={Boolean(activeTask) || Boolean(modePending)} onClick={() => handleModeClick('monitor')}><MessageCircle className="h-3.5 w-3.5" />单独监测</Button><a href="/config" className="ml-auto inline-flex min-h-9 items-center gap-1 rounded-lg px-3 text-xs font-medium text-text-secondary transition hover:bg-surface hover:text-foreground">调整默认配置<ChevronRight className="h-3.5 w-3.5" /></a></div>
 		</section>
 
 		{(notice || error || preflightMessages.length > 0) && <section aria-live="polite" className={`rounded-xl border px-4 py-3 text-sm ${error || preflightMessages.length ? 'border-danger/30 bg-danger/5 text-danger' : 'border-primary-border bg-primary-softer text-primary'}`}><p>{error || notice}</p>{preflightMessages.length > 0 && <ul className="mt-2 list-disc space-y-1 pl-5 text-xs">{preflightMessages.map((message, index) => <li key={`${message}-${index}`}>{message}</li>)}</ul>}</section>}
 
 		<section className="rounded-xl border border-card-border bg-surface px-5 py-5 sm:px-6">
-			<div className="mb-5 flex flex-wrap items-center justify-between gap-3"><div><h3 className="text-sm font-semibold text-foreground">当前流程</h3><p className="mt-1 text-xs text-text-tertiary">每一步都保留结果，投递前必须由你确认。</p></div>{visibleTask && <span className={`rounded-lg border px-2.5 py-1 text-xs ${taskStatusClass(visibleTask.status)}`}>{taskStatusText(visibleTask.status)} · {visibleTask.label}</span>}</div>
-			<ol className="grid gap-3 sm:grid-cols-5">{pipelineSteps.map((step, index) => { const completed = Boolean(visibleTask && index < activePipelineIndex) || Number(workbench.funnel[step.funnelKey] || 0) > 0; const active = Boolean(activeTask && index === activePipelineIndex); return <li key={step.label} className={`rounded-lg border px-3 py-3 ${active ? 'border-primary-border bg-primary-soft' : 'border-card-border bg-surface-raised'}`}><div className="flex items-center gap-2"><span className={`grid h-6 w-6 shrink-0 place-items-center rounded-full text-xs font-semibold ${completed ? 'bg-primary text-white' : active ? 'border border-primary text-primary' : 'border border-card-border-strong bg-surface text-text-tertiary'}`}>{completed ? <Check className="h-3.5 w-3.5" /> : index + 1}</span><span className="text-xs font-semibold text-foreground">{step.label}</span></div><div className="mt-2 flex items-center justify-between text-xs text-text-tertiary"><span>{step.protected ? '必须人工确认' : active ? '正在处理' : completed ? '已有结果' : '等待执行'}</span>{step.funnelKey && <span className="tabular-nums">{workbench.funnel[step.funnelKey] || 0}</span>}</div></li> })}</ol>
+			<div className="mb-4 flex flex-wrap items-center justify-between gap-3"><div><h3 className="text-sm font-semibold text-foreground">当前流程</h3><p className="mt-1 text-xs text-text-tertiary">数字是各环节的待办数量，点击可直接跳到对应队列；投递前必须由你确认。</p></div>{visibleTask && <span className={`rounded-lg border px-2.5 py-1 text-xs ${taskStatusClass(visibleTask.status)}`}>{taskStatusText(visibleTask.status)} · {visibleTask.label}</span>}</div>
+			<ol className="grid gap-2.5 sm:grid-cols-5">{pipelineSteps.map((step, index) => <PipelineStepCard key={step.key} step={step} index={index} state={pipelineStepState(index)} onNavigate={scrollToQueue} />)}</ol>
+			{lastOutcome && <div className={`mt-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border px-4 py-3 ${lastOutcomeFailed ? 'border-danger/30 bg-danger/5' : 'border-card-border bg-surface-raised'}`}><p className={`min-w-0 flex-1 text-xs leading-5 ${lastOutcomeFailed ? 'text-danger' : 'text-text-secondary'}`}>{lastOutcome}</p><div className="flex shrink-0 items-center gap-2">{retryMode && <Button variant="secondary" size="sm" disabled={Boolean(modePending) || Boolean(activeTask)} onClick={() => handleModeClick(retryMode)}><RefreshCw className="h-3.5 w-3.5" />重新运行</Button>}<button type="button" onClick={() => scrollToQueue('run-log')} className="inline-flex min-h-9 items-center rounded-lg px-3 text-xs font-medium text-text-secondary transition hover:bg-surface hover:text-foreground">查看日志</button></div></div>}
 		</section>
 
 		<div className="grid items-start gap-4 xl:grid-cols-[minmax(0,3fr)_minmax(18rem,1fr)]">
 			<section className="overflow-hidden rounded-xl border border-card-border bg-surface">
 				<div className="flex flex-wrap items-center justify-between gap-3 border-b border-card-border px-5 py-4"><div className="flex items-center gap-3"><span className="grid h-8 w-8 place-items-center rounded-lg bg-primary-soft text-primary"><ListChecks className="h-4 w-4" /></span><div><h3 className="text-base font-semibold text-foreground">需要你处理</h3><p className="mt-0.5 text-xs text-text-tertiary">{queueTotal ? `待确认 ${todayJobs.length} 项 · 待发送 ${pendingGreetingJobs.length} 项 · 全部 ${queueTotal} 项` : '当前没有待确认或待发送事项。'}</p></div></div></div>
 				<div>
-					{workbench.send_errors.length > 0 && <QueueGroupHeader title="优先处理失败" description="检查浏览器状态后再重新发送。" count={workbench.send_errors.length} />}
+					{workbench.send_errors.length > 0 && <QueueGroupHeader id="queue-send-errors" title="优先处理失败" description="检查浏览器状态后再重新发送。" count={workbench.send_errors.length} />}
 					<div className="divide-y divide-card-border">{workbench.send_errors.map(job => <QueueRow key={`error-${job.id}`} tone="danger" label="发送失败" job={job} detail={job.last_error || '发送失败，请检查浏览器状态后重试。'} actions={<><Button size="sm" disabled={actionPending !== null} onClick={() => sendReadyGreetings([job.id])}>重新发送</Button><Button variant="ghost" size="sm" onClick={() => openJobDetail(job)}>查看详情</Button></>} />)}</div>
-					{todayJobs.length > 0 && <QueueGroupHeader title="先确认岗位" description="查看岗位与招呼语，确认后进入待发送队列。" count={todayJobs.length} actions={<><Button variant="ghost" size="sm" onClick={() => setSelected(selected.length === todayJobs.length ? [] : todayJobs.map(job => job.id))}>{selected.length === todayJobs.length ? '取消全选' : '全选'}</Button><Button variant="outline" size="sm" disabled={!selected.length || actionPending !== null} onClick={() => rejectSelectedJobs(selected)}>放弃选中 {selected.length}</Button><Button size="sm" disabled={!selected.length || actionPending !== null} onClick={() => confirmDeliver(selected)}>确认选中 {selected.length}</Button></>} />}
+					{todayJobs.length > 0 && <QueueGroupHeader id="queue-confirm" title="先确认岗位" description="查看岗位与招呼语，确认后进入待发送队列。" count={todayJobs.length} actions={<><Button variant="ghost" size="sm" onClick={() => setSelected(selected.length === todayJobs.length ? [] : todayJobs.map(job => job.id))}>{selected.length === todayJobs.length ? '取消全选' : '全选'}</Button><Button variant="outline" size="sm" disabled={!selected.length || actionPending !== null} onClick={() => rejectSelectedJobs(selected)}>放弃选中 {selected.length}</Button><Button size="sm" disabled={!selected.length || actionPending !== null} onClick={() => confirmDeliver(selected)}>确认选中 {selected.length}</Button></>} />}
 					<div className="divide-y divide-card-border">{todayJobs.map(job => <QueueRow key={`confirm-${job.id}`} tone="warning" label="待人工确认" job={job} detail={job.greeting || job.score_reason || '查看岗位详情后决定是否联系。'} selected={selected.includes(job.id)} onToggle={() => toggleJob(job.id)} actions={<><Button variant="secondary" size="sm" onClick={() => openJobDetail(job)}>查看详情</Button><Button variant="ghost" size="sm" onClick={() => regenerateGreeting(job.id)}>重生成</Button><Button variant="outline" size="sm" disabled={actionPending !== null} onClick={() => rejectSelectedJobs([job.id])}>放弃岗位</Button><Button size="sm" disabled={actionPending !== null} onClick={() => confirmDeliver([job.id])}>确认岗位</Button></>} />)}</div>
-					{pendingGreetingJobs.length > 0 && <QueueGroupHeader title="再发送招呼语" description="这些岗位已经确认，勾选后可批量发送。" count={pendingGreetingJobs.length} actions={<><Button variant="ghost" size="sm" onClick={() => setSelectedGreetingIds(selectedGreetingIds.length === pendingGreetingJobs.length ? [] : pendingGreetingJobs.map(job => job.id))}>{selectedGreetingIds.length === pendingGreetingJobs.length ? '取消全选' : '全选'}</Button><Button variant="outline" size="sm" disabled={!selectedGreetingIds.length || actionPending !== null} onClick={() => rejectSelectedGreetings(selectedGreetingIds)}>放弃选中 {selectedGreetingIds.length}</Button><Button size="sm" disabled={!selectedGreetingIds.length || actionPending !== null} onClick={sendSelectedGreetings}>发送选中 {selectedGreetingIds.length}</Button></>} />}
+					{pendingGreetingJobs.length > 0 && <QueueGroupHeader id="queue-send" title="再发送招呼语" description="这些岗位已经确认，勾选后可批量发送。" count={pendingGreetingJobs.length} actions={<><Button variant="ghost" size="sm" onClick={() => setSelectedGreetingIds(selectedGreetingIds.length === pendingGreetingJobs.length ? [] : pendingGreetingJobs.map(job => job.id))}>{selectedGreetingIds.length === pendingGreetingJobs.length ? '取消全选' : '全选'}</Button><Button variant="outline" size="sm" disabled={!selectedGreetingIds.length || actionPending !== null} onClick={() => rejectSelectedGreetings(selectedGreetingIds)}>放弃选中 {selectedGreetingIds.length}</Button><Button size="sm" disabled={!selectedGreetingIds.length || actionPending !== null} onClick={sendSelectedGreetings}>发送选中 {selectedGreetingIds.length}</Button></>} />}
 					<div className="divide-y divide-card-border">{pendingGreetingJobs.map(job => <QueueRow key={`send-${job.id}`} tone="primary" label="待发送" job={job} detail={job.greeting || '招呼语已生成，等待发送。'} selected={selectedGreetingIds.includes(job.id)} onToggle={() => toggleGreeting(job.id)} actions={<><Button variant="secondary" size="sm" onClick={() => openJobDetail(job)}>查看详情</Button><Button variant="outline" size="sm" disabled={actionPending !== null} onClick={() => rejectSelectedGreetings([job.id])}>放弃岗位</Button><Button size="sm" disabled={actionPending !== null} onClick={() => sendReadyGreetings([job.id])}>发送招呼语</Button></>} />)}</div>
-					{(needsGreetingJobs.length > 0 || workbench.needs_resume.length > 0 || pendingReplies.length > 0) && <QueueGroupHeader title="其他待处理" description="处理内容生成、简历请求和 HR 回复。" count={needsGreetingJobs.length + workbench.needs_resume.length + pendingReplies.length} />}
+					{needsGreetingJobs.length > 0 && <QueueGroupHeader id="queue-greeting" title="待生成招呼语" description="这些岗位已确认，但招呼语还没生成。勾选后可批量生成。" count={needsGreetingJobs.length} actions={<><Button variant="ghost" size="sm" onClick={() => setSelectedNeedsGreetingIds(selectedNeedsGreetingIds.length === needsGreetingJobs.length ? [] : needsGreetingJobs.map(job => job.id))}>{selectedNeedsGreetingIds.length === needsGreetingJobs.length ? '取消全选' : '全选'}</Button><Button variant="outline" size="sm" disabled={!selectedNeedsGreetingIds.length || actionPending !== null} onClick={cancelSelectedGreetings}>取消选中 {selectedNeedsGreetingIds.length}</Button><Button size="sm" disabled={!selectedNeedsGreetingIds.length || actionPending !== null} onClick={generateSelectedGreetings}>批量生成 {selectedNeedsGreetingIds.length}</Button></>} />}
 					<div className="divide-y divide-card-border">
-					{needsGreetingJobs.map(job => <QueueRow key={`greeting-${job.id}`} tone="info" label="待生成招呼语" job={job} detail="岗位已确认，但招呼语尚未生成。" actions={<Button size="sm" disabled={actionPending !== null} onClick={() => regenerateGreetings([job.id])}>生成招呼语</Button>} />)}
+					{needsGreetingJobs.map(job => <QueueRow key={`greeting-${job.id}`} tone="info" label="待生成招呼语" job={job} detail="岗位已确认，但招呼语尚未生成。" selected={selectedNeedsGreetingIds.includes(job.id)} onToggle={() => toggleNeedsGreeting(job.id)} actions={<><Button variant="outline" size="sm" disabled={actionPending !== null} onClick={() => cancelNeedsGreetings([job.id])}>取消</Button><Button size="sm" disabled={actionPending !== null} onClick={() => regenerateGreeting(job.id)}>生成招呼语</Button></>} />)}
+					</div>
+					{(workbench.needs_resume.length > 0 || pendingReplies.length > 0) && <QueueGroupHeader id="queue-other" title="其他待处理" description="处理简历请求和 HR 回复。" count={workbench.needs_resume.length + pendingReplies.length} />}
+					<div className="divide-y divide-card-border">
 					{workbench.needs_resume.map(job => <QueueRow key={`resume-${job.id}`} tone="warning" label="HR 要简历" job={job} detail="请下载定制简历，并在 BOSS 中手动发送给 HR。" actions={<><Button size="sm" onClick={() => downloadResume(job)}><Download className="h-3.5 w-3.5" />下载简历</Button><Button variant="ghost" size="sm" onClick={() => markResumeSent(job)}>标记已发送</Button></>} />)}
 					{pendingReplies.slice(0, 4).map(item => <div key={`reply-${item.id}`} className="flex flex-wrap items-center gap-3 px-5 py-4"><span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-primary-soft text-primary"><MessageCircle className="h-4 w-4" /></span><div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-2"><span className="text-sm font-semibold text-foreground">{item.company || 'HR 消息'}｜{item.title || '待回复'}</span><span className="rounded-full border border-primary-border bg-primary-softer px-2 py-0.5 text-xs text-primary">待回复</span></div><p className="mt-1 truncate text-xs text-text-secondary">{latestHrText(item) || item.detail}</p></div><a href="/monitor" className="inline-flex min-h-9 items-center gap-1 rounded-lg px-3 text-xs font-semibold text-primary hover:bg-primary-soft">处理回复<ChevronRight className="h-3.5 w-3.5" /></a></div>)}
 					</div>
-					{queueTotal === 0 && <div className="flex min-h-56 flex-col items-center justify-center px-6 py-10 text-center"><span className="grid h-11 w-11 place-items-center rounded-full bg-primary-soft text-primary"><Check className="h-5 w-5" /></span><h4 className="mt-4 text-sm font-semibold text-foreground">当前事项已处理完</h4><p className="mt-1 max-w-sm text-xs leading-5 text-text-secondary">新岗位会先进入“待人工确认”，确认后转入“待发送”，届时可点击“发送招呼语”。</p></div>}
+					{queueTotal === 0 && <div className="flex flex-wrap items-center gap-3 px-5 py-6"><span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-primary-soft text-primary"><Check className="h-4 w-4" /></span><div className="min-w-0 flex-1"><h4 className="text-sm font-semibold text-foreground">当前没有待处理事项</h4><p className="mt-0.5 text-xs leading-5 text-text-secondary">新岗位会先进入「待人工确认」，确认后转入「待发送」，届时再点「发送招呼语」。</p></div></div>}
 				</div>
 			</section>
 
-			<aside className="overflow-hidden rounded-xl border border-card-border bg-surface">
-				<div className="border-b border-card-border px-5 py-4"><div className="flex items-center justify-between gap-3"><h3 className="text-base font-semibold text-foreground">运行记录</h3>{activeTask && <Button variant="secondary" size="sm" disabled={Boolean(modePending)} onClick={() => handleModeClick(activeTask.mode as WorkbenchMode)}><Square className="h-3 w-3" />停止</Button>}</div>{visibleTask ? <p className="mt-1 text-xs text-text-tertiary">{taskStatusTitle(visibleTask.status)}：{taskStage}</p> : <p className="mt-1 text-xs text-text-tertiary">启动任务后，这里会显示实时进度。</p>}</div>
-				{visibleTask ? <div className="p-5"><div className={`rounded-lg border p-4 ${taskStatusClass(visibleTask.status)}`}><div className="flex items-center gap-2 text-xs font-semibold text-foreground">{activeTask ? <CircleDot className="h-4 w-4 text-primary status-pulse" /> : <Clock3 className="h-4 w-4 text-text-tertiary" />}{visibleTask.label}</div><p className="mt-2 text-sm font-semibold text-foreground">{taskStage}</p>{visibleTask.deadline_at && <p className="mt-1 text-xs text-text-tertiary">预计截止 {new Date(visibleTask.deadline_at).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })}</p>}</div><ol className="mt-5 space-y-0">{visibleTask.logs.slice(-8).reverse().map((log, index) => <li key={`${log}-${index}`} className="relative flex gap-3 pb-4 last:pb-0"><span className="relative z-10 mt-1 h-2 w-2 shrink-0 rounded-full bg-primary ring-4 ring-surface" />{index < Math.min(visibleTask.logs.length, 8) - 1 && <span className="absolute left-[3px] top-3 h-full w-px bg-card-border" />}<span className="text-xs leading-5 text-text-secondary">{log}</span></li>)}</ol>{!visibleTask.logs.length && <p className="py-8 text-center text-xs text-text-tertiary">正在等待第一条运行日志…</p>}</div> : <div className="flex min-h-72 flex-col items-center justify-center px-6 text-center"><ShieldCheck className="h-8 w-8 text-primary" /><h4 className="mt-4 text-sm font-semibold text-foreground">等待启动任务</h4><p className="mt-1 text-xs leading-5 text-text-secondary">浏览器操作、AI 评分和发送结果都会记录在这里。</p></div>}
+			<aside id="run-log" className="scroll-mt-4 overflow-hidden rounded-xl border border-card-border bg-surface">
+				<div className="border-b border-card-border px-5 py-4"><div className="flex items-center justify-between gap-3"><h3 className="text-base font-semibold text-foreground">运行记录</h3>{activeTask && <Button variant="secondary" size="sm" disabled={Boolean(modePending)} onClick={() => handleModeClick(activeTask.mode as WorkbenchMode)}><Square className="h-3 w-3" />停止</Button>}</div><p className="mt-1 text-xs text-text-tertiary">{activeTask ? `当前阶段：${runLogHeadline}` : '启动任务后，这里会显示实时进度。'}</p></div>
+				{visibleTask ? <div className="p-5"><div className={`rounded-lg border p-4 ${taskStatusClass(visibleTask.status)}`}><div className="flex items-center gap-2 text-xs font-semibold text-foreground">{activeTask ? <CircleDot className="h-4 w-4 text-primary status-pulse" /> : <Clock3 className="h-4 w-4 text-text-tertiary" />}{visibleTask.label}</div>{runLogHeadline && <p className="mt-2 text-sm font-semibold text-foreground">{runLogHeadline}</p>}{visibleTask.deadline_at && <p className="mt-1 text-xs text-text-tertiary">预计截止 {new Date(visibleTask.deadline_at).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })}</p>}</div><ol className="mt-5 space-y-0">{visibleTask.logs.slice(-8).reverse().map((log, index) => <li key={`${log}-${index}`} className="relative flex gap-3 pb-4 last:pb-0"><span className="relative z-10 mt-1 h-2 w-2 shrink-0 rounded-full bg-primary ring-4 ring-surface" />{index < Math.min(visibleTask.logs.length, 8) - 1 && <span className="absolute left-[3px] top-3 h-full w-px bg-card-border" />}<span className="text-xs leading-5 text-text-secondary">{log}</span></li>)}</ol>{!visibleTask.logs.length && <p className="py-8 text-center text-xs text-text-tertiary">正在等待第一条运行日志…</p>}</div> : <div className="flex flex-col items-center justify-center px-6 py-12 text-center"><ShieldCheck className="h-8 w-8 text-primary" /><h4 className="mt-4 text-sm font-semibold text-foreground">等待启动任务</h4><p className="mt-1 text-xs leading-5 text-text-secondary">浏览器操作、AI 评分和发送结果都会记录在这里。</p></div>}
 			</aside>
 		</div>
 		{selectedJob && <JobDetailModal job={selectedJob} onClose={() => setSelectedJob(null)} />}
@@ -653,8 +742,54 @@ function WorkbenchInput({ label, children }: { label: string; children: ReactNod
 	return <label className="block"><span className="mb-2 block text-xs font-semibold text-foreground">{label}</span>{children}</label>
 }
 
-function QueueGroupHeader({ title, description, count, actions }: { title: string; description: string; count: number; actions?: ReactNode }) {
-	return <div className="flex flex-wrap items-center justify-between gap-3 border-y border-card-border bg-surface-raised px-5 py-2.5 first:border-t-0"><div className="flex min-w-0 items-baseline gap-2"><h4 className="text-xs font-semibold text-foreground">{title}</h4><span className="rounded-full border border-card-border-strong bg-surface px-2 py-0.5 text-xs tabular-nums text-text-secondary">{count}</span><p className="hidden truncate text-xs text-text-tertiary sm:block">{description}</p></div>{actions && <div className="flex flex-wrap items-center gap-1.5">{actions}</div>}</div>
+/**
+ * 流程条上的单个步骤。
+ *
+ * state 只在任务运行期间才有 active/done 语义；空闲时一律 idle，
+ * 卡片只表达"这一步还有多少待办"，不再用历史累计数冒充进度。
+ */
+function PipelineStepCard({ step, index, state, onNavigate }: {
+	step: PipelineStepView
+	index: number
+	state: 'idle' | 'active' | 'done'
+	onNavigate: (anchor: string) => void
+}) {
+	const actionable = Boolean(step.anchor) && step.count > 0
+	const shell = `block w-full rounded-lg border px-3 py-3 text-left transition-colors ${
+		state === 'active'
+			? 'border-primary-border bg-primary-soft'
+			: actionable
+				? 'border-card-border bg-surface-raised hover:border-primary-border hover:bg-primary-softer'
+				: 'border-card-border bg-surface-raised'
+	}`
+	const badge = state === 'done'
+		? 'bg-primary text-white'
+		: state === 'active'
+			? 'border border-primary text-primary'
+			: 'border border-card-border-strong bg-surface text-text-tertiary'
+	const body = (
+		<>
+			<div className="flex items-center gap-2">
+				<span className={`grid h-6 w-6 shrink-0 place-items-center rounded-full text-xs font-semibold ${badge}`}>
+					{state === 'done' ? <Check className="h-3.5 w-3.5" /> : state === 'active' ? <CircleDot className="h-3.5 w-3.5 status-pulse" /> : index + 1}
+				</span>
+				<span className="truncate text-xs font-semibold text-foreground">{step.label}</span>
+			</div>
+			<div className="mt-2 flex items-baseline justify-between gap-2 text-xs">
+				<span className="text-text-tertiary">{step.countLabel}</span>
+				<span className={`tabular-nums font-semibold ${step.count > 0 ? 'text-foreground' : 'text-text-tertiary'}`}>{step.count}</span>
+			</div>
+			{step.manual && step.count > 0 && <p className="mt-1 text-xs font-medium text-warning">需你确认</p>}
+		</>
+	)
+	if (!actionable) return <li className={shell}>{body}</li>
+	if (step.anchor!.startsWith('/')) return <li><a href={step.anchor} className={shell}>{body}</a></li>
+	return <li><button type="button" onClick={() => onNavigate(step.anchor!)} className={shell}>{body}</button></li>
+}
+
+function QueueGroupHeader({ id, title, description, count, actions }: { id?: string; title: string; description: string; count: number; actions?: ReactNode }) {
+	// id 供流程条点击后滚到对应分组；scroll-mt 避免贴住视口顶部。
+	return <div id={id} className="flex scroll-mt-4 flex-wrap items-center justify-between gap-3 border-y border-card-border bg-surface-raised px-5 py-2.5 first:border-t-0"><div className="flex min-w-0 items-baseline gap-2"><h4 className="text-xs font-semibold text-foreground">{title}</h4><span className="rounded-full border border-card-border-strong bg-surface px-2 py-0.5 text-xs tabular-nums text-text-secondary">{count}</span><p className="hidden truncate text-xs text-text-tertiary sm:block">{description}</p></div>{actions && <div className="flex flex-wrap items-center gap-1.5">{actions}</div>}</div>
 }
 
 function QueueRow({ tone, label, job, detail, selected = false, onToggle, actions }: { tone: 'primary' | 'warning' | 'danger' | 'info'; label: string; job: Job; detail: string; selected?: boolean; onToggle?: () => void; actions: ReactNode }) {

@@ -69,7 +69,7 @@ class ParallelScoringTests(unittest.TestCase):
                 "profile": {"resume_path": str(resume_path)},
                 "scoring": {"threshold": 70, "concurrency": 3},
             }
-            with patch("bosshunter.db.DB_PATH", db_path), \
+            with patch("bosshunter.ai.scorer.get_db", lambda: get_db(db_path)), \
                  patch("bosshunter.ai.scorer.quick_score", return_value=(100, "通过")), \
                  patch("bosshunter.ai.scorer._call_claude_with_retry", side_effect=fake_call), \
                  patch("bosshunter.ai.scorer.generate_greetings_batch", return_value=[]):

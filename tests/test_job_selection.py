@@ -24,6 +24,17 @@ from bosshunter.executor.sender import _send_greeting_once
 from bosshunter.executor.sender import _wait_for_chat_page
 
 
+def _sender_db(db_path: Path):
+    """把 sender 模块内的 get_db() 重定向到测试库。
+
+    迁移到 PostgreSQL 后，无参 get_db() 不再读 ``bosshunter.db.DB_PATH``
+    （它走配置里的 database.url），所以过去 patch DB_PATH 的做法已经失效。
+    各模块是 ``from bosshunter.db import get_db``，名字在导入时就绑定了，
+    必须 patch 消费方模块里的那一个。
+    """
+    return lambda *args, **kwargs: get_db(db_path)
+
+
 def _job(job_id: str, title: str = "Engineer") -> dict:
     return {
         "id": job_id,
@@ -268,7 +279,7 @@ class JobSelectionTests(unittest.TestCase):
                 ({"success": True}, None),
             ]
 
-            with patch("bosshunter.db.DB_PATH", db_path), \
+            with patch("bosshunter.executor.sender.get_db", _sender_db(db_path)), \
                  patch("bosshunter.executor.sender.should_take_day_off", return_value=False), \
                  patch("bosshunter.executor.sender.SendWindowChecker.is_active", return_value=True), \
                  patch("bosshunter.executor.sender._send_greeting_once", side_effect=attempts) as send_once, \
@@ -303,7 +314,7 @@ class JobSelectionTests(unittest.TestCase):
                 "history_detail": "发送前检测到岗位已关闭",
                 "skip_backoff": True,
             }
-            with patch("bosshunter.db.DB_PATH", db_path), \
+            with patch("bosshunter.executor.sender.get_db", _sender_db(db_path)), \
                  patch("bosshunter.executor.sender._send_greeting_once", return_value=(result, None)):
                 sent = send_greetings({"throttle": {"daily_limit": 10}}, force=True)
 
@@ -469,7 +480,7 @@ class JobSelectionTests(unittest.TestCase):
                 "_workbench_job_ids": ["send-failed"],
                 "_workbench_include_send_errors": True,
             }
-            with patch("bosshunter.db.DB_PATH", db_path), \
+            with patch("bosshunter.executor.sender.get_db", _sender_db(db_path)), \
                  patch("bosshunter.executor.sender._send_greeting_once", return_value=({"success": True}, None)):
                 sent = send_greetings(config, force=True)
 
@@ -519,7 +530,7 @@ class JobSelectionTests(unittest.TestCase):
             }
 
             # Act
-            with patch("bosshunter.db.DB_PATH", db_path), \
+            with patch("bosshunter.executor.sender.get_db", _sender_db(db_path)), \
                  patch("bosshunter.throttle.datetime") as mock_datetime, \
                  patch("bosshunter.executor.sender._send_greeting_once", return_value=({"success": True}, None)):
                 mock_datetime.now.return_value = datetime(2026, 6, 19, 20, 0)

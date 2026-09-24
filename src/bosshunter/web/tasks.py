@@ -27,6 +27,9 @@ MODE_LABELS = {
 
 TERMINAL_STATUSES = {"completed", "failed", "stopped"}
 ACTIVE_STATUSES = {"running", "stopping"}
+# 流程阶段的规范取值，前端流程条按这个顺序渲染。
+# 执行器在推进阶段时通过 _log(..., stage=...) 显式写入，前端不再解析日志文案。
+PIPELINE_STAGE_KEYS = ("collect", "score", "confirm", "greet", "send")
 DEADLINE_MODES = {"full", "monitor", "deliver"}
 # 可与长期任务并行的短任务。它们只操作独立的 BOSS 会话/详情页/搜索页，
 # 打开独立标签页，不影响监测/采集共享的列表页与数据库（WAL 并发安全），
@@ -50,6 +53,8 @@ class WorkbenchTask:
     updated_at: str = field(default_factory=lambda: datetime.now().isoformat(timespec="seconds"))
     deadline_at: str | None = None
     stop_reason: str | None = None
+    # 当前所处流程阶段，取值见 PIPELINE_STAGE_KEYS；None 表示尚未进入任何已知阶段。
+    stage: str | None = None
     stop_requested: Event = field(default_factory=Event, repr=False)
     context: dict[str, Any] = field(default_factory=dict, repr=False)
 
@@ -65,6 +70,7 @@ class WorkbenchTask:
             "updated_at": self.updated_at,
             "deadline_at": self.deadline_at,
             "stop_reason": self.stop_reason,
+            "stage": self.stage,
             "stop_requested": self.stop_requested.is_set(),
         }
 
@@ -204,13 +210,13 @@ class WorkbenchTaskRunner:
         try:
             conn.execute(
                 """INSERT INTO workbench_tasks
-                (id, mode, label, status, logs, error, created_at, updated_at, deadline_at, stop_reason)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                (id, mode, label, status, logs, error, created_at, updated_at, deadline_at, stop_reason, stage)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT(id) DO UPDATE SET status=excluded.status, logs=excluded.logs,
                 error=excluded.error, updated_at=excluded.updated_at, deadline_at=excluded.deadline_at,
-                stop_reason=excluded.stop_reason""",
+                stop_reason=excluded.stop_reason, stage=excluded.stage""",
                 (task.id, task.mode, task.label, task.status, json.dumps(task.logs, ensure_ascii=False),
-                 task.error, task.created_at, task.updated_at, task.deadline_at, task.stop_reason),
+                 task.error, task.created_at, task.updated_at, task.deadline_at, task.stop_reason, task.stage),
             )
             conn.commit()
         finally:
@@ -238,6 +244,7 @@ class WorkbenchTaskRunner:
                     id=row["id"], mode=row["mode"], label=row["label"], status=status,
                     logs=logs, error=row["error"], created_at=row["created_at"],
                     updated_at=row["updated_at"], deadline_at=row["deadline_at"], stop_reason=stop_reason,
+                    stage=row["stage"],
                 )
             conn.commit()
         finally:

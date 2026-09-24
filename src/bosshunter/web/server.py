@@ -17,6 +17,7 @@ from bottle import Bottle, ServerAdapter, request, response, static_file, HTTPEr
 
 from bosshunter import __version__
 from bosshunter.config import load_config, CITY_CODES
+from bosshunter.job_filters import is_whitelisted_company
 
 # 从 .env 加载的本地环境变量（BOSSHUNTER_AUTH_TOKEN 等）在导入期即可用，
 # 因此这里必须走真实环境，不能复用 _load_web_env 的覆盖逻辑。
@@ -323,7 +324,17 @@ def _task_config(extra: dict | None = None) -> dict:
 	return config
 
 
-def _log(task: WorkbenchTask, message: str) -> None:
+def _log(task: WorkbenchTask, message: str, stage: str | None = None) -> None:
+	"""追加一条任务日志，并可选地推进任务所处阶段。
+
+	Args:
+		task: 目标任务。
+		message: 展示给用户的日志文本。
+		stage: 阶段 key（见 ``PIPELINE_STAGE_KEYS``）。仅在该日志确实代表
+			阶段推进时传入；不传表示沿用当前阶段。
+	"""
+	if stage is not None:
+		task.stage = stage
 	task.logs.append(message)
 	task_runner._persist(task)
 
@@ -335,7 +346,7 @@ def _execute_collect(task: WorkbenchTask, config: dict) -> None:
 	config = dict(config)
 	config["_workbench_stop_event"] = task.stop_requested
 	keywords = config.get("search", {}).get("keywords", [])
-	_log(task, "开始采集岗位")
+	_log(task, "开始采集岗位", stage="collect")
 	scrape_jobs(config, keywords, config.get("_workbench_limit"))
 	if not task.stop_requested.is_set():
 		_log(task, "采集完成，岗位已进入待评分队列")
@@ -347,7 +358,7 @@ def _execute_score(task: WorkbenchTask, config: dict) -> None:
 	# 注入 stop_event，让评分循环能在岗位迭代间中断。
 	config = dict(config)
 	config["_workbench_stop_event"] = task.stop_requested
-	_log(task, "开始 AI 评分（不重新采集）")
+	_log(task, "开始 AI 评分", stage="score")
 	scored, filtered = score_jobs(config)
 	db = _get_web_db()
 	try:
@@ -355,6 +366,9 @@ def _execute_score(task: WorkbenchTask, config: dict) -> None:
 	finally:
 		db.close()
 	_log(task, f"AI 评分结束：通过 {scored}，过滤 {filtered}，待重试 {remaining}")
+	# 结果计数留给调用方（全流程）拼结束语，避免用户看到"没有待确认岗位"却不知道筛掉了多少。
+	task.context["scored"] = scored
+	task.context["filtered"] = filtered
 
 
 def _start_assistant_action(action: dict) -> dict:
@@ -450,7 +464,8 @@ def _execute_reenrich(task: WorkbenchTask, config: dict) -> None:
 
 	reenrich_config = dict(config)
 	reenrich_config["_workbench_stop_event"] = task.stop_requested
-	_log(task, "开始补全缺失的地区、公司背景和注册资本信息")
+	# 补全本质是重新访问岗位详情页抓取字段，归到"采集岗位"这一步。
+	_log(task, "开始补全缺失的地区、公司背景和注册资本信息", stage="collect")
 	updated = reenrich_jobs(reenrich_config)
 	_log(task, f"企业信息补全结束：更新 {updated} 个岗位")
 
@@ -463,7 +478,7 @@ def _execute_monitor(task: WorkbenchTask, config: dict) -> None:
 	interval_min = int(config.get("monitor", {}).get("interval", 30) or 30)
 	interval_sec = max(interval_min * 60, 1)
 	while not task.stop_requested.is_set():
-		_log(task, "执行一轮监测")
+		_log(task, "执行一轮监测", stage="send")
 		# 周期级异常隔离：单轮 DB 抖动/页面结构异常不应终止整个长任务，
 		# 记录错误后等下一个周期重试（与 CLI 循环 pipeline.py 的行为一致）。
 		try:
@@ -492,23 +507,34 @@ def _execute_full(task: WorkbenchTask, config: dict) -> None:
 	if task.stop_requested.is_set():
 		return
 
+	# 采集之后必须补上 AI 评分：新采集的岗位状态是 pending，只有 score_jobs 会把
+	# 通过评分的推到 ready（并顺带生成招呼语）。漏掉这步，下面的待确认查询必然为空，
+	# 「运行全流程」就会退化成"只采集"，与 CLI run_pipeline 和界面文案都不一致。
+	_execute_score(task, config)
+	if task.stop_requested.is_set():
+		return
+
 	db = _get_web_db()
 	try:
 		threshold = int(config.get("scoring", {}).get("threshold", 60) or 60)
 		pending_confirmation = [
-			job for job in get_jobs_pending_confirmation(db) if int(job.get("score") or 0) >= threshold
+			job for job in get_jobs_pending_confirmation(db)
+			if int(job.get("score") or 0) >= threshold
+			or is_whitelisted_company(job.get("company"), config)
 		]
 	finally:
 		db.close()
 	if not pending_confirmation:
 		task.context["waiting_confirmation"] = False
-		_log(task, "没有待确认岗位，流程结束")
+		scored = int(task.context.get("scored") or 0)
+		filtered = int(task.context.get("filtered") or 0)
+		_log(task, f"没有待确认岗位，流程结束（本轮评分通过 {scored} 个、过滤 {filtered} 个）", stage="confirm")
 		return
 
 	confirmation_event = Event()
 	task.context["waiting_confirmation"] = True
 	task.context["confirmation_event"] = confirmation_event
-	_log(task, "等待前端确认投递")
+	_log(task, "等待前端确认投递", stage="confirm")
 	while not task.stop_requested.is_set() and not confirmation_event.wait(0.5):
 		pass
 	if task.stop_requested.is_set():
@@ -516,11 +542,11 @@ def _execute_full(task: WorkbenchTask, config: dict) -> None:
 
 	job_ids = [str(job_id) for job_id in task.context.get("confirmed_job_ids", []) if str(job_id)]
 	if not job_ids:
-		_log(task, "未收到前端确认岗位，流程结束")
+		_log(task, "未收到前端确认岗位，流程结束", stage="confirm")
 		return
 
 	task.context["waiting_confirmation"] = False
-	_log(task, f"前端已确认 {len(job_ids)} 个岗位，继续投递")
+	_log(task, f"前端已确认 {len(job_ids)} 个岗位，继续投递", stage="confirm")
 	deliver_config = dict(config)
 	deliver_config["_workbench_job_ids"] = job_ids
 	_execute_deliver(task, deliver_config)
@@ -536,7 +562,7 @@ def _execute_deliver(task: WorkbenchTask, config: dict) -> None:
 	config = dict(config)
 	config["_workbench_stop_event"] = task.stop_requested
 	if not config.get("_workbench_skip_greeting"):
-		_log(task, "检查招呼语...")
+		_log(task, "检查招呼语...", stage="greet")
 		generated = generate_greetings(config)
 		if generated > 0:
 			_log(task, f"已生成 {generated} 条招呼语")
@@ -544,7 +570,7 @@ def _execute_deliver(task: WorkbenchTask, config: dict) -> None:
 			_log(task, "所有岗位已有招呼语，跳过生成")
 		if task.stop_requested.is_set():
 			return
-	_log(task, "发送招呼语")
+	_log(task, "发送招呼语", stage="send")
 	sent = send_greetings(config, force=True)
 	_log(task, f"已发送 {sent} 条招呼语")
 
@@ -552,7 +578,7 @@ def _execute_deliver(task: WorkbenchTask, config: dict) -> None:
 def _execute_greeting(task: WorkbenchTask, config: dict) -> None:
 	from bosshunter.ai.greeter import generate_greetings
 
-	_log(task, "生成招呼语...")
+	_log(task, "生成招呼语...", stage="greet")
 	generated = generate_greetings(config)
 	if generated > 0:
 		_log(task, f"已生成 {generated} 条招呼语，等待人工查看后发送")
@@ -584,7 +610,7 @@ def _execute_reply(task: WorkbenchTask, config: dict) -> None:
 	from bosshunter.browser import close_tab
 	from bosshunter.executor.monitor import _build_reply_resolution_detail, _open_conversation, _send_message_in_chat
 
-	_log(task, "打开对应的 BOSS 聊天会话")
+	_log(task, "打开对应的 BOSS 聊天会话", stage="send")
 	target_id = _open_conversation(job, config)
 	if not target_id:
 		raise RuntimeError("无法打开对应的 BOSS 聊天会话")
@@ -658,7 +684,7 @@ def _import_generate_greeting(task: WorkbenchTask, job_id: str, config: dict) ->
 
 	import_config = dict(config)
 	import_config["_workbench_stop_event"] = task.stop_requested
-	_log(task, f"为岗位 {job_id} 生成招呼语…")
+	_log(task, f"为岗位 {job_id} 生成招呼语…", stage="greet")
 	greeting = regenerate_greeting(job_id, import_config)
 	if greeting:
 		_log(task, "招呼语已生成，请在「今日待确定」中查看并确认")
@@ -690,7 +716,7 @@ def _execute_import(task: WorkbenchTask, config: dict) -> None:
 		url = str(params.get("url", "")).strip()
 		if not url:
 			raise ValueError("缺少岗位 URL")
-		_log(task, f"按 URL 定向采集: {url}")
+		_log(task, f"按 URL 定向采集: {url}", stage="collect")
 		job = import_job_by_url(url, import_config)
 		if not job:
 			raise RuntimeError("采集失败，请检查 URL 是否正确、BOSS 登录状态及 CDP 运行时")
@@ -709,7 +735,7 @@ def _execute_import(task: WorkbenchTask, config: dict) -> None:
 		title = str(params.get("title", "")).strip()
 		if not company and not title:
 			raise ValueError("请至少填写公司名或职位名")
-		_log(task, f"按公司+职位搜索: company={company!r} title={title!r}")
+		_log(task, f"按公司+职位搜索: company={company!r} title={title!r}", stage="collect")
 		candidates = search_jobs_by_company_title(company, title, import_config)
 		# 候选列表写进 task.context；前端通过 /api/workbench/import/candidates 读取。
 		task.context["candidates"] = candidates
@@ -723,7 +749,7 @@ def _execute_import(task: WorkbenchTask, config: dict) -> None:
 		url = str(params.get("url", "")).strip()
 		if not url:
 			raise ValueError("缺少所选岗位的 URL")
-		_log(task, f"采集所选岗位详情: {url}")
+		_log(task, f"采集所选岗位详情: {url}", stage="collect")
 		job = import_job_by_url(url, import_config)
 		if not job:
 			raise RuntimeError("采集失败，请检查 BOSS 登录状态及 CDP 运行时")

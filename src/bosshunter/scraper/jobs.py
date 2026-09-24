@@ -15,7 +15,7 @@ from bosshunter.browser import (
 )
 from bosshunter.config import CITY_CODES
 from bosshunter.db import get_db, get_job, get_jobs_needing_enrichment, insert_job, update_job_enrichment
-from bosshunter.job_filters import is_agency_company, matching_deal_breaker
+from bosshunter.job_filters import is_agency_company, is_whitelisted_company, matching_deal_breaker
 from bosshunter.throttle import PageThrottle
 
 console = Console()
@@ -346,12 +346,15 @@ def scrape_jobs(config: dict, keywords: list[str], limit: int | None = None) -> 
                     )):
                         continue
 
+                    # 白名单公司跳过下面全部自动过滤，直接进入详情采集与后续确认。
+                    whitelisted = is_whitelisted_company(job_data.get("company", ""), config)
+
                     # Skip deal breakers
-                    if matching_deal_breaker(job_data.get("title", ""), deal_breakers):
+                    if not whitelisted and matching_deal_breaker(job_data.get("title", ""), deal_breakers):
                         continue
 
                     # Skip agency/headhunter jobs with vague company names (e.g. "某大型XX公司")
-                    if is_agency_company(job_data.get("company", "")):
+                    if not whitelisted and is_agency_company(job_data.get("company", "")):
                         continue
 
                     # Open detail page for full JD

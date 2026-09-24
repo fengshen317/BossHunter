@@ -4,21 +4,21 @@
 
 > 某直聘智能求职 Agent — 从岗位采集、AI 评分到人工确认投递、回复监测与定制简历生成的本地自动化流水线
 
+[English](README_EN.md) · [文档中心](docs/README.md) · [安装指南](docs/安装与升级指南.md) · [操作手册](docs/操作手册.md) · [贡献指南](CONTRIBUTING.md)
+
 **BossHunter** 是一个基于 AI + CDP 浏览器自动化的智能求职助手，通过「AI 评分 + 人工确认」策略，帮助求职者更高效地筛选岗位、准备沟通内容并管理投递状态。
 
 ---
 
 ## 项目演示
 
-### 产品功能演示视频（推荐先看）
+### 工作台与智能助手
 
-> **完整演示入口：** [点击观看 BossHunter 产品功能演示视频](docs/demo/JD猎手_AI求职_BossHunter_产品功能演示.mp4)
->
-> 视频演示了从配置、岗位采集、AI 评分、人工确认、发送招呼语到监测执行的完整链路。
+![BossHunter 工作台批量发送界面](workbench-batch-send.png)
 
-### 产品介绍 PPT
+![BossHunter 智能助手流程](assistant-process-final.png)
 
-![BossHunter 产品介绍 PPT](docs/demo/bossHunter-product-intro.gif)
+> 截图仅展示产品界面；真实运行数据、简历和账号信息不会随仓库发布。
 
 ---
 
@@ -122,8 +122,9 @@ BossHunter 适合这些用户：
 
 | 依赖 | 版本 | 用途 |
 |------|------|------|
-| Python | 3.10+ | 核心运行时 |
+| Python | 3.11+ | 核心运行时 |
 | Node.js | 22+ | 本地 Browser Runtime / CDP 代理 |
+| PostgreSQL | 14+ | 业务数据、Agent 状态与检查点 |
 | Chrome | 最新稳定版 | 连接已登录浏览器 |
 | AI API Key | — | Anthropic 或 OpenAI 兼容接口 |
 
@@ -161,7 +162,16 @@ pip install -e .
 pip install -e ".[pdf]"
 ```
 
-### 二、配置
+### 二、初始化 PostgreSQL 与配置
+
+创建 PostgreSQL 数据库，并按编号执行 `migrations/postgresql/` 下的全部 SQL 文件。完整命令见[安装与升级指南](docs/安装与升级指南.md)。当前版本不支持 SQLite 运行时降级。
+
+```bash
+cp config.example.yaml config.yaml
+cp resume.example.md resume.md
+```
+
+在 `config.yaml` 中填写 `database.url`、本人简历、搜索目标、AI 服务和保守的发送限制，然后启动工作台：
 
 ```bash
 bosshunter web
@@ -253,7 +263,7 @@ bosshunter status --full        # 完整仪表盘
 
 ## 配置说明
 
-详见 [config.example.yaml](config.example.yaml)。
+完整字段说明见[配置参考](docs/配置参考.md)，可复制的模板见 [config.example.yaml](config.example.yaml)。
 
 核心配置项：
 
@@ -265,8 +275,11 @@ bosshunter status --full        # 完整仪表盘
 | `throttle` | `daily_limit`, `interval_min/max`, `send_windows` | 低频发送策略 |
 | `ai` | `provider`, `model`, `api_key`, `base_url` | AI 服务配置 |
 | `resume` | `template`, `theme_color`, `show_avatar`, `generate_ats_version` | PDF 模板、头像展示与 ATS 版本 |
-| `monitor` | `interval`, `max_resume_sends_per_cycle` | 监听设置 |
+| `monitor` | `interval`, `auto_reply_hr_questions` | 监听间隔与 HR 问题处理策略 |
 | `follow_up` | `enabled`, `interval_hours`, `skip_weekends` | 跟进策略 |
+| `database` | `url` | 必填 PostgreSQL 连接地址 |
+| `runtime` | `redis_url`, `worker_enabled`, `max_concurrency` | 多实例运行与后台 Worker |
+| `artifacts` | `backend`, `local_path`, `bucket` | 本地或 S3/MinIO 制品存储 |
 
 ### AI 兼容接口说明
 
@@ -284,17 +297,19 @@ bosshunter status --full        # 完整仪表盘
 BossHunter/
 ├── SKILL.md              # Skill 行为定义（Claude Code 加载）
 ├── README.md             # 本文件
-├── LICENSE               # MIT License
+├── README_EN.md          # English overview
+├── LICENSE               # BossHunter Non-Commercial License
 ├── config.example.yaml   # 配置模板（脱敏）
 ├── pyproject.toml        # Python 包定义
 ├── .gitignore            # 安全排除规则
 ├── resume.example.md     # 简历模板示例
-├── docs/demo/            # 产品截图与演示视频
+├── docs/                 # 用户、开发与架构文档
+├── migrations/postgresql/# PostgreSQL 迁移（按编号执行）
 ├── src/
 │   └── bosshunter/       # 核心源码
 │       ├── main.py       # CLI 入口
 │       ├── config.py     # 配置加载
-│       ├── db.py         # SQLite 数据层
+│       ├── db.py         # PostgreSQL 数据层
 │       ├── pipeline.py   # 流程编排
 │       ├── ai/           # AI 评分 + 招呼语 + 简历生成
 │       ├── browser/      # Browser Runtime / CDP 连接
@@ -305,9 +320,7 @@ BossHunter/
 │       ├── dedup/        # 去重
 │       ├── ui/           # 终端交互 UI
 │       └── web/          # Web Dashboard
-└── data/                 # 运行时数据（不入库）
-    ├── bosshunter.db
-    └── resumes/
+└── data/                 # 本地制品与浏览器状态（不入库）
 ```
 
 ---
@@ -363,7 +376,7 @@ https://github.com/powerycy/BossHunter
 
 ## 贡献
 
-欢迎 PR 和 Issue。请注意：
+欢迎 PR 和 Issue，提交前请阅读[贡献指南](CONTRIBUTING.md)和[技术手册](docs/技术手册.md)。请注意：
 
 - 不接受绕过平台安全机制、规避检测或提高默认发送频率的 PR。
 - 不接受收集、上传或外发用户隐私数据的 PR。
@@ -373,4 +386,4 @@ https://github.com/powerycy/BossHunter
 
 ## License
 
-[MIT License](LICENSE)
+[BossHunter Non-Commercial License](LICENSE)（`LicenseRef-BossHunter-NonCommercial`）。允许个人、教育、研究及其他非商业用途；商业使用需要事先取得版权所有者的书面许可。
