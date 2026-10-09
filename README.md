@@ -170,7 +170,7 @@ chrome.exe --remote-debugging-port=9222
 
 ```bash
 # 1. 克隆仓库
-git clone https://github.com/powerycy/BossHunter.git
+git clone https://github.com/fengshen317/BossHunter.git
 cd BossHunter
 
 # 2. 安装 Python 依赖
@@ -388,7 +388,7 @@ BossHunter 是个人维护的开源项目。如果它对你有帮助，欢迎：
 你的 Star 会帮助项目获得更多曝光，也会让我更有动力继续维护招聘平台适配、AI 匹配能力和 Web Dashboard。
 
 ⭐ Star 项目：  
-https://github.com/powerycy/BossHunter
+https://github.com/fengshen317/BossHunter
 
 ---
 

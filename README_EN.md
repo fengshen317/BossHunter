@@ -33,7 +33,7 @@ BossHunter is not a fully autonomous mass-application tool. Applications and oth
 ## Quick Start
 
 ```bash
-git clone https://github.com/powerycy/BossHunter.git
+git clone https://github.com/fengshen317/BossHunter.git
 cd BossHunter
 python -m venv .venv
 
