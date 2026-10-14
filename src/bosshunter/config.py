@@ -54,6 +54,14 @@ DEFAULTS: dict[str, Any] = {
         "greeting_max_iterations": 2,
     },
 	"assistant": {
+		"intent_classifier": {
+			"mode": "llm",
+			"provider": "typesafe",
+			"model": "jev-latest",
+			"base_url": "https://api.typesafe.ai",
+			"api_key_env": "TYPESAFE_API_KEY",
+			"timeout_seconds": 3,
+		},
 		"context": {
 			"default_context_window_tokens": 32768,
 			"output_reserve_tokens": 4096,

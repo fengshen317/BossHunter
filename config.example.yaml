@@ -88,6 +88,14 @@ ai:
 
 # AI 助手上下文与长期记忆。Token 预算优先，轮数仅用于限制碎片噪声。
 assistant:
+  # 第一阶段仅记录分类证据，不改变正式理解、记忆和执行结果。
+  intent_classifier:
+    mode: "llm"  # llm：关闭；shadow：开启 Jev 影子评估
+    provider: "typesafe"
+    model: "jev-latest"
+    base_url: "https://api.typesafe.ai"
+    api_key_env: "TYPESAFE_API_KEY"  # 密钥仅从进程环境读取
+    timeout_seconds: 3  # 每个网络阶段的超时，最多允许 5 秒
   context:
     default_context_window_tokens: 32768
     output_reserve_tokens: 4096

@@ -76,6 +76,7 @@ from bosshunter.assistant.repository import (
 	search_memories,
 )
 from bosshunter.assistant.routing import decide_route
+from bosshunter.assistant.intent_classifier import collect_shadow_evidence
 from bosshunter.assistant.sql_tool import (
 	execute_database_query,
 	plan_database_query,
@@ -225,6 +226,7 @@ class AssistantState(TypedDict, total=False):
 	messages: Annotated[list[dict[str, Any]], _append_items]
 	context: ContextSnapshot
 	intent: IntentResult
+	intent_classifier_evidence: dict[str, Any] | None
 	goal: GoalState
 	evidence_route: EvidenceRoute
 	evidence_tasks: list[EvidenceTask]
@@ -909,6 +911,16 @@ def build_assistant_graph(
 			_emit_execution_event("model-goal-extractor", "调用模型：解析用户目标", "failed", type(exc).__name__)
 			raise
 		_emit_execution_event("model-goal-extractor", "调用模型：解析用户目标", "completed", "已返回结构化目标")
+		classifier_evidence = collect_shadow_evidence(
+			context, loaded_config, cancel_check=CANCEL_CHECK_CALLBACK.get(),
+		)
+		if classifier_evidence and classifier_evidence["status"] == "completed":
+			# 只记录分歧以便评估；旧模型一致率不代表分类准确率。
+			classifier_evidence["reference_intent"] = intent["intent_type"]
+			classifier_evidence["reference_mode"] = intent.get("mode")
+			classifier_evidence["intent_agrees"] = (
+				classifier_evidence["answers"]["intent"]["choice"] == intent["intent_type"]
+			)
 		memory_updates: list[dict[str, Any]] = []
 		memory_operations = list(intent.get("memory_operations", []))
 		explicit_memory = _extract_explicit_memory(context["question"])
@@ -927,7 +939,10 @@ def build_assistant_graph(
 			finally:
 				conn.close()
 		_emit_execution_event("intent", "识别目标与意图", "completed", _intent_event_detail(intent))
-		return {"intent": intent, "memory_updates": memory_updates}
+		return {
+			"intent": intent, "memory_updates": memory_updates,
+			"intent_classifier_evidence": classifier_evidence,
+		}
 
 	def ambiguity_checker_node(state: AssistantState) -> dict[str, Any]:
 		"""依据能力元数据检查槽位完整性并防止模型低估风险。"""
