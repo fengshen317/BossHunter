@@ -52,15 +52,28 @@ jobs:
         if: ${{ !cancelled() }}
         run: rm -f -- openwiki/.run.json
 
-      - name: Create OpenWiki update pull request
+      - name: Select OpenWiki update paths
+        id: update_paths
         if: ${{ !cancelled() }}
+        shell: bash
+        run: |
+          {
+            echo 'paths<<OPENWIKI_PATHS'
+            for path in openwiki AGENTS.md CLAUDE.md .github/workflows/openwiki-update.yml; do
+              # 跳过缺失或忽略的可选文件；已跟踪的删除仍需进入提交。
+              if git ls-files --error-unmatch -- "$path" >/dev/null 2>&1 ||
+                { [[ -e "$path" ]] && ! git check-ignore -q -- "$path"; }; then
+                echo "$path"
+              fi
+            done
+            echo 'OPENWIKI_PATHS'
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Create OpenWiki update pull request
+        if: ${{ !cancelled() && steps.update_paths.outputs.paths != '' }}
         uses: peter-evans/create-pull-request@22a9089034f40e5a961c8808d113e2c98fb63676 # v7
         with:
-          add-paths: |
-            openwiki
-            AGENTS.md
-            CLAUDE.md
-            .github/workflows/openwiki-update.yml
+          add-paths: ${{ steps.update_paths.outputs.paths }}
           branch: openwiki/update
           commit-message: "docs: update OpenWiki"
           title: "docs: update OpenWiki"
